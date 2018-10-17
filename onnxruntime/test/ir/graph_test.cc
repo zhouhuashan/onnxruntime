@@ -386,7 +386,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckInputNodeOrderMaintained) {
   auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
   const std::vector<NodeIndex>* topological_order;
-  status = graph.GetNodesInTopologicalOrder(&topological_order);
+  status = graph.GetNodesInTopologicalOrder(topological_order);
   EXPECT_TRUE(status.IsOK());
 
   bool seen1 = false;

@@ -37,7 +37,7 @@ class Graph : public GraphBase {
   // Add/Remove/Get initial tensors for some graph inputs.
   void AddInitializedTensor(const ONNX_NAMESPACE::TensorProto& tensor_proto);
   void RemoveInitializedTensor(const std::string& tensor_name);
-  bool GetInitializedTensor(const std::string& tensor_name, gsl::not_null<const ONNX_NAMESPACE::TensorProto**> value) const;
+  bool GetInitializedTensor(const std::string& tensor_name, const ONNX_NAMESPACE::TensorProto*& value) const;
   const InitializedTensorSet& GetAllInitializedTensors() const noexcept;
   void CleanAllInitializedTensors() noexcept;
 

@@ -524,7 +524,7 @@ class GraphBase {
   const Node* SourceNode() const;
   const Node* SinkNode() const;
 
-  common::Status GetNodesInTopologicalOrder(/*out*/ gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const;
+  common::Status GetNodesInTopologicalOrder(/*out*/ const std::vector<NodeIndex>*& pp_nodes) const;
 
   // Mark Graph as needing Resolve() to be called
   GraphBase& SetGraphResolveNeeded() noexcept {

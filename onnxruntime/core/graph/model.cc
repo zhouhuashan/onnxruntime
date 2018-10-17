@@ -36,7 +36,7 @@ Model::Model(const std::string& graph_name,
   model_proto_->mutable_graph()->set_name(graph_name);
   model_metadata_ = model_metadata;
   for (auto& metadata : model_metadata_) {
-    const gsl::not_null<StringStringEntryProto*> prop = model_proto_->add_metadata_props();
+    const gsl::not_null<StringStringEntryProto*> prop{model_proto_->add_metadata_props()};
     prop->set_key(metadata.first);
     prop->set_value(metadata.second);
   }
@@ -56,7 +56,7 @@ Model::Model(const std::string& graph_name,
   }
 
   for (auto domain : *p_domain_to_version) {
-    const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
+    const gsl::not_null<OperatorSetIdProto*> opset_id_proto{model_proto_->add_opset_import()};
     opset_id_proto->set_domain(domain.first);
     opset_id_proto->set_version(domain.second);
   }
@@ -106,7 +106,7 @@ Model::Model(std::unique_ptr<ModelProto> model_proto, const IOnnxRuntimeOpSchema
   for (auto domain : domain_map) {
     if (domain_to_version.find(domain.first) == domain_to_version.end()) {
       domain_to_version[domain.first] = domain.second;
-      const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
+      const gsl::not_null<OperatorSetIdProto*> opset_id_proto{model_proto_->add_opset_import()};
       opset_id_proto->set_domain(domain.first);
       opset_id_proto->set_version(domain.second);
     }
@@ -239,7 +239,7 @@ Status Model::Load(std::unique_ptr<ModelProto> p_model_proto, std::shared_ptr<Mo
 template <typename T>
 static Status LoadModel(const T& file_path, std::shared_ptr<Model>& p_model, const IOnnxRuntimeOpSchemaRegistryList* local_registries) {
   int fd;
-  Status status = Env::Default().FileOpenRd(file_path, &fd);
+  Status status = Env::Default().FileOpenRd(file_path, fd);
   if (!status.IsOK()) {
     if (status.Category() == common::SYSTEM) {
       switch (status.Code()) {
@@ -270,7 +270,7 @@ static Status LoadModel(const T& file_path, std::shared_ptr<Model>& p_model, con
 template <typename T>
 static Status SaveModel(Model& model, const T& file_path) {
   int fd;
-  Status status = Env::Default().FileOpenWr(file_path, &fd);
+  Status status = Env::Default().FileOpenWr(file_path, fd);
   ONNXRUNTIME_RETURN_IF_ERROR(status);
   try {
     status = Model::Save(model, fd);

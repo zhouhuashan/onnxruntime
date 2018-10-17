@@ -538,7 +538,7 @@ class PlannerImpl {
 
 Status PlannerImpl::CreatePlan() {
   const std::vector<onnxruntime::NodeIndex>* p_graph_nodes;
-  ONNXRUNTIME_RETURN_IF_ERROR(graph_.GetNodesInTopologicalOrder(&p_graph_nodes));
+  ONNXRUNTIME_RETURN_IF_ERROR(graph_.GetNodesInTopologicalOrder(p_graph_nodes));
 
   auto num_ml_values = mlvalue_name_idx_map_.MaxIdx() + 1;
 

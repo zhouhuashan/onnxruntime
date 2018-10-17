@@ -18,7 +18,7 @@ namespace test {
 // Assumes the graph passed in has been previously resolved.
 static void TestResolve(onnxruntime::Graph& graph) {
   const std::vector<onnxruntime::NodeIndex>* nodes;
-  EXPECT_TRUE(graph.GetNodesInTopologicalOrder(&nodes).IsOK());
+  EXPECT_TRUE(graph.GetNodesInTopologicalOrder(nodes).IsOK());
   auto nodes_before = *nodes;
   auto& inputs_before = graph.GetInputs();
   auto& outputs_before = graph.GetOutputs();
@@ -30,7 +30,7 @@ static void TestResolve(onnxruntime::Graph& graph) {
   EXPECT_TRUE(graph.Resolve().IsOK());
 
   const std::vector<onnxruntime::NodeIndex>* nodes_after;
-  EXPECT_TRUE(graph.GetNodesInTopologicalOrder(&nodes_after).IsOK());
+  EXPECT_TRUE(graph.GetNodesInTopologicalOrder(nodes_after).IsOK());
   auto& inputs_after = graph.GetInputs();
   auto& outputs_after = graph.GetOutputs();
   auto& value_info_after = graph.GetValueInfo();

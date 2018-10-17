@@ -109,14 +109,14 @@ class Env {
 
 #ifdef _WIN32
   //Mainly for use with protobuf library
-  virtual common::Status FileOpenRd(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  virtual common::Status FileOpenRd(const std::wstring& path, /*out*/ int& fd) const = 0;
   //Mainly for use with protobuf library
-  virtual common::Status FileOpenWr(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  virtual common::Status FileOpenWr(const std::wstring& path, /*out*/ int& fd) const = 0;
 #endif
   //Mainly for use with protobuf library
-  virtual common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  virtual common::Status FileOpenRd(const std::string& path, /*out*/ int& fd) const = 0;
   //Mainly for use with protobuf library
-  virtual common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  virtual common::Status FileOpenWr(const std::string& path, /*out*/ int& fd) const = 0;
   //Mainly for use with protobuf library
   virtual common::Status FileClose(int fd) const = 0;
   //This functions is always successful. It can't fail.
