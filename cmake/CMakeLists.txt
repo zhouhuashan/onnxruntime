@@ -147,10 +147,6 @@ if (onnxruntime_USE_EIGEN_FOR_BLAS)
   add_definitions(-DUSE_EIGEN_FOR_BLAS)
 endif()
 
-if (onnxruntime_USE_MLAS AND WIN32)
-  add_definitions(-DUSE_MLAS)
-endif()
-
 if (onnxruntime_USE_OPENBLAS AND "${onnxruntime_OPENBLAS_HOME}" STREQUAL "" AND WIN32)
   # On linux we assume blas is installed via 'apt-get install libopenblas-dev'
   message(FATAL_ERROR "onnxruntime_OPENBLAS_HOME required for onnxruntime_USE_OPENBLAS")
@@ -265,10 +261,8 @@ if (onnxruntime_RUN_ONNX_TESTS)
   add_definitions(-DONNXRUNTIME_RUN_EXTERNAL_ONNX_TESTS)
 endif()
 
-if (onnxruntime_USE_MLAS AND WIN32)
-    set(MLAS_INC ${PROJECT_SOURCE_DIR}/../../mlas/inc)
-    set(MLAS_LIBRARY mlas)
-endif()
+add_definitions(-DUSE_MLAS)
+
 if (WIN32)
     add_definitions(-DPLATFORM_WINDOWS -DNOGDI -DNOMINMAX -D_USE_MATH_DEFINES)
     # parallel build
@@ -396,6 +390,7 @@ include(onnxruntime_framework.cmake)
 include(onnxruntime_util.cmake)
 include(onnxruntime_providers.cmake)
 include(onnxruntime_session.cmake)
+include(onnxruntime_mlas.cmake)
 
 if(onnxruntime_USE_MKLDNN)
   set(PROVIDERS_MKLDNN onnxruntime_providers_mkldnn)

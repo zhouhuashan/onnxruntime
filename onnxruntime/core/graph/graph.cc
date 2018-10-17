@@ -194,7 +194,7 @@ void Node::ToProto(NodeProto& proto) const {
   // Set attributes.
   proto.clear_attribute();
   for (auto attribute : attributes_) {
-    const gsl::not_null<AttributeProto*> attr = proto.add_attribute();
+    const gsl::not_null<AttributeProto*> attr{proto.add_attribute()};
     *attr = attribute.second;
   }
 
@@ -371,12 +371,12 @@ const NodeAttributes& Node::GetAttributes() const noexcept {
 }
 
 void Node::ForEachDef(std::function<void(const onnxruntime::NodeArg*, bool is_input)> func) const {
-  for (const gsl::not_null<const onnxruntime::NodeArg*> arg : InputDefs()) {
+  for (const auto* arg : InputDefs()) {
     if (!arg->Exists())
       continue;
     func(&*arg, true);
   }
-  for (const gsl::not_null<const onnxruntime::NodeArg*> arg : OutputDefs()) {
+  for (const auto* arg : OutputDefs()) {
     if (!arg->Exists())
       continue;
     func(&*arg, false);
@@ -384,7 +384,7 @@ void Node::ForEachDef(std::function<void(const onnxruntime::NodeArg*, bool is_in
 };
 
 void Node::ForEachInputDef(std::function<void(const onnxruntime::NodeArg*)> func) const {
-  for (const gsl::not_null<const onnxruntime::NodeArg*> arg : InputDefs()) {
+  for (const auto* arg : InputDefs()) {
     if (!arg->Exists())
       continue;
     func(&*arg);
@@ -392,7 +392,7 @@ void Node::ForEachInputDef(std::function<void(const onnxruntime::NodeArg*)> func
 };
 
 void Node::ForEachOutputDef(std::function<void(const onnxruntime::NodeArg*)> func) const {
-  for (const gsl::not_null<const onnxruntime::NodeArg*> arg : OutputDefs()) {
+  for (const auto* arg : OutputDefs()) {
     if (!arg->Exists())
       continue;
     func(&*arg);
@@ -403,7 +403,7 @@ void Node::ReplaceDefs(const std::map<const onnxruntime::NodeArg*, onnxruntime::
   std::vector<std::vector<NodeArg*>*> all_defs = {&definitions_.input_defs, &definitions_.output_defs};
 
   for (auto pair : replacements)
-    for (const gsl::not_null<std::vector<onnxruntime::NodeArg*>*> defs : all_defs)
+    for (auto* defs : all_defs)
       for (auto& def : *defs)
         if (def == pair.first)
           def = pair.second;
@@ -444,14 +444,14 @@ Graph::Graph(GraphProto* graph_proto,
     // Copy constant nodes _value to name_to_initial_tensor_
     for (auto& node : graph_proto_->node()) {
       if (node.op_type() == kConstant) {
-        const gsl::not_null<TensorProto*> tensor = graph_proto_->add_initializer();
+        const gsl::not_null<TensorProto*> tensor{graph_proto_->add_initializer()};
         *tensor = node.attribute(0).t();
         *(tensor->mutable_name()) = node.output(0);
       }
     }
 
     // remove constant nodes
-    const gsl::not_null<RepeatedPtrField<NodeProto>*> graph_mutable_nodes = graph_proto_->mutable_node();
+    const gsl::not_null<RepeatedPtrField<NodeProto>*> graph_mutable_nodes{graph_proto_->mutable_node()};
     graph_mutable_nodes->erase(
         std::remove_if(graph_mutable_nodes->begin(), graph_mutable_nodes->end(),
                        [](NodeProto& p) {
@@ -525,7 +525,7 @@ Status GraphBase::VerifyNoDuplicateName(/*in*/ const std::unordered_set<std::str
     node_name_to_index[node_name] = node.Index();
 
     // Verify node outputs' name should be unique.
-    for (const gsl::not_null<const NodeArg*> output_def : node.OutputDefs()) {
+    for (const auto* output_def : node.OutputDefs()) {
       if (output_def->Exists()) {
         auto& output_arg_name = output_def->Name();
         if (inputs_and_initializers.count(output_arg_name)) {
@@ -578,7 +578,7 @@ Status GraphBase::BuildConnections(const std::unordered_map<std::string, Node*>&
     if (input_args.size() > 0) {
       // This node needs inputs.
 
-      for (const gsl::not_null<const NodeArg*> input_arg : input_args) {
+      for (const auto* input_arg : input_args) {
         if (!input_arg->Exists()) {
           // This input could be optional and it does not exist in this case.
           continue;
@@ -686,7 +686,7 @@ void GraphBase::ReverseDFSFrom(const std::vector<const Node*>& from,
         sorted_nodes.push_back((*iter));
       }
       std::sort(sorted_nodes.begin(), sorted_nodes.end(), comp);
-      for (gsl::not_null<const onnxruntime::Node*> in : sorted_nodes) {
+      for (const auto* in : sorted_nodes) {
         const NodeIndex idx = in->Index();
         if (!visited[idx]) {
           stack.emplace_back(in, false);
@@ -1114,9 +1114,9 @@ Status Graph::VerifyNodeAndOpMatch(const std::unordered_map<std::string, Node*>&
 
     ONNXRUNTIME_RETURN_IF_ERROR(node.UpdateInputArgCount());
 
-    // currently an Op is required by ValidateVersion, so we use gsl::not_null.
+    // currently an Op is required by ValidateVersion, so we use gsl::not_null to validate that.
     // This may change in the future to allow a null Op
-    const gsl::not_null<const OpSchema*> p_op = node.Op();
+    const gsl::not_null<const OpSchema*> p_op{node.Op()};
 
     // Attribute verification and fill node attribute with
     // default value defined in operator definition if needed.
@@ -1203,13 +1203,13 @@ Status Graph::Resolve(bool no_proto_sync_required) {
   return Status::OK();
 }
 
-Status GraphBase::GetNodesInTopologicalOrder(gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const {
+Status GraphBase::GetNodesInTopologicalOrder(const std::vector<NodeIndex>*& pp_nodes) const {
   if (graph_resolve_needed_) {
     return Status(::onnxruntime::common::ONNXRUNTIME, ::onnxruntime::common::FAIL,
                   "Resolve() must be called before using the graph as modifications have been made to it.");
   }
 
-  *pp_nodes = &nodes_in_topological_order_;
+  pp_nodes = &nodes_in_topological_order_;
   return Status::OK();
 }
 
@@ -1248,7 +1248,7 @@ void Graph::AddInitializedTensor(const TensorProto& tensor) {
     return;
   }
 
-  const gsl::not_null<TensorProto*> tensorAdded = graph_proto_->add_initializer();
+  const gsl::not_null<TensorProto*> tensorAdded{graph_proto_->add_initializer()};
   *(tensorAdded) = tensor;
   name_to_initial_tensor_[tensor.name()] = tensorAdded;
 
@@ -1265,12 +1265,13 @@ void Graph::RemoveInitializedTensor(const std::string& tensor_name) {
   }
 }
 
-bool Graph::GetInitializedTensor(const std::string& tensor_name, gsl::not_null<const TensorProto**> value) const {
+bool Graph::GetInitializedTensor(const std::string& tensor_name, const TensorProto*& value) const {
   auto iter = name_to_initial_tensor_.find(tensor_name);
   if (name_to_initial_tensor_.end() == iter) {
+    value = nullptr;
     return false;
   }
-  *value = iter->second;
+  value = iter->second;
   return true;
 }
 
@@ -1299,8 +1300,10 @@ const std::vector<const NodeArg*>& Graph::GetValueInfo() const noexcept {
 // Ensure the NodeArgs in the input are created and in this Graph's node arg map
 static void AddNodeArgs(const std::vector<NodeArg*>& input_args,
                         std::unordered_map<std::string, NodeArg*>& node_arg_map) {
-  for (const gsl::not_null<NodeArg*> input_arg : input_args) {
-    if (!input_arg->Exists()) continue;
+  for (auto* input_arg : input_args) {
+    if (!input_arg->Exists())
+      continue;
+
     auto& key = input_arg->Name();
     auto existing_entry = node_arg_map.find(key);
 
@@ -1486,8 +1489,8 @@ const GraphProto& Graph::ToGraphProto() {
       continue;
     }
 
-    const gsl::not_null<NodeProto*> node_proto = graph_proto_->add_node();
-    const gsl::not_null<Node*> p_node = GetNode(node_idx);
+    const gsl::not_null<NodeProto*> node_proto{graph_proto_->add_node()};
+    const gsl::not_null<Node*> p_node{GetNode(node_idx)};
     p_node->ToProto(*node_proto);
   }
 
@@ -1532,15 +1535,15 @@ void Graph::SyncGraphInputsOutputs() {
   graph_proto_->clear_output();
   graph_proto_->clear_value_info();
 
-  for (const gsl::not_null<const onnxruntime::NodeArg*> input_arg : GetInputs()) {
+  for (const auto* input_arg : GetInputs()) {
     *(graph_proto_->mutable_input()->Add()) = input_arg->ToProto();
   }
 
-  for (const gsl::not_null<const onnxruntime::NodeArg*> output_arg : GetOutputs()) {
+  for (const auto* output_arg : GetOutputs()) {
     *(graph_proto_->mutable_output()->Add()) = output_arg->ToProto();
   }
 
-  for (const gsl::not_null<const onnxruntime::NodeArg*> value_info : value_info_) {
+  for (const auto* value_info : value_info_) {
     *(graph_proto_->mutable_value_info()->Add()) = value_info->ToProto();
   }
 }
@@ -1632,7 +1635,7 @@ Status Graph::SetGraphInputsOutputs() {
 
     // add non-initializer outputs
     for (const auto& node : Nodes()) {
-      for (gsl::not_null<const NodeArg*> output_def : node.OutputDefs()) {
+      for (const auto* output_def : node.OutputDefs()) {
         ONNXRUNTIME_IGNORE_RETURN_VALUE(specified_graph_outputs.erase(output_def->Name()));
         output_name_to_node_arg.insert({output_def->Name(), output_def});
       }
@@ -1655,7 +1658,7 @@ Status Graph::SetGraphInputsOutputs() {
 
     for (const auto& node : Nodes()) {
       // Go thru all node's inputs.
-      for (const gsl::not_null<const NodeArg*> input_arg : node.InputDefs()) {
+      for (const auto* input_arg : node.InputDefs()) {
         if (!input_arg->Exists()) {
           // It's an optional input and does not exist in this case.
           continue;
@@ -1700,7 +1703,7 @@ Status Graph::SetGraphInputsOutputs() {
     std::vector<std::string> ordered_output_names;
 
     for (const auto& node : Nodes()) {
-      for (gsl::not_null<const NodeArg*> output_def : node.OutputDefs()) {
+      for (const auto* output_def : node.OutputDefs()) {
         if (output_def->Exists()) {
           output_name_to_node_arg.insert({output_def->Name(), output_def});
           ordered_output_names.push_back(output_def->Name());
@@ -1714,7 +1717,7 @@ Status Graph::SetGraphInputsOutputs() {
     std::unordered_set<Node*> inner_nodes;
     for (const auto& node : Nodes()) {
       // Go thru all node's inputs.
-      for (const gsl::not_null<const NodeArg*> input_arg : node.InputDefs()) {
+      for (const auto* input_arg : node.InputDefs()) {
         if (!input_arg->Exists()) {
           // It's an optional input and does not exist in this case.
           continue;
@@ -1781,7 +1784,7 @@ gsl::not_null<Node*> GraphBase::AllocateNode() {
   ++num_of_nodes_;
   graph_resolve_needed_ = true;
 
-  return node;
+  return gsl::not_null<Node*>{node};
 }
 
 // TODO: Does this need (and maybe AllocateNode) to be threadsafe so nodes_ and num_of_nodes_ managed more carefully?

@@ -325,7 +325,7 @@ class InferenceSession::Impl {
       // Register default CPUExecutionProvider if user didn't provide it through the Register() calls
       if (!execution_providers_.Get(onnxruntime::kCpuExecutionProvider)) {
         LOGS(*session_logger_, INFO) << "Adding default CPU execution provider.";
-        CPUExecutionProviderInfo epi{"CPUExecutionProvider", session_options_.enable_cpu_mem_arena};
+        CPUExecutionProviderInfo epi{session_options_.enable_cpu_mem_arena};
         execution_providers_.Add(onnxruntime::kCpuExecutionProvider,
                                  std::make_unique<CPUExecutionProvider>(epi));
       }

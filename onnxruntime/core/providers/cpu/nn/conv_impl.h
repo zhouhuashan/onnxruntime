@@ -22,8 +22,7 @@
 #include "core/util/math_cpuonly.h"
 
 #if defined(USE_MLAS)
-#include <windows.h>
-#include <mlas.h>
+#include "core/mlas/inc/mlas.h"
 #endif
 
 namespace onnxruntime {
@@ -233,7 +232,7 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
                           output_shape.GetDims().end());
 
   MLAS_CONV_PARAMETERS Parameters;
-  SIZE_T WorkingBufferSize;
+  size_t WorkingBufferSize;
 
   bool UseMlasConv = MlasConvPrepare(&Parameters,
                                      kernel_shape.size(),

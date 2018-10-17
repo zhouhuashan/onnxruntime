@@ -324,7 +324,7 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
   size_t output_len;
   {
     ONNXValueListPtr t;
-    auto onnx_status = RunInferenceAndFetchAll(session, input_names.data(), input_values.data(), input_index, &t, &output_len);
+    auto onnx_status = ONNXRuntimeRunInferenceAndFetchAll(session, input_names.data(), input_values.data(), input_index, &t, &output_len);
     if (onnx_status != nullptr) {
       std::string onnx_runtime_error_message = ONNXRuntimeGetErrorMessage(onnx_status);
       ReleaseONNXStatus(onnx_status);
@@ -374,7 +374,7 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
   int i = 0;
   for (auto& output_name : output_names) {
     // p_fetches is filled in the order of output_names.
-    name_fetch_output_map[output_name] = ONNXValueListGetNthValue(output_list.get(), i);
+    name_fetch_output_map[output_name] = ONNXRuntimeONNXValueListGetNthValue(output_list.get(), i);
     const onnx::ValueInfoProto& infoProto = c_->GetOutputInfoFromModel(i);
     name_output_value_info_proto.insert(std::make_pair(infoProto.name(), &infoProto));
     i++;

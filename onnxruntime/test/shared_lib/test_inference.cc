@@ -2,6 +2,9 @@
 // Licensed under the MIT License.
 
 #include "core/session/onnxruntime_cxx_api.h"
+#ifdef USE_CUDA
+#include "core/providers/cuda/cuda_provider_factory.h"
+#endif
 #include <memory>
 #include <vector>
 #include <iostream>
@@ -27,12 +30,12 @@ void RunSession(ONNXRuntimeAllocator* env, ONNXSession* session_object,
   size_t output_len;
   {
     ONNXValueListPtr t;
-    ONNXRUNTIME_TRHOW_ON_ERROR(RunInferenceAndFetchAll(session_object, input_names.data(), inputs.data(), inputs.size(), &t, &output_len));
+    ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeRunInferenceAndFetchAll(session_object, input_names.data(), inputs.data(), inputs.size(), &t, &output_len));
     output.reset(t);
   }
 
   ASSERT_EQ(static_cast<size_t>(1), output_len);
-  ONNXValuePtr rtensor = ONNXValueListGetNthValue(output.get(), 0);
+  ONNXValuePtr rtensor = ONNXRuntimeONNXValueListGetNthValue(output.get(), 0);
   size_t rtensor_dims;
   ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeGetTensorShapeDimCount(rtensor, &rtensor_dims));
   std::vector<size_t> shape_array(rtensor_dims);
@@ -103,10 +106,16 @@ void TestInference(ONNXEnv* env, const T& model_uri,
                    const std::vector<float>& expected_values_y,
                    bool enable_cuda, bool custom_op) {
   SessionOptionsWrapper sf(env);
+
   if (enable_cuda) {
-    sf.EnableCudaProvider(0);
-  } else {
-    sf.DisableCudaProvider();
+#ifdef USE_CUDA
+    ONNXRuntimeProviderFactoryPtr* f;
+    ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeCreateCUDAExecutionProviderFactory(0, &f));
+    sf.AppendExecutionProvider(f);
+    (*f)->Release(f);
+#else
+    FAIL() << "CUDA is not enabled";
+#endif
   }
   if (custom_op) {
     sf.AddCustomOp("liblotus_custom_op_shared_lib_test.so");
@@ -118,7 +127,7 @@ void TestInference(ONNXEnv* env, const T& model_uri,
   alloca.LeakCheck();
 }
 
-void MyLoggingFunction(void*, ONNXRuntimeLoggingLevel, const char*, const char*, const char*, const char*) {
+void ONNXRUNTIME_API_STATUSCALL MyLoggingFunction(void*, ONNXRuntimeLoggingLevel, const char*, const char*, const char*, const char*) {
 }
 
 template <bool use_customer_logger>
@@ -128,9 +137,9 @@ class CApiTestImpl : public ::testing::Test {
 
   void SetUp() override {
     if (use_customer_logger) {
-      ONNXRUNTIME_TRHOW_ON_ERROR(InitializeONNXRuntimeWithCustomLogger(MyLoggingFunction, nullptr, ONNXRUNTIME_LOGGING_LEVEL_kINFO, "Default", &env));
+      ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeInitializeWithCustomLogger(MyLoggingFunction, nullptr, ONNXRUNTIME_LOGGING_LEVEL_kINFO, "Default", &env));
     } else {
-      ONNXRUNTIME_TRHOW_ON_ERROR(InitializeONNXRuntime(ONNXRUNTIME_LOGGING_LEVEL_kINFO, "Default", &env));
+      ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeInitialize(ONNXRUNTIME_LOGGING_LEVEL_kINFO, "Default", &env));
     }
   }
 
@@ -169,6 +178,9 @@ TEST_F(CApiTest, simple) {
   std::vector<float> expected_values_y = {1.0f, 4.0f, 9.0f, 16.0f, 25.0f, 36.0f};
 
   TestInference(env, MODEL_URI, dims_x, values_x, expected_dims_y, expected_values_y, false, false);
+#if USE_CUDA
+  TestInference(env, MODEL_URI, dims_x, values_x, expected_dims_y, expected_values_y, true, false);
+#endif
 }
 
 #ifndef _WIN32

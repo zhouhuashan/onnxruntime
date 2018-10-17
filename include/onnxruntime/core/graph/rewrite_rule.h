@@ -37,7 +37,7 @@ class GraphEditor {
   // Get Initialized Tensor
   const ONNX_NAMESPACE::TensorProto* GetInitializedTensor(const std::string& tensor_name) const {
     const ONNX_NAMESPACE::TensorProto* tensor_proto = nullptr;
-    graph_.GetInitializedTensor(tensor_name, &tensor_proto);
+    graph_.GetInitializedTensor(tensor_name, tensor_proto);
     return tensor_proto;
   }
 

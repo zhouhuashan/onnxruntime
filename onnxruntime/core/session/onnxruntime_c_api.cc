@@ -4,6 +4,7 @@
 #include "core/graph/onnx_protobuf.h"  //TODO: remove this
 #include "core/session/onnxruntime_c_api.h"
 #include "core/session/allocator_impl.h"
+#include "core/framework/execution_provider.h"
 #include <cassert>
 #include <cstring>
 #include <sstream>
@@ -129,7 +130,7 @@ class LoggingWrapper : public ISink {
   void* logger_param_;
 };
 
-ONNXRUNTIME_API_STATUS_IMPL(InitializeONNXRuntimeWithCustomLogger, ONNXRuntimeLoggingFunction logging_function, void* logger_param, ONNXRuntimeLoggingLevel default_warning_level, _In_ const char* logid, _Out_ ONNXEnv** out) {
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeInitializeWithCustomLogger, ONNXRuntimeLoggingFunction logging_function, void* logger_param, ONNXRuntimeLoggingLevel default_warning_level, _In_ const char* logid, _Out_ ONNXEnv** out) {
   API_IMPL_BEGIN
   std::string name = logid;
   std::unique_ptr<ISink> logger = std::make_unique<LoggingWrapper>(logging_function, logger_param);
@@ -145,7 +146,7 @@ ONNXRUNTIME_API_STATUS_IMPL(InitializeONNXRuntimeWithCustomLogger, ONNXRuntimeLo
   API_IMPL_END
 }
 
-ONNXRUNTIME_API_STATUS_IMPL(InitializeONNXRuntime, ONNXRuntimeLoggingLevel default_warning_level, _In_ const char* logid, _Out_ ONNXEnv** out) {
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeInitialize, ONNXRuntimeLoggingLevel default_warning_level, _In_ const char* logid, _Out_ ONNXEnv** out) {
   API_IMPL_BEGIN
   std::string name = logid;
   std::unique_ptr<LoggingManager> default_logging_manager = std::make_unique<LoggingManager>(std::unique_ptr<ISink>{new CLogSink{}},
@@ -366,17 +367,12 @@ static ONNXStatusPtr CreateInferenceSessionImpl(_In_ ONNXEnv* env, _In_ T model_
     if (!status.IsOK())
       return ToONNXStatus(status);
   }
-  if (options->enable_cuda_provider) {
-    //TODO: instead of creating providers at there, it should get a functor from ONNXEnv and call it
-#if USE_CUDA
-    onnxruntime::CUDAExecutionProviderInfo cuda_pi;
-    cuda_pi.device_id = options->cuda_device_id;
-    status = sess->RegisterExecutionProvider(onnxruntime::CreateCUDAExecutionProvider(cuda_pi));
-    if (!status.IsOK())
-      return ToONNXStatus(status);
-#else
-    return CreateONNXStatus(ONNXRUNTIME_INVALID_ARGUMENT, "This executable was not built with CUDA");
-#endif
+  for (ONNXRuntimeProviderFactoryPtr* p : options->provider_factories) {
+    ONNXRuntimeProviderPtr provider;
+    ONNXStatusPtr error_code = (*p)->CreateProvider(p, &provider);
+    if (error_code)
+      return error_code;
+    sess->RegisterExecutionProvider(std::unique_ptr<onnxruntime::IExecutionProvider>((onnxruntime::IExecutionProvider*)provider));
   }
   status = sess->Load(model_path);
   if (!status.IsOK())
@@ -403,7 +399,41 @@ ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeCreateInferenceSession, _In_ ONNXEnv* env
 }
 #endif
 
-ONNXRUNTIME_API_STATUS_IMPL(RunInferenceAndFetchAll, _In_ ONNXSessionPtr sess, _In_ const char* input_names[], _In_ ONNXValuePtr* input, size_t input_len, _Out_ ONNXValueListPtr* output, _Out_ size_t* output_len) {
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeRunInference, _In_ ONNXSessionPtr sess, _In_ const char* input_names[], _In_ ONNXValuePtr* input, size_t input_len, _In_ const char* output_names1[], size_t output_names_len, _Out_ ONNXValueListPtr* output) {
+  API_IMPL_BEGIN
+  auto session = reinterpret_cast<::onnxruntime::InferenceSession*>(sess);
+  ::onnxruntime::NameMLValMap in;
+  for (size_t i = 0; i != input_len; ++i) {
+    auto kvp = in.insert(std::make_pair(std::string(input_names[i]), *reinterpret_cast<::onnxruntime::MLValue*>(input[i])));
+    if (!kvp.second) {
+      return CreateONNXStatus(ONNXRUNTIME_INVALID_ARGUMENT, "duplicated input name");
+    }
+  }
+  // Create output feed
+  std::vector<std::string> output_names(output_names_len);
+  for (size_t i = 0; i != output_names_len; ++i) {
+    if (output_names1[i] == nullptr || output_names1[i][0] == '\0') {
+      return CreateONNXStatus(ONNXRUNTIME_INVALID_ARGUMENT, "output name cannot be empty");
+    }
+    output_names[i] = output_names1[i];
+  }
+
+  std::vector<MLValue> fetches;
+  auto status = session->Run(in, output_names, &fetches);
+  if (!status.IsOK())
+    return ToONNXStatus(status);
+  auto* out = new MLValue[fetches.size()];
+  const int queue_id = 0;
+  for (size_t i = 0; i != fetches.size(); ++i) {
+    if (fetches[i].Fence())
+      fetches[i].Fence()->BeforeUsingAsInput(onnxruntime::kCpuExecutionProvider, queue_id);
+    out[i] = fetches[i];
+  }
+  *output = reinterpret_cast<ONNXValueListPtr>(out);
+  return nullptr;
+  API_IMPL_END
+}
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeRunInferenceAndFetchAll, _In_ ONNXSessionPtr sess, _In_ const char* input_names[], _In_ ONNXValuePtr* input, size_t input_len, _Out_ ONNXValueListPtr* output, _Out_ size_t* output_len) {
   API_IMPL_BEGIN
   auto session = reinterpret_cast<::onnxruntime::InferenceSession*>(sess);
   ::onnxruntime::NameMLValMap in;
@@ -521,7 +551,7 @@ ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeTensorProtoToONNXValue, _Inout_ ONNXRunti
   API_IMPL_END
 }
 
-ONNXRUNTIME_API(ONNXValuePtr, ONNXValueListGetNthValue, ONNXValueListPtr list, size_t index) {
+ONNXRUNTIME_API(ONNXValuePtr, ONNXRuntimeONNXValueListGetNthValue, ONNXValueListPtr list, size_t index) {
   auto v = reinterpret_cast<::onnxruntime::MLValue*>(list);
   return reinterpret_cast<ONNXValuePtr>(v + index);
 }

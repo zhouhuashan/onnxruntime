@@ -180,13 +180,13 @@ common::Status SaveMLValueNameIndexMapping(const onnxruntime::Graph& graph,
     // build the MLValue->index map
 
     // we keep all graph inputs, even if they are unused, so make sure they all have an entry
-    for (gsl::not_null<const onnxruntime::NodeArg*> input_def : graph.GetInputs()) {
+    for (const auto* input_def : graph.GetInputs()) {
       idx = mlvalue_name_idx_map.Add(input_def->Name());
       VLOGS(logger, 1)
           << "Added graph input with name: " << input_def->Name() << " to MLValueIndex with index: " << idx;
     }
 
-    for (gsl::not_null<const onnxruntime::NodeArg*> input_def : node.InputDefs()) {
+    for (const auto* input_def : node.InputDefs()) {
       if (input_def->Exists()) {
         idx = mlvalue_name_idx_map.Add(input_def->Name());
         VLOGS(logger, 1)
@@ -194,7 +194,7 @@ common::Status SaveMLValueNameIndexMapping(const onnxruntime::Graph& graph,
       }
     }
 
-    for (gsl::not_null<const onnxruntime::NodeArg*> output_def : node.OutputDefs()) {
+    for (const auto* output_def : node.OutputDefs()) {
       if (output_def->Exists()) {
         mlvalue_name_idx_map.Add(output_def->Name());
         VLOGS(logger, 1)

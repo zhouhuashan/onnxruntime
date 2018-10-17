@@ -77,6 +77,17 @@ typedef struct ONNXOpaqueTypeInfo {
  */
 DEFINE_RUNTIME_CLASS(ONNXEnv);
 
+DEFINE_RUNTIME_CLASS(ONNXRuntimeProvider);
+
+typedef struct ONNXRuntimeProviderFactoryInterface {
+  //These methods returns the new reference count.
+  uint32_t (ONNXRUNTIME_API_STATUSCALL *AddRef)(void* this_);
+  uint32_t (ONNXRUNTIME_API_STATUSCALL *Release)(void* this_);
+  ONNXStatusPtr (ONNXRUNTIME_API_STATUSCALL *CreateProvider)(void* this_, ONNXRuntimeProviderPtr* out);
+} ONNXRuntimeProviderFactoryInterface;
+
+typedef ONNXRuntimeProviderFactoryInterface* ONNXRuntimeProviderFactoryPtr;
+
 typedef enum ONNXRuntimeLoggingLevel {
   ONNXRUNTIME_LOGGING_LEVEL_kVERBOSE = 0,
   ONNXRUNTIME_LOGGING_LEVEL_kINFO = 1,
@@ -85,22 +96,22 @@ typedef enum ONNXRuntimeLoggingLevel {
   ONNXRUNTIME_LOGGING_LEVEL_kFATAL = 4
 } ONNXRuntimeLoggingLevel;
 
-typedef void (*ONNXRuntimeLoggingFunction)(void* param, ONNXRuntimeLoggingLevel severity, const char* category, const char* logid, const char* code_location, const char* message);
+typedef void (ONNXRUNTIME_API_STATUSCALL *ONNXRuntimeLoggingFunction)(void* param, ONNXRuntimeLoggingLevel severity, const char* category, const char* logid, const char* code_location, const char* message);
 /**
  * ONNXEnv is process-wise. For each process, only one ONNXEnv can be created. Don't do it multiple times
  */
-ONNXRUNTIME_API_STATUS(InitializeONNXRuntime, ONNXRuntimeLoggingLevel default_warning_level, _In_ const char* logid, _Out_ ONNXEnv** out);
+ONNXRUNTIME_API_STATUS(ONNXRuntimeInitialize, ONNXRuntimeLoggingLevel default_warning_level, _In_ const char* logid, _Out_ ONNXEnv** out);
 /**
  * ONNXEnv is process-wise. For each process, only one ONNXEnv can be created. Don't do it multiple times
  */
-ONNXRUNTIME_API_STATUS(InitializeONNXRuntimeWithCustomLogger, ONNXRuntimeLoggingFunction logging_function, void* logger_param, ONNXRuntimeLoggingLevel default_warning_level, _In_ const char* logid, _Out_ ONNXEnv** out);
+ONNXRUNTIME_API_STATUS(ONNXRuntimeInitializeWithCustomLogger, ONNXRuntimeLoggingFunction logging_function, void* logger_param, ONNXRuntimeLoggingLevel default_warning_level, _In_ const char* logid, _Out_ ONNXEnv** out);
 
 DEFINE_RUNTIME_CLASS(ONNXRuntimeSessionOptions);
 
-ONNXRUNTIME_API(ONNXRuntimeSessionOptions*, CreateONNXRuntimeSessionOptions, void);
+ONNXRUNTIME_API(ONNXRuntimeSessionOptions*, ONNXRuntimeCreateSessionOptions, void);
 
 /// create a copy of an existing ONNXRuntimeSessionOptions
-ONNXRUNTIME_API(ONNXRuntimeSessionOptions*, CloneONNXRuntimeSessionOptions, ONNXRuntimeSessionOptions*);
+ONNXRUNTIME_API(ONNXRuntimeSessionOptions*, ONNXRuntimeCloneSessionOptions, ONNXRuntimeSessionOptions*);
 ONNXRUNTIME_API(void, ONNXRuntimeEnableSequentialExecution, _In_ ONNXRuntimeSessionOptions* options);
 ONNXRUNTIME_API(void, ONNXRuntimeDisableSequentialExecution, _In_ ONNXRuntimeSessionOptions* options);
 
@@ -130,12 +141,13 @@ ONNXRUNTIME_API(void, ONNXRuntimeSetSessionLogVerbosityLevel, _In_ ONNXRuntimeSe
 ///How many threads in the session thread pool.
 ONNXRUNTIME_API(int, ONNXRuntimeSetSessionThreadPoolSize, _In_ ONNXRuntimeSessionOptions* options, int session_thread_pool_size);
 
-///move third-party provider stuffs to a sperated file
-ONNXRUNTIME_API(int, ONNXRuntimeEnableCudaProvider, _In_ ONNXRuntimeSessionOptions* options, int device_id);
-ONNXRUNTIME_API(void, ONNXRuntimeDisableCudaProvider, _In_ ONNXRuntimeSessionOptions* options);
+/**
+  * The order of invocation indicates the preference order as well. In other words call this method
+  * on your most preferred execution provider first followed by the less preferred ones.
+  * Calling this API is optional in which case onnxruntime will use its internal CPU execution provider.
+  */
+ONNXRUNTIME_API(void, ONNXRuntimeSessionOptionsAppendExecutionProvider, _In_ ONNXRuntimeSessionOptions* options, _In_ ONNXRuntimeProviderFactoryPtr* f);
 
-ONNXRUNTIME_API(int, ONNXRuntimeEnableMklProvider, _In_ ONNXRuntimeSessionOptions* options);
-ONNXRUNTIME_API(void, ONNXRuntimeDisableMklProvider, _In_ ONNXRuntimeSessionOptions* options);
 ONNXRUNTIME_API(void, ONNXRuntimeAddCustomOp, _In_ ONNXRuntimeSessionOptions* options, const char* custom_op_path);
 
 DEFINE_RUNTIME_CLASS(ONNXSession);
@@ -219,9 +231,8 @@ DEFINE_RUNTIME_CLASS(ONNXValueList);
  * \param sess created by ONNXRuntimeCreateInferenceSession function
  * \param output must be freed by ReleaseONNXValueListPtr function
  */
-ONNXRUNTIME_API_STATUS(RunInferenceAndFetchAll, _In_ ONNXSessionPtr sess, _In_ const char* input_names[], _In_ ONNXValuePtr* input, size_t input_len, _Out_ ONNXValueListPtr* output, _Out_ size_t* output_len);
-/// not implemented
-//ONNX_RUNTIME_EXPORT ONNXStatusPtr RunInference(_In_ ONNXSessionPtr sess, _In_ const char* input_names[], _In_ ONNXValuePtr* input, size_t input_len,  _In_ const char* output_names[], size_t output_names_len, _Out_ ONNXValueListPtr* output) NO_EXCEPTION;
+ONNXRUNTIME_API_STATUS(ONNXRuntimeRunInferenceAndFetchAll, _In_ ONNXSessionPtr sess, _In_ const char* input_names[], _In_ ONNXValuePtr* input, size_t input_len, _Out_ ONNXValueListPtr* output, _Out_ size_t* output_len);
+ONNXRUNTIME_API_STATUS(ONNXRuntimeRunInference, _In_ ONNXSessionPtr sess, _In_ const char* input_names[], _In_ ONNXValuePtr* input, size_t input_len, _In_ const char* output_names[], size_t output_names_len, _Out_ ONNXValueListPtr* output);
 
 ONNXRUNTIME_API(int, ONNXRuntimeInferenceSessionGetInputCount, _In_ ONNXSessionPtr sess);
 ONNXRUNTIME_API(int, ONNXRuntimeInferenceSessionGetOutputCount, _In_ ONNXSessionPtr sess);
@@ -241,7 +252,7 @@ ONNXRUNTIME_API(int, ONNXRuntimeInferenceSessionGetOutputCount, _In_ ONNXSession
  * Get the n-th value from the List
  * \param index starts from zero
  */
-ONNXRUNTIME_API(ONNXValuePtr, ONNXValueListGetNthValue, _In_ ONNXValueListPtr list, size_t index);
+ONNXRUNTIME_API(ONNXValuePtr, ONNXRuntimeONNXValueListGetNthValue, _In_ ONNXValueListPtr list, size_t index);
 
 ONNXRUNTIME_API_STATUS(ONNXRuntimeTensorProtoToONNXValue, _Inout_ ONNXRuntimeAllocator* allocator, _In_ const void* input, int input_len, _Out_ ONNXValuePtr* out);
 

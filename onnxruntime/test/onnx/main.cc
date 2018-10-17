@@ -14,11 +14,11 @@
 #include <getopt.h>
 #include <thread>
 #endif
-
 #include "TestResultStat.h"
 #include "testenv.h"
 #include "runner.h"
 #include "sync_api.h"
+#include "providers.h"
 #include "test_allocator.h"
 using namespace std::experimental::filesystem::v1;
 using namespace onnxruntime;
@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
   std::unique_ptr<ONNXEnv, decltype(&ReleaseONNXEnv)> env(nullptr, ReleaseONNXEnv);
   {
     ONNXEnv* t;
-    ONNXStatusPtr ost = InitializeONNXRuntime(logging_level, "Default", &t);
+    ONNXStatusPtr ost = ONNXRuntimeInitialize(logging_level, "Default", &t);
     if (ost != nullptr) {
       fprintf(stderr, "Error creating environment: %s \n", ONNXRuntimeGetErrorMessage(ost));
       ReleaseONNXStatus(ost);
@@ -188,14 +188,28 @@ int main(int argc, char* argv[]) {
       sf.EnableSequentialExecution();
     else
       sf.DisableSequentialExecution();
-    if (enable_cuda)
-      sf.EnableCudaProvider(0);
-    else
-      sf.DisableCudaProvider();
-    if (enable_mkl)
-      sf.EnableMklProvider();
-    else
-      sf.DisableMklProvider();
+    if (enable_cuda) {
+#ifdef USE_CUDA
+      ONNXRuntimeProviderFactoryPtr* f;
+      ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeCreateCUDAExecutionProviderFactory(0, &f));
+      sf.AppendExecutionProvider(f);
+      (*f)->Release(f);
+#else
+      fprintf(stderr, "CUDA is supported in this build");
+      return -1;
+#endif
+    }
+    if (enable_mkl) {
+#ifdef USE_MKLDNN
+      ONNXRuntimeProviderFactoryPtr* f;
+      ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeCreateMkldnnExecutionProviderFactory(enable_cpu_mem_arena ? 1 : 0, &f));
+      sf.AppendExecutionProvider(f);
+      (*f)->Release(f);
+#else
+      fprintf(stderr, "MKL-DNN is supported in this build");
+      return -1;
+#endif
+    }
 
     TestEnv args(tests, stat, sf);
     Status st = RunTests(args, p_models, concurrent_session_runs, static_cast<size_t>(repeat_count), GetDefaultThreadPool(Env::Default()));

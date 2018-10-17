@@ -74,25 +74,25 @@ void TransformerMemcpyImpl::ProcessDefs(onnxruntime::Node& node, const KernelReg
     const auto* input_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
     const auto* output_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
     ONNXRUNTIME_ENFORCE(onnxruntime::Node::ForEachWithIndex(
-                    node.InputDefs(),
-                    [this, &input_mem_types](const onnxruntime::NodeArg& arg, size_t index) {
-                      if (input_mem_types && MemTypeOnCpuExplicitly(*input_mem_types, index))
-                        non_provider_input_defs_.insert(&arg);
-                      else
-                        provider_input_defs_.insert(&arg);
-                      return Status::OK();
-                    })
-                    .IsOK());
+                            node.InputDefs(),
+                            [this, &input_mem_types](const onnxruntime::NodeArg& arg, size_t index) {
+                              if (input_mem_types && MemTypeOnCpuExplicitly(*input_mem_types, index))
+                                non_provider_input_defs_.insert(&arg);
+                              else
+                                provider_input_defs_.insert(&arg);
+                              return Status::OK();
+                            })
+                            .IsOK());
     ONNXRUNTIME_ENFORCE(onnxruntime::Node::ForEachWithIndex(
-                    node.OutputDefs(),
-                    [this, &output_mem_types](const onnxruntime::NodeArg& arg, size_t index) {
-                      if (output_mem_types && MemTypeOnCpuExplicitly(*output_mem_types, index))
-                        non_provider_output_defs_.insert(&arg);
-                      else
-                        provider_output_defs_.insert(&arg);
-                      return Status::OK();
-                    })
-                    .IsOK());
+                            node.OutputDefs(),
+                            [this, &output_mem_types](const onnxruntime::NodeArg& arg, size_t index) {
+                              if (output_mem_types && MemTypeOnCpuExplicitly(*output_mem_types, index))
+                                non_provider_output_defs_.insert(&arg);
+                              else
+                                provider_output_defs_.insert(&arg);
+                              return Status::OK();
+                            })
+                            .IsOK());
   } else {
     // TODO: copy between devices? i.e. multiple GPUs
     ONNXRUNTIME_ENFORCE(node.GetExecutionProviderType() == onnxruntime::kCpuExecutionProvider || node.GetExecutionProviderType().empty());
@@ -154,7 +154,9 @@ void TransformerMemcpyImpl::ProcessInitializers() {
       auto& new_def = graph_.GetOrCreateNodeArg(new_def_name, provider_def->TypeAsProto());
 
       const TensorProto* tensor_proto = nullptr;
-      graph_.GetInitializedTensor(name, &tensor_proto);
+      bool found = graph_.GetInitializedTensor(name, tensor_proto);
+      ONNXRUNTIME_ENFORCE(found, "Failed to get initialized tensor ", name);
+
       TensorProto new_tensor_proto = *tensor_proto;
       *(new_tensor_proto.mutable_name()) = new_def_name;
       graph_.AddInitializedTensor(new_tensor_proto);

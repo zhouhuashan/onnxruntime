@@ -16,7 +16,6 @@
 |Fedora 28    | YES          | NO          |Cannot build GPU kernels but can run them |
 
 * Red Hat Enterprise Linux and CentOS are not supported.
-* Clang 7.x is not supported. You may use Clang 6.x.
 * GCC 4.x and below are not supported. If you are using GCC 7.0+, you'll need to upgrade eigen to a newer version before compiling ONNX Runtime.
 
 OS/Compiler Matrix:

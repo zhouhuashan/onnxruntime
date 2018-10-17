@@ -116,33 +116,33 @@ class WindowsEnv : public Env {
     t.f();
   }
 
-  common::Status FileOpenRd(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const override {
-    _wsopen_s(p_fd, path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-    if (0 > *p_fd) {
+  common::Status FileOpenRd(const std::wstring& path, /*out*/ int& fd) const override {
+    _wsopen_s(&fd, path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+    if (0 > fd) {
       return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();
   }
 
-  common::Status FileOpenWr(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const override {
-    _wsopen_s(p_fd, path.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-    if (0 > *p_fd) {
+  common::Status FileOpenWr(const std::wstring& path, /*out*/ int& fd) const override {
+    _wsopen_s(&fd, path.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+    if (0 > fd) {
       return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();
   }
 
-  common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
-    _sopen_s(p_fd, path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-    if (0 > *p_fd) {
+  common::Status FileOpenRd(const std::string& path, /*out*/ int& fd) const override {
+    _sopen_s(&fd, path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+    if (0 > fd) {
       return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();
   }
 
-  common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
-    _sopen_s(p_fd, path.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-    if (0 > *p_fd) {
+  common::Status FileOpenWr(const std::string& path, /*out*/ int& fd) const override {
+    _sopen_s(&fd, path.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+    if (0 > fd) {
       return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();

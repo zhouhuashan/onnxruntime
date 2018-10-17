@@ -95,17 +95,17 @@ class PosixEnv : public Env {
     return getpid();
   }
 
-  common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
-    *p_fd = open(path.c_str(), O_RDONLY);
-    if (0 > *p_fd) {
+  common::Status FileOpenRd(const std::string& path, /*out*/ int& fd) const override {
+    fd = open(path.c_str(), O_RDONLY);
+    if (0 > fd) {
       return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();
   }
 
-  common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
-    *p_fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (0 > *p_fd) {
+  common::Status FileOpenWr(const std::string& path, /*out*/ int& fd) const override {
+    fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (0 > fd) {
       return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();

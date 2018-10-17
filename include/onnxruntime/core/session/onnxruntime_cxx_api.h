@@ -32,7 +32,7 @@ class SessionOptionsWrapper {
   SessionOptionsWrapper(_In_ ONNXEnvPtr env, ONNXRuntimeSessionOptions* p) : value(p, ReleaseONNXRuntimeSessionOptions), env_(env){};
 
  public:
-  SessionOptionsWrapper(_In_ ONNXEnvPtr env) : value(CreateONNXRuntimeSessionOptions(), ReleaseONNXRuntimeSessionOptions), env_(env){};
+  SessionOptionsWrapper(_In_ ONNXEnvPtr env) : value(ONNXRuntimeCreateSessionOptions(), ReleaseONNXRuntimeSessionOptions), env_(env){};
   ONNXRUNTIME_REDIRECT_SIMPLE_FUNCTION_CALL(EnableSequentialExecution)
   ONNXRUNTIME_REDIRECT_SIMPLE_FUNCTION_CALL(DisableSequentialExecution)
   ONNXRUNTIME_REDIRECT_SIMPLE_FUNCTION_CALL(DisableProfiling)
@@ -40,15 +40,8 @@ class SessionOptionsWrapper {
   ONNXRUNTIME_REDIRECT_SIMPLE_FUNCTION_CALL(DisableMemPattern)
   ONNXRUNTIME_REDIRECT_SIMPLE_FUNCTION_CALL(EnableCpuMemArena)
   ONNXRUNTIME_REDIRECT_SIMPLE_FUNCTION_CALL(DisableCpuMemArena)
-  ONNXRUNTIME_REDIRECT_SIMPLE_FUNCTION_CALL(DisableCudaProvider)
-  ONNXRUNTIME_REDIRECT_SIMPLE_FUNCTION_CALL(EnableMklProvider)
-  ONNXRUNTIME_REDIRECT_SIMPLE_FUNCTION_CALL(DisableMklProvider)
   void EnableProfiling(_In_ const char* profile_file_prefix) {
     ONNXRuntimeEnableProfiling(value.get(), profile_file_prefix);
-  }
-
-  int EnableCudaProvider(int device_id) {
-    return ONNXRuntimeEnableCudaProvider(value.get(), device_id);
   }
 
   void SetSessionLogId(const char* logid) {
@@ -61,8 +54,17 @@ class SessionOptionsWrapper {
     ONNXRuntimeSetSessionThreadPoolSize(value.get(), session_thread_pool_size);
   }
 
+  /**
+  * The order of invocation indicates the preference order as well. In other words call this method
+  * on your most preferred execution provider first followed by the less preferred ones.
+  * Calling this API is optional in which case onnxruntime will use its internal CPU execution provider.
+  */
+  void AppendExecutionProvider(_In_ ONNXRuntimeProviderFactoryPtr* f) {
+    ONNXRuntimeSessionOptionsAppendExecutionProvider(value.get(), f);
+  }
+
   SessionOptionsWrapper clone() const {
-    ONNXRuntimeSessionOptions* p = CloneONNXRuntimeSessionOptions(value.get());
+    ONNXRuntimeSessionOptions* p = ONNXRuntimeCloneSessionOptions(value.get());
     return SessionOptionsWrapper(env_, p);
   }
 #ifdef _WIN32

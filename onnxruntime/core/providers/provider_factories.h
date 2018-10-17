@@ -11,12 +11,10 @@ namespace onnxruntime {
 
 // Information needed to construct CPU/MKL-DNN execution providers.
 struct CPUExecutionProviderInfo {
-  std::string name;
   bool create_arena{true};
 
-  explicit CPUExecutionProviderInfo(const std::string& provider_name,
-                                    bool use_arena = true)
-      : name(provider_name), create_arena(use_arena) {}
+  explicit CPUExecutionProviderInfo(bool use_arena)
+      : create_arena(use_arena) {}
   CPUExecutionProviderInfo() = default;
 };
 
