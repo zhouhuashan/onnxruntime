@@ -6,9 +6,30 @@
 #include "core/session/inference_session.h"
 #include "abi_session_options_impl.h"
 
+uint32_t ONNXRUNTIME_API_STATUSCALL ReleaseCuda(void* this_) {
+  ONNXRuntimeSessionOptions* this_ptr = (ONNXRuntimeSessionOptions*)this_;
+  if (--this_ptr->ref_count == 0)
+    delete this_ptr;
+  return 0;
+}
+
+uint32_t ONNXRUNTIME_API_STATUSCALL AddRefCuda(void* this_) {
+  ONNXRuntimeSessionOptions* this_ptr = (ONNXRuntimeSessionOptions*)this_;
+  ++this_ptr->ref_count;
+  return 0;
+}
+
+constexpr ONNXObject cuda_cls = {
+    AddRefCuda,
+    ReleaseCuda,
+};
+
+ONNXRuntimeSessionOptions::ONNXRuntimeSessionOptions() : cls(&cuda_cls), ref_count(1) {
+}
+
 ONNXRuntimeSessionOptions::~ONNXRuntimeSessionOptions() {
   for (ONNXRuntimeProviderFactoryPtr* p : provider_factories) {
-    (*p)->Release(p);
+    ONNXRuntimeReleaseObject(p);
   }
 }
 
@@ -16,9 +37,9 @@ ONNXRuntimeSessionOptions& ONNXRuntimeSessionOptions::operator=(const ONNXRuntim
   throw std::runtime_error("not implemented");
 }
 ONNXRuntimeSessionOptions::ONNXRuntimeSessionOptions(const ONNXRuntimeSessionOptions& other)
-    : value(other.value), custom_op_paths(other.custom_op_paths), provider_factories(other.provider_factories) {
+    : cls(&cuda_cls), ref_count(1), value(other.value), custom_op_paths(other.custom_op_paths), provider_factories(other.provider_factories) {
   for (ONNXRuntimeProviderFactoryPtr* p : other.provider_factories) {
-    (*p)->AddRef(p);
+    ONNXRuntimeAddRefToObject(p);
   }
 }
 ONNXRUNTIME_API(ONNXRuntimeSessionOptions*, ONNXRuntimeCreateSessionOptions) {
@@ -35,12 +56,8 @@ ONNXRUNTIME_API(ONNXRuntimeSessionOptions*, ONNXRuntimeCloneSessionOptions, ONNX
 }
 
 ONNXRUNTIME_API(void, ONNXRuntimeSessionOptionsAppendExecutionProvider, _In_ ONNXRuntimeSessionOptions* options, _In_ ONNXRuntimeProviderFactoryPtr* f) {
-  (*f)->AddRef(f);
+  ONNXRuntimeAddRefToObject(f);
   options->provider_factories.push_back(f);
-}
-
-ONNXRUNTIME_API(void, ReleaseONNXRuntimeSessionOptions, _Frees_ptr_opt_ ONNXRuntimeSessionOptions* value) {
-  delete value;
 }
 
 ONNXRUNTIME_API(void, ONNXRuntimeEnableSequentialExecution, _In_ ONNXRuntimeSessionOptions* options) {

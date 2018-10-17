@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
       ONNXRuntimeProviderFactoryPtr* f;
       ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeCreateCUDAExecutionProviderFactory(0, &f));
       sf.AppendExecutionProvider(f);
-      (*f)->Release(f);
+      ONNXRuntimeReleaseObject(f);
 #else
       fprintf(stderr, "CUDA is supported in this build");
       return -1;
@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
       ONNXRuntimeProviderFactoryPtr* f;
       ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeCreateMkldnnExecutionProviderFactory(enable_cpu_mem_arena ? 1 : 0, &f));
       sf.AppendExecutionProvider(f);
-      (*f)->Release(f);
+      ONNXRuntimeReleaseObject(f);
 #else
       fprintf(stderr, "MKL-DNN is supported in this build");
       return -1;

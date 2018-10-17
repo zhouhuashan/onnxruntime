@@ -27,12 +27,12 @@
 namespace onnxruntime {
 class SessionOptionsWrapper {
  private:
-  std::unique_ptr<ONNXRuntimeSessionOptions, decltype(&ReleaseONNXRuntimeSessionOptions)> value;
+  std::unique_ptr<ONNXRuntimeSessionOptions, decltype(&ONNXRuntimeReleaseObject)> value;
   ONNXEnvPtr env_;
-  SessionOptionsWrapper(_In_ ONNXEnvPtr env, ONNXRuntimeSessionOptions* p) : value(p, ReleaseONNXRuntimeSessionOptions), env_(env){};
+  SessionOptionsWrapper(_In_ ONNXEnvPtr env, ONNXRuntimeSessionOptions* p) : value(p, ONNXRuntimeReleaseObject), env_(env){};
 
  public:
-  SessionOptionsWrapper(_In_ ONNXEnvPtr env) : value(ONNXRuntimeCreateSessionOptions(), ReleaseONNXRuntimeSessionOptions), env_(env){};
+  SessionOptionsWrapper(_In_ ONNXEnvPtr env) : value(ONNXRuntimeCreateSessionOptions(), ONNXRuntimeReleaseObject), env_(env){};
   ONNXRUNTIME_REDIRECT_SIMPLE_FUNCTION_CALL(EnableSequentialExecution)
   ONNXRUNTIME_REDIRECT_SIMPLE_FUNCTION_CALL(DisableSequentialExecution)
   ONNXRUNTIME_REDIRECT_SIMPLE_FUNCTION_CALL(DisableProfiling)

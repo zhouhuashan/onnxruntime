@@ -112,7 +112,7 @@ void TestInference(ONNXEnv* env, const T& model_uri,
     ONNXRuntimeProviderFactoryPtr* f;
     ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeCreateCUDAExecutionProviderFactory(0, &f));
     sf.AppendExecutionProvider(f);
-    (*f)->Release(f);
+    ONNXRuntimeReleaseObject(f);
 #else
     FAIL() << "CUDA is not enabled";
 #endif

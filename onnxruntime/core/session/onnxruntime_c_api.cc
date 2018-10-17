@@ -556,6 +556,13 @@ ONNXRUNTIME_API(ONNXValuePtr, ONNXRuntimeONNXValueListGetNthValue, ONNXValueList
   return reinterpret_cast<ONNXValuePtr>(v + index);
 }
 
+ONNXRUNTIME_API(uint32_t, ONNXRuntimeAddRefToObject,void* ptr){
+  return (*(ONNXObject**)ptr)->AddRef(ptr);  
+}
+ONNXRUNTIME_API(uint32_t, ONNXRuntimeReleaseObject,void* ptr){
+  return (*(ONNXObject**)ptr)->Release(ptr);  
+}
+
 #define DEFINE_RELEASE_ONNX_RUNTIME_OBJECT_FUNCTION(INPUT_TYPE, REAL_TYPE) \
   ONNXRUNTIME_API(void, Release##INPUT_TYPE, INPUT_TYPE##Ptr value) {      \
     delete reinterpret_cast<REAL_TYPE*>(value);                            \

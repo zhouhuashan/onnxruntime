@@ -79,10 +79,35 @@ DEFINE_RUNTIME_CLASS(ONNXEnv);
 
 DEFINE_RUNTIME_CLASS(ONNXRuntimeProvider);
 
-typedef struct ONNXRuntimeProviderFactoryInterface {
-  //These methods returns the new reference count.
+/**
+ * Just like the IUnknown interface in COM
+ * Every type inherented from ONNXObject should be deleted by ONNXRuntimeReleaseObject(...).
+ */
+typedef struct ONNXObject{
+  ///returns the new reference count.
   uint32_t (ONNXRUNTIME_API_STATUSCALL *AddRef)(void* this_);
+  ///returns the new reference count.
   uint32_t (ONNXRUNTIME_API_STATUSCALL *Release)(void* this_);
+  //TODO: implement QueryInterface?
+} ONNXObject;
+
+/**
+ * This function is a wrapper to "(*(ONNXObject**)ptr)->AddRef(ptr)"
+ * Before calling this function, caller should make sure current ref count > 0
+ * \return the new reference count
+ */
+ONNXRUNTIME_API(uint32_t, ONNXRuntimeAddRefToObject,void* ptr);
+
+/**
+ * 
+ * A wrapper to "(*(ONNXObject**)ptr)->Release(ptr)"
+ * \return the new reference count
+ */
+ONNXRUNTIME_API(uint32_t, ONNXRuntimeReleaseObject,void* ptr);
+
+//Inherented from ONNXObject
+typedef struct ONNXRuntimeProviderFactoryInterface {
+  ONNXObject parent;
   ONNXStatusPtr (ONNXRUNTIME_API_STATUSCALL *CreateProvider)(void* this_, ONNXRuntimeProviderPtr* out);
 } ONNXRuntimeProviderFactoryInterface;
 
@@ -106,7 +131,9 @@ ONNXRUNTIME_API_STATUS(ONNXRuntimeInitialize, ONNXRuntimeLoggingLevel default_wa
  */
 ONNXRUNTIME_API_STATUS(ONNXRuntimeInitializeWithCustomLogger, ONNXRuntimeLoggingFunction logging_function, void* logger_param, ONNXRuntimeLoggingLevel default_warning_level, _In_ const char* logid, _Out_ ONNXEnv** out);
 
-DEFINE_RUNTIME_CLASS(ONNXRuntimeSessionOptions);
+struct ONNXRuntimeSessionOptions;
+typedef struct ONNXRuntimeSessionOptions ONNXRuntimeSessionOptions;
+typedef ONNXRuntimeSessionOptions* ONNXRuntimeSessionOptionsPtr;
 
 ONNXRUNTIME_API(ONNXRuntimeSessionOptions*, ONNXRuntimeCreateSessionOptions, void);
 
