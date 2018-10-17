@@ -52,7 +52,7 @@ TEST(PoolTest, MaxPool) {
   test.Run();
 }
 
-static void MaxPool_8_WithIndexTest(int64_t storage_order) {
+static void MaxPool_8_WithIndexTest(bool has_index, int64_t storage_order=0) {
   OpTester test("MaxPool", 8);
 
   test.AddAttribute("auto_pad", "");
@@ -96,14 +96,17 @@ static void MaxPool_8_WithIndexTest(int64_t storage_order) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  storage_order == 0 ? test.AddOutput<int64_t>("Indices", expected_dims, expected_indices_row)
-                     : test.AddOutput<int64_t>("Indices", expected_dims, expected_indices_col);
+  if (has_index) {
+    storage_order == 0 ? test.AddOutput<int64_t>("Indices", expected_dims, expected_indices_row)
+                       : test.AddOutput<int64_t>("Indices", expected_dims, expected_indices_col);
+  }
   test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kMklDnnExecutionProvider});
 }
 
 TEST(PoolTest, MaxPool_8_With_Index) {
-  MaxPool_8_WithIndexTest(0 /*storage_order*/);  // row major
-  MaxPool_8_WithIndexTest(1 /*storage_order*/);  // col major
+  MaxPool_8_WithIndexTest(false);  // row major
+  MaxPool_8_WithIndexTest(true, 0 /*storage_order*/);  // row major
+  MaxPool_8_WithIndexTest(true, 1 /*storage_order*/);  // col major
 }
 
 TEST(PoolTest, MaxPool1D) {

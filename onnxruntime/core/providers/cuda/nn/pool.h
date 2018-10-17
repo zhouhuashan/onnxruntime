@@ -12,7 +12,7 @@ namespace onnxruntime {
 namespace cuda {
 
 template <typename T, typename PoolType>
-class Pool final : public CudaKernel, public PoolBase {
+class Pool : public CudaKernel, public PoolBase {
  public:
   Pool(OpKernelInfo info) : CudaKernel(info), PoolBase(info) {}
 
@@ -20,9 +20,9 @@ class Pool final : public CudaKernel, public PoolBase {
 };
 
 template <typename T>
-class Pool<T, MaxPool<8>> final : public CudaKernel, public PoolBase {
+class Pool<T, MaxPool<8>> final : public Pool<T, MaxPool<1>> {
  public:
-  Pool(OpKernelInfo info) : CudaKernel(info), PoolBase(info) {}
+  Pool(OpKernelInfo info) : Pool<T, MaxPool<1>>(info) {}
 
   Status ComputeInternal(OpKernelContext* context) const override;
 };
