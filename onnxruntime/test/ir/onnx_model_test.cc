@@ -77,7 +77,7 @@ TEST(ONNXModelsTest1, bvlc_alexnet_1) {
   using ::google::protobuf::io::FileInputStream;
   using ::google::protobuf::io::ZeroCopyInputStream;
   int fd;
-  ASSERT_TRUE(Env::Default().FileOpenRd("../models/test_bvlc_alexnet/model.onnx", &fd).IsOK());
+  ASSERT_TRUE(Env::Default().FileOpenRd("../models/test_bvlc_alexnet/model.onnx", fd).IsOK());
   ASSERT_TRUE(fd > 0);
   std::unique_ptr<ZeroCopyInputStream> raw_input(new FileInputStream(fd));
   std::unique_ptr<CodedInputStream> coded_input(new CodedInputStream(raw_input.get()));
@@ -123,7 +123,7 @@ TEST_P(ONNXModelsTest, LoadFromProtobuf) {
   using ::google::protobuf::io::FileInputStream;
   using ::google::protobuf::io::ZeroCopyInputStream;
   int fd;
-  auto st = Env::Default().FileOpenRd(GetModelFileName(), &fd);
+  auto st = Env::Default().FileOpenRd(GetModelFileName(), fd);
   ASSERT_TRUE(st.IsOK()) << st.ErrorMessage();
   ASSERT_TRUE(fd > 0);
   std::unique_ptr<ZeroCopyInputStream> raw_input(new FileInputStream(fd));
