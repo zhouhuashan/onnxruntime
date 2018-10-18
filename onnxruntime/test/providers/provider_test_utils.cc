@@ -22,19 +22,19 @@ namespace test {
 
 // The default implementation compares for equality, specialized versions for other types are below
 template <typename T>
-void Check(const OpTester::Data& expected_data, const Tensor& output_tensor) {
+void Check(const OpTester::Data& expected_data, const Tensor& output_tensor, const std::string& provider_type) {
   auto& expected_tensor = expected_data.data_.Get<Tensor>();
   auto* expected = expected_tensor.template Data<T>();
   auto* output = output_tensor.template Data<T>();
   auto size = output_tensor.Shape().Size();
 
   for (int i = 0; i < size; ++i) {
-    EXPECT_EQ(expected[i], output[i]);
+    EXPECT_EQ(expected[i], output[i]) << "provider_type: " << provider_type;
   }
 }
 
 template <>
-void Check<float>(const OpTester::Data& expected_data, const Tensor& output_tensor) {
+void Check<float>(const OpTester::Data& expected_data, const Tensor& output_tensor, const std::string& provider_type) {
   auto& expected_tensor = expected_data.data_.Get<Tensor>();
   auto* expected = expected_tensor.template Data<float>();
   auto* output = output_tensor.template Data<float>();
@@ -54,13 +54,13 @@ void Check<float>(const OpTester::Data& expected_data, const Tensor& output_tens
     else {
       if (!has_abs_err && !has_rel_err) {
         // the default for existing tests
-        EXPECT_NEAR(expected[i], output[i], threshold);
+        EXPECT_NEAR(expected[i], output[i], threshold) << "provider_type: " << provider_type;
       } else {
         if (has_abs_err) {
-          EXPECT_NEAR(expected[i], output[i], expected_data.absolute_error_.value());
+          EXPECT_NEAR(expected[i], output[i], expected_data.absolute_error_.value()) << "provider_type: " << provider_type;
         }
         if (has_rel_err) {
-          EXPECT_NEAR(expected[i], output[i], expected_data.relative_error_.value() * std::abs(expected[i]));
+          EXPECT_NEAR(expected[i], output[i], expected_data.relative_error_.value() * std::abs(expected[i])) << "provider_type: " << provider_type;
         }
       }
     }
@@ -68,55 +68,55 @@ void Check<float>(const OpTester::Data& expected_data, const Tensor& output_tens
 }
 
 template <typename Type>
-void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, const Tensor& output_tensor) {
+void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, const Tensor& output_tensor, const std::string& provider_type) {
   if (type == DataTypeImpl::GetType<Type>())
-    Check<Type>(expected_data, output_tensor);
+    Check<Type>(expected_data, output_tensor, provider_type);
   else
     ONNXRUNTIME_THROW("OpTester:Check() not implemented for output tensor type of ", type);
 }
 
 template <typename Type, typename Next, typename... Types>
-void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, const Tensor& output_tensor) {
+void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, const Tensor& output_tensor, const std::string& provider_type) {
   if (type == DataTypeImpl::GetType<Type>())
-    Check<Type>(expected_data, output_tensor);
+    Check<Type>(expected_data, output_tensor, provider_type);
   else
-    CheckDispatch<Next, Types...>(type, expected_data, output_tensor);
+    CheckDispatch<Next, Types...>(type, expected_data, output_tensor, provider_type);
 }
 
-void Check(const OpTester::Data& expected_data, const Tensor& output_tensor) {
+void Check(const OpTester::Data& expected_data, const Tensor& output_tensor, const std::string& provider_type) {
   ONNXRUNTIME_ENFORCE(expected_data.data_.Get<Tensor>().Shape() == output_tensor.Shape(),
               "Expected output shape [" + expected_data.data_.Get<Tensor>().Shape().ToString() +
                   "] did not match run output shape [" +
                   output_tensor.Shape().ToString() + "]");
 
-  CheckDispatch<bool, float, double, uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t, std::string, MLFloat16>(output_tensor.DataType(), expected_data, output_tensor);
+  CheckDispatch<bool, float, double, uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t, std::string, MLFloat16>(output_tensor.DataType(), expected_data, output_tensor, provider_type);
 }
 
 // Check for non tensor types
 
 template <typename T>
-void Check(const OpTester::Data& expected_data, const T& run_output) {
-  EXPECT_EQ(expected_data.data_.Get<T>(), run_output);
+void Check(const OpTester::Data& expected_data, const T& run_output, const std::string& provider_type) {
+  EXPECT_EQ(expected_data.data_.Get<T>(), run_output) << "provider_type: " << provider_type;
 }
 
 template <typename Type>
-void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, MLValue& mlvalue) {
+void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, MLValue& mlvalue, const std::string& provider_type) {
   if (type == DataTypeImpl::GetType<Type>())
-    Check<Type>(expected_data, mlvalue.Get<Type>());
+    Check<Type>(expected_data, mlvalue.Get<Type>(), provider_type);
   else
     ONNXRUNTIME_THROW("OpTester:Check() not implemented for output tensor type of ", type);
 }
 
 template <typename Type, typename Next, typename... Types>
-void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, MLValue& mlvalue) {
+void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, MLValue& mlvalue, const std::string& provider_type) {
   if (type == DataTypeImpl::GetType<Type>())
-    Check<Type>(expected_data, mlvalue.Get<Type>());
+    Check<Type>(expected_data, mlvalue.Get<Type>(), provider_type);
   else
-    CheckDispatch<Next, Types...>(type, expected_data, mlvalue);
+    CheckDispatch<Next, Types...>(type, expected_data, mlvalue, provider_type);
 }
 
-void Check(const OpTester::Data& expected_data, MLValue& mlvalue) {
-  CheckDispatch<VectorMapStringToFloat, VectorMapInt64ToFloat>(expected_data.data_.Type(), expected_data, mlvalue);
+void Check(const OpTester::Data& expected_data, MLValue& mlvalue, const std::string& provider_type) {
+  CheckDispatch<VectorMapStringToFloat, VectorMapInt64ToFloat>(expected_data.data_.Type(), expected_data, mlvalue, provider_type);
 }
 
 OpTester::~OpTester() {
@@ -230,7 +230,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
         kNupharExecutionProvider,
     };
 
-    for (const auto& provider_type : all_provider_types) {
+    for (const std::string& provider_type : all_provider_types) {
       if (excluded_provider_types.count(provider_type) > 0)
         continue;
 
@@ -315,9 +315,9 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
 
         if (expected_data.def_.Exists()) {  // optional outputs won't exist
           if (expected_data.data_.IsTensor()) {
-            Check(expected_data, mlvalue.Get<Tensor>());
+            Check(expected_data, mlvalue.Get<Tensor>(), provider_type);
           } else {
-            Check(expected_data, mlvalue);
+            Check(expected_data, mlvalue, provider_type);
           }
           ++idx;
 
