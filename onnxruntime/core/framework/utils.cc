@@ -35,7 +35,7 @@ const KernelDef* GetKernelDef(const onnxruntime::Graph& graph,
   return GetKernelDef(kernel_registry, *node);
 }
 
-AllocatorPtr GetAllocator(const ExecutionProviders& exec_providers, const AllocatorInfo& allocator_info) {
+AllocatorPtr GetAllocator(const ExecutionProviders& exec_providers, const ONNXRuntimeAllocatorInfo& allocator_info) {
   auto exec_provider = exec_providers.Get(allocator_info);
   if (exec_provider == nullptr) {
     return nullptr;
@@ -44,7 +44,7 @@ AllocatorPtr GetAllocator(const ExecutionProviders& exec_providers, const Alloca
   return exec_provider->GetAllocator(allocator_info.mem_type);
 }
 
-AllocatorPtr GetAllocator(const SessionState& session_state, const AllocatorInfo& allocator_info) {
+AllocatorPtr GetAllocator(const SessionState& session_state, const ONNXRuntimeAllocatorInfo& allocator_info) {
   return GetAllocator(session_state.GetExecutionProviders(), allocator_info);
 }
 

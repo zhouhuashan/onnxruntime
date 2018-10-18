@@ -56,7 +56,7 @@ class Tensor final {
   Tensor(MLDataType p_type,
          const TensorShape& shape,
          BufferNakedPtr p_data,
-         const AllocatorInfo& alloc,
+         const ONNXRuntimeAllocatorInfo& alloc,
          AllocatorPtr deleter = nullptr,
          int64_t offset = 0);
 
@@ -88,7 +88,7 @@ class Tensor final {
   /**
      Returns the location of the tensor's memory
   */
-  const AllocatorInfo& Location() const { return alloc_info_; }
+  const ONNXRuntimeAllocatorInfo& Location() const { return alloc_info_; }
 
   /**
      May return nullptr if tensor size is zero
@@ -169,7 +169,7 @@ class Tensor final {
   void Init(MLDataType p_type,
             const TensorShape& shape,
             void* p_raw_data,
-            const AllocatorInfo& alloc,
+            const ONNXRuntimeAllocatorInfo& alloc,
             AllocatorPtr deleter,
             int64_t offset = 0);
 
@@ -183,7 +183,7 @@ class Tensor final {
 
   TensorShape shape_;
   MLDataType dtype_;
-  AllocatorInfo alloc_info_;
+  ONNXRuntimeAllocatorInfo alloc_info_;
   int64_t byte_offset_;
 };
 

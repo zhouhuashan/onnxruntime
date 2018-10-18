@@ -79,6 +79,7 @@ typedef void* ONNXStatusPtr;
 //}
 DEFINE_RUNTIME_CLASS2(ONNXStatus, void);
 
+ONNXRUNTIME_API(ONNXStatusPtr, CreateONNXStatus, ONNXRuntimeErrorCode code, const char* msg);
 ONNXRUNTIME_API(ONNXRuntimeErrorCode, ONNXRuntimeGetErrorCode, _In_ const ONNXStatusPtr Status);
 ONNXRUNTIME_API(const char*, ONNXRuntimeGetErrorMessage, _In_ const ONNXStatusPtr Status);
 #ifdef __cplusplus

@@ -20,7 +20,7 @@ class KernelRegistryManager;
 /**
    Logical device representation.
 */
-typedef std::map<MemType, AllocatorPtr> AllocatorMap;
+typedef std::map<ONNXRuntimeMemType, AllocatorPtr> AllocatorMap;
 
 class IExecutionProvider {
  public:
@@ -34,7 +34,7 @@ class IExecutionProvider {
   /**
      Get allocator with specified MemType
   */
-  virtual AllocatorPtr GetAllocator(MemType mem_type) const;
+  virtual AllocatorPtr GetAllocator(ONNXRuntimeMemType mem_type) const;
 
   /**
      Get execution provider's capability for the specified <graph>.
@@ -113,7 +113,7 @@ class IExecutionProvider {
   */
   virtual common::Status OnRunEnd();
 
-  void InsertAllocator(MemType mem_type, AllocatorPtr allocator);
+  void InsertAllocator(ONNXRuntimeMemType mem_type, AllocatorPtr allocator);
 
  private:
   AllocatorMap allocators_;

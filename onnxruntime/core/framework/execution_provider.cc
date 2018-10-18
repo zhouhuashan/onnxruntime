@@ -15,7 +15,7 @@ const AllocatorMap& IExecutionProvider::GetAllocatorMap() const {
 }
 
 AllocatorPtr
-IExecutionProvider::GetAllocator(MemType mem_type) const {
+IExecutionProvider::GetAllocator(ONNXRuntimeMemType mem_type) const {
   if (allocators_.count(mem_type) > 0)
     return allocators_.at(mem_type);
   else
@@ -57,7 +57,7 @@ common::Status IExecutionProvider::OnRunStart() { return Status::OK(); }
 
 common::Status IExecutionProvider::OnRunEnd() { return Status::OK(); }
 
-void IExecutionProvider::InsertAllocator(MemType mem_type,
+void IExecutionProvider::InsertAllocator(ONNXRuntimeMemType mem_type,
                                          AllocatorPtr allocator) {
   allocators_.insert({mem_type, allocator});
 }

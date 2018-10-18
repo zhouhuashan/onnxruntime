@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include "mkldnn_provider_factory.h"
+#include "core/providers/mkldnn/mkldnn_provider_factory.h"
 #include "mkldnn_execution_provider.h"
 
 using namespace onnxruntime;
@@ -36,13 +36,13 @@ uint32_t ONNXRUNTIME_API_STATUSCALL AddRefMkldnn(void* this_) {
   return 0;
 }
 
-constexpr ONNXRuntimeProviderFactoryInterface cuda_cls = {
-    AddRefMkldnn,
-    ReleaseMkldnn,
+constexpr ONNXRuntimeProviderFactoryInterface mkl_cls = {
+    {AddRefMkldnn,
+     ReleaseMkldnn},
     CreateMkldnn,
 };
 
-MkldnnProviderFactory::MkldnnProviderFactory() : cls(&cuda_cls), ref_count(1), create_arena(true) {}
+MkldnnProviderFactory::MkldnnProviderFactory() : cls(&mkl_cls), ref_count(1), create_arena(true) {}
 }  // namespace
 
 ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeCreateMkldnnExecutionProviderFactory, int use_arena, _Out_ ONNXRuntimeProviderFactoryPtr** out) {

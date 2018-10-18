@@ -74,7 +74,7 @@ class ExecutionProviders {
     return exec_providers_[it->second].get();
   }
 
-  const IExecutionProvider* Get(const AllocatorInfo& allocator_info) const {
+  const IExecutionProvider* Get(const ONNXRuntimeAllocatorInfo& allocator_info) const {
     auto it = allocator_idx_map_.find(allocator_info);
     if (it == allocator_idx_map_.end()) {
       return nullptr;
@@ -94,8 +94,8 @@ class ExecutionProviders {
 
   // maps for fast lookup of an index into exec_providers_
   std::unordered_map<std::string, size_t> provider_idx_map_;
-  // using std::map as AllocatorInfo would need a custom hash function to be used with unordered_map,
+  // using std::map as ONNXRuntimeAllocatorInfo would need a custom hash function to be used with unordered_map,
   // and as this isn't performance critical it's not worth the maintenance overhead of adding one.
-  std::map<AllocatorInfo, size_t> allocator_idx_map_;
+  std::map<ONNXRuntimeAllocatorInfo, size_t> allocator_idx_map_;
 };
 }  // namespace onnxruntime

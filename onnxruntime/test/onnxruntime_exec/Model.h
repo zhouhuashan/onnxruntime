@@ -17,7 +17,7 @@ typedef int HRESULT;
 
 #include "Runtime.h"
 
-enum ExecutionStatus {
+enum class ExecutionStatus {
   OK = 0,
   MODEL_LOADING_FAILURE = 1,
   DATA_LOADING_FAILURE = 2,

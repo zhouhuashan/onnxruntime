@@ -21,7 +21,7 @@ OpKernelInfo::OpKernelInfo(const onnxruntime::Node& node,
 OpKernelInfo::OpKernelInfo(const OpKernelInfo& other)
     : OpKernelInfo(other.node_, other.kernel_def_, *other.execution_provider_, other.session_state_) {}
 
-const AllocatorInfo& OpKernelInfo::GetAllocatorInfo(MemType mem_type) const {
+const ONNXRuntimeAllocatorInfo& OpKernelInfo::GetAllocatorInfo(ONNXRuntimeMemType mem_type) const {
   return execution_provider_->GetAllocatorMap().at(mem_type)->Info();
 }
 

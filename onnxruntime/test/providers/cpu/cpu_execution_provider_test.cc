@@ -10,7 +10,7 @@ TEST(CPUExecutionProviderTest, MetadataTest) {
   CPUExecutionProviderInfo info;
   auto provider = std::make_unique<CPUExecutionProvider>(info);
   EXPECT_TRUE(provider != nullptr);
-  ASSERT_STREQ(provider->GetAllocator(kMemTypeDefault)->Info().name, CPU);
+  ASSERT_STREQ(provider->GetAllocator(ONNXRuntimeMemTypeDefault)->Info().name, CPU);
 }
 }  // namespace test
 }  // namespace onnxruntime

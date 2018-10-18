@@ -327,7 +327,6 @@ set(onnx_test_runner_common_srcs
   ${onnx_test_runner_src_dir}/runner.cc
   ${onnx_test_runner_src_dir}/TestCase.cc
   ${onnx_test_runner_src_dir}/TestCase.h
-  ${onnx_test_runner_src_dir}/test_allocator.h
   ${onnx_test_runner_src_dir}/sync_api.h)
 
 if(WIN32)
@@ -495,6 +494,7 @@ if (onnxruntime_BUILD_SHARED_LIB)
   # this program shouldn't have direct depedency on CUDA
   # CUDA is part of ${ONNX_DLL}
   add_executable(onnxruntime_shared_lib_test "${ONNXRUNTIME_ROOT}/test/shared_lib/test_inference.cc")
+  onnxruntime_add_include_to_target(onnxruntime_shared_lib_test onnxruntime_test_utils)
   target_include_directories(onnxruntime_shared_lib_test PRIVATE "${PROJECT_SOURCE_DIR}/include" ${ONNXRUNTIME_ROOT})
   if(WIN32)
     target_compile_definitions(onnxruntime_shared_lib_test PRIVATE ONNX_RUNTIME_BUILD_DLL)

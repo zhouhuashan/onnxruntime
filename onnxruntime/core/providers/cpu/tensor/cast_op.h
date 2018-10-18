@@ -53,7 +53,7 @@ template <typename SrcType,
 inline void CastFloat16Data(const Tensor* in, Tensor* out, const TensorShape& shape, const OpKernelInfo& info) {
   auto* p_provider = info.GetExecutionProvider();
   ONNXRUNTIME_ENFORCE(p_provider);
-  auto allocator = p_provider->GetAllocator(kMemTypeDefault);
+  auto allocator = p_provider->GetAllocator(ONNXRuntimeMemTypeDefault);
   ONNXRUNTIME_ENFORCE(allocator != nullptr);
   void* buffer = allocator->Alloc(sizeof(float) * shape.Size());
   ONNXRUNTIME_ENFORCE(buffer);

@@ -21,10 +21,10 @@ class NupharExecutionProvider : public IExecutionProvider {
     tvm_ctx_.device_id = info.device_id;
 
     DeviceAllocatorRegistrationInfo allocator_info(
-        {kMemTypeDefault,
+        {ONNXRuntimeMemTypeDefault,
          [this](int /*id*/) { return std::make_unique<NupharAllocator>(this->tvm_ctx_); },
          std::numeric_limits<size_t>::max()});
-    InsertAllocator(kMemTypeDefault, CreateAllocator(allocator_info, tvm_ctx_.device_id));
+    InsertAllocator(ONNXRuntimeMemTypeDefault, CreateAllocator(allocator_info, tvm_ctx_.device_id));
   }
 
   virtual ~NupharExecutionProvider();

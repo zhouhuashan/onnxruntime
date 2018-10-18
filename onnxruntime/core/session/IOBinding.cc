@@ -28,7 +28,7 @@ static common::Status AllocateHelper(const SessionState& session_state,
                                      MLValue& output_mlvalue) {
   auto* p_provider = session_state.GetExecutionProviders().Get(provider_type);
   ONNXRUNTIME_ENFORCE(p_provider);
-  auto allocator = p_provider->GetAllocator(kMemTypeDefault);
+  auto allocator = p_provider->GetAllocator(ONNXRuntimeMemTypeDefault);
   ONNXRUNTIME_ENFORCE(allocator != nullptr);
   auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
   void* buffer = allocator->Alloc(fetched_tensor.Size());
@@ -79,7 +79,7 @@ common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_
     }
 
     auto input_provider_type = p_input_provider->Type();
-    if (input_provider_type == required_provider_type && input_tensor_loc.mem_type == kMemTypeDefault) {
+    if (input_provider_type == required_provider_type && input_tensor_loc.mem_type == ONNXRuntimeMemTypeDefault) {
       new_mlvalue = orig_mlvalue;
       return Status::OK();
     }
@@ -170,14 +170,14 @@ AllocatorPtr IOBinding::GetCPUAllocator(onnxruntime::ProviderType provider_type)
   auto& exec_providers = session_state_.GetExecutionProviders();
   auto* p_provider = exec_providers.Get(provider_type);
   ONNXRUNTIME_ENFORCE(p_provider);
-  auto allocator = p_provider->GetAllocator(kMemTypeCPU);
+  auto allocator = p_provider->GetAllocator(ONNXRuntimeMemTypeCPU);
 
   // if the provider does not implement CPU allocator, fall back to CPU
   if (allocator)
     return allocator;
 
   auto* cpu_provider = exec_providers.Get(onnxruntime::kCpuExecutionProvider);
-  return cpu_provider->GetAllocator(kMemTypeDefault);
+  return cpu_provider->GetAllocator(ONNXRuntimeMemTypeDefault);
 }
 
 }  // namespace onnxruntime

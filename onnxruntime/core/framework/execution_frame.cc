@@ -48,7 +48,7 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
       } else {
         // pre-allocate the big chunk requested in memory pattern.
         // all the internal kernel's input/output tensors will be allocated on these buffer.
-        for (int i = 0; i < mem_patterns_->locations.size(); i++) {
+        for (size_t i = 0; i < mem_patterns_->locations.size(); i++) {
           ONNXRUNTIME_ENFORCE(buffers_.find(mem_patterns_->locations[i]) == buffers_.end());
           AllocatorPtr alloc = GetAllocator(mem_patterns_->locations[i]);
           void* buffer = mem_patterns_->patterns[i].PeakSize() > 0 ? alloc->Alloc(mem_patterns_->patterns[i].PeakSize()) : nullptr;
@@ -63,7 +63,7 @@ ExecutionFrame::~ExecutionFrame() = default;
 
 Status ExecutionFrame::AllocateMLValueTensorSelfOwnBuffer(int mlvalue_index,
                                                           const MLDataType element_type,
-                                                          const AllocatorInfo& location,
+                                                          const ONNXRuntimeAllocatorInfo& location,
                                                           const TensorShape& shape,
                                                           bool create_fence) {
   ONNXRUNTIME_ENFORCE(mlvalue_index >= 0 && static_cast<size_t>(mlvalue_index) < all_values_.size());
@@ -72,7 +72,7 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBuffer(int mlvalue_index,
 
 Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_index,
                                                                 const MLDataType element_type,
-                                                                const AllocatorInfo& location,
+                                                                const ONNXRuntimeAllocatorInfo& location,
                                                                 const TensorShape& shape,
                                                                 bool create_fence) {
   if (mlvalue_index < 0)
@@ -162,17 +162,17 @@ void ExecutionFrame::TraceAllocate(int mlvalue_idx, size_t size) {
 
 Status ExecutionFrame::AllocateTensorWithSelfOwnBuffer(const int index,
                                                        const MLDataType element_type,
-                                                       const AllocatorInfo& location,
+                                                       const ONNXRuntimeAllocatorInfo& location,
                                                        const TensorShape& shape,
                                                        bool create_fence) {
-  ONNXRUNTIME_ENFORCE(index >= 0 && index < node_values_.size());
+  ONNXRUNTIME_ENFORCE(index >= 0 && static_cast<size_t>(index) < node_values_.size());
   return AllocateMLValueTensorSelfOwnBufferHelper(node_values_[index], element_type, location, shape, create_fence);
 }
 
 Status ExecutionFrame::AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_to_allocate,
                                                               int mlvalue_index_reuse,
                                                               const MLDataType element_type,
-                                                              const AllocatorInfo& location,
+                                                              const ONNXRuntimeAllocatorInfo& location,
                                                               const TensorShape& shape,
                                                               bool create_fence) {
   ONNXRUNTIME_ENFORCE(mlvalue_index_to_allocate >= 0 && mlvalue_index_to_allocate < all_values_.size());
@@ -199,7 +199,7 @@ Status ExecutionFrame::AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_
 Status ExecutionFrame::AllocateTensorWithPreAllocateBufferHelper(MLValue* p_mlvalue,
                                                                  void* pBuffer,
                                                                  const MLDataType element_type,
-                                                                 const AllocatorInfo& location,
+                                                                 const ONNXRuntimeAllocatorInfo& location,
                                                                  const TensorShape& shape) {
   if (p_mlvalue->IsAllocated()) {
     return Status::OK();
@@ -218,7 +218,7 @@ Status ExecutionFrame::AllocateTensorWithPreAllocateBufferHelper(MLValue* p_mlva
 Status ExecutionFrame::AllocateTensorWithPreAllocateBuffer(const int offset,
                                                            void* pBuffer,
                                                            const MLDataType element_type,
-                                                           const AllocatorInfo& location,
+                                                           const ONNXRuntimeAllocatorInfo& location,
                                                            const TensorShape& shape) {
   ONNXRUNTIME_ENFORCE(offset >= 0 && offset < node_values_.size());
   if (node_values_[offset] < 0)
@@ -436,7 +436,7 @@ MLValue* ExecutionFrame::GetMutableNodeInputOrOutputMLValue(int index) {
   return const_cast<MLValue*>(GetNodeInputOrOutputMLValue(index));
 }
 
-AllocatorPtr ExecutionFrame::GetAllocator(const AllocatorInfo& info) {
+AllocatorPtr ExecutionFrame::GetAllocator(const ONNXRuntimeAllocatorInfo& info) {
   return utils::GetAllocator(session_state_, info);
 }
 

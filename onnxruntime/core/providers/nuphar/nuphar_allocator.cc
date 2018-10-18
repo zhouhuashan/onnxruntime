@@ -26,9 +26,9 @@ void NupharAllocator::Free(void *p) {
   tvm::runtime::DeviceAPI::Get(tvm_ctx_)->FreeDataSpace(tvm_ctx_, p);
 }
 
-const AllocatorInfo& NupharAllocator::Info() const {
-  static AllocatorInfo tvm_allocator_info(TVM_STACKVM, AllocatorType::kDeviceAllocator,
-                                          tvm_ctx_.device_id, kMemTypeDefault);
+const ONNXRuntimeAllocatorInfo& NupharAllocator::Info() const {
+  static ONNXRuntimeAllocatorInfo tvm_allocator_info(TVM_STACKVM, ONNXRuntimeAllocatorType::ONNXRuntimeDeviceAllocator,
+                                                     tvm_ctx_.device_id, ONNXRuntimeMemTypeDefault);
   return tvm_allocator_info;
 }
 

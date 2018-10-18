@@ -11,10 +11,10 @@ constexpr const char* CUDA_PINNED = "CudaPinned";
 
 class CUDAAllocator : public IDeviceAllocator {
  public:
-  CUDAAllocator(int device_id) : device_id_(device_id), info_(CUDA, AllocatorType::kDeviceAllocator, device_id, kMemTypeDefault) {}
+  CUDAAllocator(int device_id) : device_id_(device_id), info_(CUDA, ONNXRuntimeAllocatorType::ONNXRuntimeDeviceAllocator, device_id, ONNXRuntimeMemTypeDefault) {}
   virtual void* Alloc(size_t size) override;
   virtual void Free(void* p) override;
-  virtual const AllocatorInfo& Info() const override;
+  virtual const ONNXRuntimeAllocatorInfo& Info() const override;
   virtual FencePtr CreateFence(const SessionState* session_state) override;
 
  private:
@@ -22,14 +22,14 @@ class CUDAAllocator : public IDeviceAllocator {
 
  private:
   const int device_id_;
-  const AllocatorInfo info_;
+  const ONNXRuntimeAllocatorInfo info_;
 };
 
 class CUDAPinnedAllocator : public IDeviceAllocator {
  public:
   virtual void* Alloc(size_t size) override;
   virtual void Free(void* p) override;
-  virtual const AllocatorInfo& Info() const override;
+  virtual const ONNXRuntimeAllocatorInfo& Info() const override;
   virtual FencePtr CreateFence(const SessionState* session_state) override;
 };
 

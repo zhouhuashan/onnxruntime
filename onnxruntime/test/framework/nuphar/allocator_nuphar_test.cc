@@ -16,16 +16,16 @@ TEST(AllocatorTest, NupharAllocatorTest) {
   tvm_ctx.device_id = device_id;
   tvm_ctx.device_type = kDLCPU;
   DeviceAllocatorRegistrationInfo allocator_info(
-    {kMemTypeDefault,
-     [tvm_ctx](int /*id*/) { return std::make_unique<NupharAllocator>(tvm_ctx); },
-     std::numeric_limits<size_t>::max()});
+      {ONNXRuntimeMemTypeDefault,
+       [tvm_ctx](int /*id*/) { return std::make_unique<NupharAllocator>(tvm_ctx); },
+       std::numeric_limits<size_t>::max()});
 
   auto nuphar_arena = CreateAllocator(allocator_info, device_id);
 
   EXPECT_STREQ(nuphar_arena->Info().name, TVM_STACKVM);
   EXPECT_EQ(nuphar_arena->Info().id, device_id);
-  EXPECT_EQ(nuphar_arena->Info().mem_type, kMemTypeDefault);
-  EXPECT_EQ(nuphar_arena->Info().type, AllocatorType::kArenaAllocator);
+  EXPECT_EQ(nuphar_arena->Info().mem_type, ONNXRuntimeMemTypeDefault);
+  EXPECT_EQ(nuphar_arena->Info().type, ONNXRuntimeAllocatorType::ONNXRuntimeArenaAllocator);
 
   //test nuphar allocation
   size_t size = 1024;

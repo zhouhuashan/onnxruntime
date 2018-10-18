@@ -4,6 +4,7 @@
 #include "core/graph/onnx_protobuf.h"  //TODO: remove this
 #include "core/session/onnxruntime_c_api.h"
 #include "core/session/allocator_impl.h"
+#include "core/framework/error_code_helper.h"
 #include "core/framework/execution_provider.h"
 #include <cassert>
 #include <cstring>
@@ -35,6 +36,7 @@ using onnxruntime::MLStatus;
 using onnxruntime::MLValue;
 using onnxruntime::OutputDefList;
 using onnxruntime::Tensor;
+using onnxruntime::ToONNXStatus;
 using onnxruntime::common::Status;
 
 #define ONNXRUNTIME_API_RETURN_IF_ERROR(expr) \
@@ -57,45 +59,6 @@ struct ONNXEnv {
   LoggingManager* loggingManager;
   ONNXRUNTIME_DISALLOW_COPY_AND_ASSIGNMENT(ONNXEnv);
 };
-
-static ONNXStatusPtr ToONNXStatus(const Status& st) {
-  if (st.IsOK())
-    return nullptr;
-  size_t clen = st.ErrorMessage().length();
-  size_t len = clen + 1 + sizeof(int);
-  char* p = new char[len];
-  char* ret = p;
-  *reinterpret_cast<int*>(p) = static_cast<int>(st.Code());
-  p += sizeof(int);
-  memcpy(p, st.ErrorMessage().c_str(), clen);
-  p += clen;
-  *p = '\0';
-  return ret;
-}
-
-ONNXRUNTIME_API(ONNXRuntimeErrorCode, ONNXRuntimeGetErrorCode, _In_ const ONNXStatusPtr status) {
-  return *reinterpret_cast<ONNXRuntimeErrorCode*>(status);
-}
-
-ONNXRUNTIME_API(const char*, ONNXRuntimeGetErrorMessage, _In_ const ONNXStatusPtr status) {
-  return reinterpret_cast<const char*>(status) + sizeof(int);
-}
-
-static ONNXStatusPtr CreateONNXStatus(ONNXRuntimeErrorCode code, const char* msg) {
-#ifndef NDEBUG
-  assert(!(code == 0 && msg != nullptr));
-#endif
-  size_t clen = strlen(msg);
-  size_t len = clen + 1 + sizeof(int);
-  char* p = new char[len];
-  char* ret = p;
-  *reinterpret_cast<int*>(p) = static_cast<int>(code);
-  p += sizeof(int);
-  memcpy(p, msg, clen);
-  p += clen;
-  *p = '\0';
-  return ret;
-}
 
 #define API_IMPL_BEGIN try {
 #define API_IMPL_END                                                   \
@@ -228,7 +191,7 @@ ONNXStatusPtr CreateTensorImpl(const size_t* shape, size_t shape_len, const ONNX
   *out = std::make_unique<Tensor>(DataTypeImpl::GetType<T>(),
                                   onnxruntime::TensorShape(shapes.data(), shape_len),
                                   p_data,
-                                  *(onnxruntime::AllocatorInfo*)info,
+                                  *info,
                                   nullptr);
   return nullptr;
 }

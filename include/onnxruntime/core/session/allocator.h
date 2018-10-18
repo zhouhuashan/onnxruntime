@@ -3,27 +3,8 @@
 
 #pragma once
 
-#include "error_code.h"
-
-typedef enum ONNXRuntimeAllocatorType {
-  ONNXRuntimeMemDeviceAllocator = 0,
-  ONNXRuntimeMemArenaAllocator = 1
-} ONNXRuntimeAllocatorType;
-
-// memory types for allocator, exec provider specific types should be extended in each provider
-typedef enum ONNXRuntimeMemType {
-  ONNXRuntimeMemTypeCPUInput = -2,                      // Any CPU memory used by non-CPU execution provider
-  ONNXRuntimeMemTypeCPUOutput = -1,                     // CPU accessible memory outputted by non-CPU execution provider, i.e. CUDA_PINNED
-  ONNXRuntimeMemTypeCPU = ONNXRuntimeMemTypeCPUOutput,  // temporary CPU accessible memory allocated by non-CPU execution provider, i.e. CUDA_PINNED
-  ONNXRuntimeMemTypeDefault = 0,                        // the default allocator for execution provider
-} ONNXRuntimeMemType;
-
-typedef struct ONNXRuntimeAllocatorInfo {
-  const char* name;
-  int id;
-  enum ONNXRuntimeMemType mem_type;
-  enum ONNXRuntimeAllocatorType type;
-} ONNXRuntimeAllocatorInfo;
+#include "core/framework/error_code.h"
+#include "core/framework/allocator_info.h"
 
 typedef struct ONNXRuntimeAllocatorInteface {
   void* (*Alloc)(void* this_, size_t size);

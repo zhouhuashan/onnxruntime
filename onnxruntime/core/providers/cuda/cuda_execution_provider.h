@@ -25,7 +25,7 @@ class CUDAExecutionProvider : public IExecutionProvider {
   explicit CUDAExecutionProvider(const CUDAExecutionProviderInfo& info);
   virtual ~CUDAExecutionProvider();
 
-  virtual AllocatorPtr GetAllocator(MemType mem_type = kMemTypeDefault) const override;
+  virtual AllocatorPtr GetAllocator(ONNXRuntimeMemType mem_type = ONNXRuntimeMemTypeDefault) const override;
 
   std::string Type() const override {
     return onnxruntime::kCudaExecutionProvider;
@@ -81,7 +81,7 @@ class CUDAExecutionProvider : public IExecutionProvider {
     if (count_or_bytes == 0)
       return nullptr;
 
-    return IAllocator::MakeUniquePtr<T>(GetAllocator(kMemTypeDefault), count_or_bytes);
+    return IAllocator::MakeUniquePtr<T>(GetAllocator(ONNXRuntimeMemTypeDefault), count_or_bytes);
   }
 
   virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const override;

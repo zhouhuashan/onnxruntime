@@ -361,7 +361,7 @@ class PlannerImpl {
       auto exec_provider = execution_providers_.Get(graph_, step.node_index);
       ONNXRUNTIME_ENFORCE(exec_provider);
 
-      auto& default_allocator_info = exec_provider->GetAllocator(kMemTypeDefault)->Info();
+      auto& default_allocator_info = exec_provider->GetAllocator(ONNXRuntimeMemTypeDefault)->Info();
       auto& mem_type_allocated_args = p_kernelDef->OutputMemoryType();
       auto& outputs = pnode->OutputDefs();
       auto num_outputs = outputs.size();
@@ -421,9 +421,9 @@ class PlannerImpl {
             auto p_opkernelDef = utils::GetKernelDef(kernel_registry_, node);
             if (MemTypeOnCpuExplicitly(p_opkernelDef->InputMemoryType(), index))
               // weights are not output from any node, so it's OK to put its location on CPU provider
-              thisplan.location = execution_providers_.Get(onnxruntime::kCpuExecutionProvider)->GetAllocator(kMemTypeDefault)->Info();
+              thisplan.location = execution_providers_.Get(onnxruntime::kCpuExecutionProvider)->GetAllocator(ONNXRuntimeMemTypeDefault)->Info();
             else
-              thisplan.location = p_provider->GetAllocator(kMemTypeDefault)->Info();
+              thisplan.location = p_provider->GetAllocator(ONNXRuntimeMemTypeDefault)->Info();
 
             return Status::OK();
           });

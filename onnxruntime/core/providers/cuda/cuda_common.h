@@ -46,7 +46,7 @@ class CudaKernel : public OpKernel {
 
   template <typename T>
   inline IAllocatorUniquePtr<T> AllocateBufferOnCPUPinned(size_t count_or_bytes) const {
-    return IAllocator::MakeUniquePtr<T>(provider_->GetAllocator(kMemTypeCPU), count_or_bytes);
+    return IAllocator::MakeUniquePtr<T>(provider_->GetAllocator(ONNXRuntimeMemTypeCPU), count_or_bytes);
   }
 
   template <typename T>

@@ -21,7 +21,7 @@ ONNX_OPERATOR_KERNEL_EX(
     1,
     kCudaExecutionProvider,
     KernelDefBuilder()
-        .InputMemoryType<kMemTypeCPUInput>(0)
+        .InputMemoryType<ONNXRuntimeMemTypeCPUInput>(0)
         .ExecQueueId(kCudaStreamCopyIn)
         .TypeConstraint("T", DataTypeImpl::AllFixedSizeTensorTypes()),
     Memcpy);
@@ -32,7 +32,7 @@ ONNX_OPERATOR_KERNEL_EX(
     1,
     kCudaExecutionProvider,
     KernelDefBuilder()
-        .OutputMemoryType<kMemTypeCPUOutput>(0)
+        .OutputMemoryType<ONNXRuntimeMemTypeCPUOutput>(0)
         .ExecQueueId(kCudaStreamCopyOut)
         .TypeConstraint("T", DataTypeImpl::AllFixedSizeTensorTypes()),
     Memcpy);
@@ -61,17 +61,17 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
   CUDA_CALL_THROW(cudaStreamCreateWithFlags(&streams_[kCudaStreamCopyIn], cudaStreamNonBlocking));
   CUDA_CALL_THROW(cudaStreamCreateWithFlags(&streams_[kCudaStreamCopyOut], cudaStreamNonBlocking));
 
-  DeviceAllocatorRegistrationInfo default_allocator_info({kMemTypeDefault,
+  DeviceAllocatorRegistrationInfo default_allocator_info({ONNXRuntimeMemTypeDefault,
                                                           [](int id) { return std::make_unique<CUDAAllocator>(id); }, std::numeric_limits<size_t>::max()});
-  InsertAllocator(kMemTypeDefault, CreateAllocator(default_allocator_info, device_id_));
+  InsertAllocator(ONNXRuntimeMemTypeDefault, CreateAllocator(default_allocator_info, device_id_));
 
-  DeviceAllocatorRegistrationInfo pinned_allocator_info({kMemTypeCPUOutput,
+  DeviceAllocatorRegistrationInfo pinned_allocator_info({ONNXRuntimeMemTypeCPUOutput,
                                                          [](int) { return std::make_unique<CUDAPinnedAllocator>(); }, std::numeric_limits<size_t>::max()});
-  InsertAllocator(kMemTypeCPUOutput, CreateAllocator(pinned_allocator_info, device_id_));
+  InsertAllocator(ONNXRuntimeMemTypeCPUOutput, CreateAllocator(pinned_allocator_info, device_id_));
 }
 
 CUDAExecutionProvider::~CUDAExecutionProvider() {
-  auto cpu_alloc = GetAllocator(kMemTypeCPU);
+  auto cpu_alloc = GetAllocator(ONNXRuntimeMemTypeCPU);
   std::lock_guard<std::mutex> lock(deferred_release_cpu_ptr_mutex_);
   auto it = deferred_release_cpu_ptr_.begin();
   while (it != deferred_release_cpu_ptr_.end()) {
@@ -104,16 +104,16 @@ void CUDAExecutionProvider::ReleasePerThreadStuffs() const {
   }
 }
 
-AllocatorPtr CUDAExecutionProvider::GetAllocator(MemType mem_type) const {
+AllocatorPtr CUDAExecutionProvider::GetAllocator(ONNXRuntimeMemType mem_type) const {
   // Pinned memory allocator is shared between threads, but CUDA memory allocator is per-thread or it may cause result changes
   // A hypothesis is that arena allocator is not aligned with CUDA output cache, and data from different kernel writes may
   // cause cacheline to contain dirty data.
-  if (mem_type == kMemTypeDefault) {
+  if (mem_type == ONNXRuntimeMemTypeDefault) {
     if (!per_thread_default_allocator_) {
       std::lock_guard<std::mutex> lock(default_allocator_pool_mutex_);
       if (default_allocator_pool_.empty()) {
         DeviceAllocatorRegistrationInfo default_allocator_info(
-            {kMemTypeDefault,
+            {ONNXRuntimeMemTypeDefault,
              [](int id) { return std::make_unique<CUDAAllocator>(id); }, std::numeric_limits<size_t>::max()});
         per_thread_default_allocator_ = CreateAllocator(default_allocator_info, device_id_);
       } else {
@@ -146,7 +146,7 @@ void CUDAExecutionProvider::AddDeferredReleaseCPUPtr(void* p) {
 }
 
 Status CUDAExecutionProvider::OnRunStart() {
-  auto cpu_alloc = GetAllocator(kMemTypeCPU);
+  auto cpu_alloc = GetAllocator(ONNXRuntimeMemTypeCPU);
   // check if cudaEvents has passed for deferred release
   // note that we need to take a mutex in case of multi-threaded Run()
   std::lock_guard<std::mutex> lock(deferred_release_cpu_ptr_mutex_);

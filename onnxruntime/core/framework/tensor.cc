@@ -9,7 +9,7 @@ namespace onnxruntime {
 Tensor::Tensor(MLDataType p_type,
                const TensorShape& shape,
                BufferNakedPtr p_data,
-               const AllocatorInfo& alloc,
+               const ONNXRuntimeAllocatorInfo& alloc,
                AllocatorPtr deleter,
                const int64_t offset)
     : alloc_info_(alloc) {
@@ -19,7 +19,7 @@ Tensor::Tensor(MLDataType p_type,
 void Tensor::Init(MLDataType p_type,
                   const TensorShape& shape,
                   void* p_raw_data,
-                  const AllocatorInfo& alloc,
+                  const ONNXRuntimeAllocatorInfo& alloc,
                   AllocatorPtr deleter,
                   const int64_t offset) {
   dtype_ = p_type;

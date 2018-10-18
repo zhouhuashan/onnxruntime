@@ -10,6 +10,7 @@
 #include <iostream>
 #include <atomic>
 #include <gtest/gtest.h>
+#include "test_allocator.h"
 
 using namespace onnxruntime;
 
@@ -53,50 +54,6 @@ void RunSession(ONNXRuntimeAllocator* env, ONNXSession* session_object,
   }
 }
 
-ONNXRUNTIME_ALLOCATOR_IMPL_BEGIN(MockedONNXRuntimeAllocator)
-private:
-std::atomic<size_t> memory_inuse;
-constexpr static ONNXRuntimeAllocatorInfo cpuAllocatorInfo{"Cpu", 0, ONNXRuntimeMemTypeDefault, ONNXRuntimeMemDeviceAllocator};
-
-public:
-ONNXRuntimeAllocatorInteface** Upcast() {
-  return const_cast<ONNXRuntimeAllocatorInteface**>(&vtable_);
-}
-MockedONNXRuntimeAllocator() : memory_inuse(0) {}
-void* Alloc(size_t size) {
-  constexpr size_t extra_len = sizeof(size_t);
-  memory_inuse.fetch_add(size += extra_len);
-  void* p = ::malloc(size);
-  *(size_t*)p = size;
-  return (char*)p + extra_len;
-}
-void Free(void* p) {
-  constexpr size_t extra_len = sizeof(size_t);
-  if (!p) return;
-  p = (char*)p - extra_len;
-  size_t len = *(size_t*)p;
-  memory_inuse.fetch_sub(len);
-  return ::free(p);
-}
-const ONNXRuntimeAllocatorInfo* Info() {
-  return &cpuAllocatorInfo;
-}
-
-void LeakCheck() {
-  ASSERT_EQ(0, memory_inuse.load());
-}
-
-//The method returns the new reference count.
-uint32_t AddRef() {
-  return 0;
-}
-uint32_t Release() {
-  return 0;
-}
-ONNXRUNTIME_ALLOCATOR_IMPL_END
-
-constexpr ONNXRuntimeAllocatorInfo MockedONNXRuntimeAllocator::cpuAllocatorInfo;
-constexpr ONNXRuntimeAllocatorInteface MockedONNXRuntimeAllocator::table_;
 
 template <typename T>
 void TestInference(ONNXEnv* env, const T& model_uri,
@@ -221,10 +178,12 @@ TEST_F(CApiTest, create_tensor) {
 TEST_F(CApiTest, create_tensor_with_data) {
   float values[] = {3.0, 1.0, 2, 0};
   constexpr size_t values_length = sizeof(values) / sizeof(values[0]);
-  constexpr static ONNXRuntimeAllocatorInfo info{"Cpu", 0, ONNXRuntimeMemTypeDefault, ONNXRuntimeMemDeviceAllocator};
+  ONNXRuntimeAllocatorInfo* info;
+  ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeCreateAllocatorInfo("Cpu", ONNXRuntimeDeviceAllocator, 0, ONNXRuntimeMemTypeDefault, &info));
   std::vector<size_t> dims = {3};
   std::unique_ptr<ONNXValue, decltype(&ReleaseONNXValue)> tensor(
-      ONNXRuntimeCreateTensorWithDataAsONNXValue(&info, values, values_length * sizeof(float), dims, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT), ReleaseONNXValue);
+      ONNXRuntimeCreateTensorWithDataAsONNXValue(info, values, values_length * sizeof(float), dims, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT), ReleaseONNXValue);
+  ReleaseONNXRuntimeAllocatorInfo(info);
   void* new_pointer;
   ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeGetTensorMutableData(tensor.get(), &new_pointer));
   ASSERT_EQ(new_pointer, values);

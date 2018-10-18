@@ -82,7 +82,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
 
   TensorShape shape(std::vector<int64_t>{2, 3});
   status = frame.AllocateTensorWithSelfOwnBuffer(start_index, DataTypeImpl::GetType<float>(),
-                                                 execution_providers.Get(xp_typ)->GetAllocator(kMemTypeDefault)->Info(), shape);
+                                                 execution_providers.Get(xp_typ)->GetAllocator(ONNXRuntimeMemTypeDefault)->Info(), shape);
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   MLValue* p_ml_value = frame.GetMutableNodeInputOrOutputMLValue(0);
@@ -117,7 +117,7 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
 
   graph.AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
 
-  auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
+  auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator(ONNXRuntimeMemTypeDefault);
   auto element_type = DataTypeImpl::GetType<float>();
   TensorShape shape({3, 2});
   void* buffer = cpu_allocator->Alloc(element_type->Size() * shape.Size());
@@ -207,7 +207,7 @@ TEST(ExecutionFrameTest, MemPatternTest) {
   mlvalue_name_idx_map.Add("T2");
   mlvalue_name_idx_map.Add("T3");
 
-  auto cpu_allocator = execution_providers.Get(xp_type)->GetAllocator(kMemTypeDefault);
+  auto cpu_allocator = execution_providers.Get(xp_type)->GetAllocator(ONNXRuntimeMemTypeDefault);
 
   MLValue v1, v2, v3;
   CreateMLValue<float>(cpu_allocator,

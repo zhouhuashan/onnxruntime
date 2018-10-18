@@ -16,7 +16,7 @@ namespace cuda {
       T,                                                          \
       kCudaExecutionProvider,                                     \
       KernelDefBuilder()                                          \
-          .InputMemoryType<kMemTypeCPUInput>(1)                   \
+          .InputMemoryType<ONNXRuntimeMemTypeCPUInput>(1)                   \
           .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
       Tile<T>);
 

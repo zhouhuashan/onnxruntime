@@ -9,11 +9,11 @@
 namespace onnxruntime {
 namespace test {
 TEST(AllocatorTest, CPUAllocatorTest) {
-  auto cpu_arena = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
+  auto cpu_arena = TestCPUExecutionProvider()->GetAllocator(ONNXRuntimeMemTypeDefault);
 
   ASSERT_STREQ(cpu_arena->Info().name, CPU);
   EXPECT_EQ(cpu_arena->Info().id, 0);
-  EXPECT_EQ(cpu_arena->Info().type, AllocatorType::kArenaAllocator);
+  EXPECT_EQ(cpu_arena->Info().type, ONNXRuntimeAllocatorType::ONNXRuntimeArenaAllocator);
 
   size_t size = 1024;
   auto bytes = cpu_arena->Alloc(size);
@@ -48,8 +48,8 @@ class TestAllocator : public IAllocator {
     delete p_sizet;
   }
 
-  virtual const AllocatorInfo& Info() const override {
-    static AllocatorInfo info("test", kDeviceAllocator, 0);
+  virtual const ONNXRuntimeAllocatorInfo& Info() const override {
+    static ONNXRuntimeAllocatorInfo info("test", ONNXRuntimeDeviceAllocator, 0);
     return info;
   }
 

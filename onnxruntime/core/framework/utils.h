@@ -29,9 +29,9 @@ const KernelDef* GetKernelDef(const onnxruntime::Graph& graph,
                               const KernelRegistryManager& kernel_registry,
                               const onnxruntime::NodeIndex node_id);
 
-AllocatorPtr GetAllocator(const ExecutionProviders& exec_providers, const AllocatorInfo& allocator_info);
+AllocatorPtr GetAllocator(const ExecutionProviders& exec_providers, const ONNXRuntimeAllocatorInfo& allocator_info);
 
 AllocatorPtr GetAllocator(const SessionState& session_state,
-                          const AllocatorInfo& allocator_info);
+                          const ONNXRuntimeAllocatorInfo& allocator_info);
 }  // namespace utils
 }  // namespace onnxruntime

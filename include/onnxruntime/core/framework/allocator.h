@@ -13,36 +13,16 @@
 #include "core/common/exceptions.h"
 #include "core/common/status.h"
 #include "core/framework/fence.h"
+#include "core/framework/allocator_info.h"
 
-namespace onnxruntime {
-constexpr const char* CPU = "Cpu";
-
-// forward declaration
-class SessionState;
-
-enum AllocatorType {  // TODO use enum class
-  kDeviceAllocator = 0,
-  kArenaAllocator = 1
-};
-
-/**
-   memory types for allocator, exec provider specific types should be extended in each provider
-*/
-enum MemType : int {                // TODO use enum class
-  kMemTypeCPUInput = -2,            // Any CPU memory used by non-CPU execution provider
-  kMemTypeCPUOutput = -1,           // CPU accessible memory outputted by non-CPU execution provider, i.e. CUDA_PINNED
-  kMemTypeCPU = kMemTypeCPUOutput,  // temporary CPU accessible memory allocated by non-CPU execution provider, i.e. CUDA_PINNED
-  kMemTypeDefault = 0,              // the default allocator for execution provider
-};
-
-struct AllocatorInfo {
+struct ONNXRuntimeAllocatorInfo {
   // use string for name, so we could have customized allocator in execution provider.
   const char* name;
   int id;
-  MemType mem_type;
-  AllocatorType type;
+  ONNXRuntimeMemType mem_type;
+  ONNXRuntimeAllocatorType type;
 
-  constexpr AllocatorInfo(const char* name1, AllocatorType type, int id1 = 0, MemType mem_type1 = kMemTypeDefault)
+  constexpr ONNXRuntimeAllocatorInfo(const char* name1, ONNXRuntimeAllocatorType type, int id1 = 0, ONNXRuntimeMemType mem_type1 = ONNXRuntimeMemTypeDefault)
 #if (defined(__GNUC__) || defined(__clang__))
       __attribute__((nonnull))
 #endif
@@ -52,12 +32,12 @@ struct AllocatorInfo {
         type(type) {
   }
 
-  inline bool operator==(const AllocatorInfo& other) const {
+  inline bool operator==(const ONNXRuntimeAllocatorInfo& other) const {
     return mem_type == other.mem_type && type == other.type && id == other.id && strcmp(name, other.name) == 0;
   }
 
-  // To make AllocatorInfo become a valid key in std map
-  inline bool operator<(const AllocatorInfo& other) const {
+  // To make ONNXRuntimeAllocatorInfo become a valid key in std map
+  inline bool operator<(const ONNXRuntimeAllocatorInfo& other) const {
     if (type != other.type)
       return type < other.type;
     if (mem_type != other.mem_type)
@@ -70,7 +50,7 @@ struct AllocatorInfo {
 
   inline std::string ToString() const {
     std::ostringstream ostr;
-    ostr << "AllocatorInfo: ["
+    ostr << "ONNXRuntimeAllocatorInfo: ["
          << " name:" << name
          << " id:" << id
          << " mem_type:" << mem_type
@@ -80,7 +60,13 @@ struct AllocatorInfo {
   }
 };
 
-std::ostream& operator<<(std::ostream& out, const AllocatorInfo& info);
+std::ostream& operator<<(std::ostream& out, const ONNXRuntimeAllocatorInfo& info);
+
+namespace onnxruntime {
+constexpr const char* CPU = "Cpu";
+
+// forward declaration
+class SessionState;
 
 template <typename T>
 using IAllocatorUniquePtr = std::unique_ptr<T, std::function<void(T*)>>;
@@ -90,7 +76,7 @@ class IAllocator {
   virtual ~IAllocator() = default;
   virtual void* Alloc(size_t size) = 0;
   virtual void Free(void* p) = 0;
-  virtual const AllocatorInfo& Info() const = 0;
+  virtual const ONNXRuntimeAllocatorInfo& Info() const = 0;
 
   /**
      optional CreateFence interface, as provider like DML has its own fence
@@ -132,7 +118,7 @@ class IDeviceAllocator : public IAllocator {
   ~IDeviceAllocator() override = default;
   void* Alloc(size_t size) override = 0;
   void Free(void* p) override = 0;
-  const AllocatorInfo& Info() const override = 0;
+  const ONNXRuntimeAllocatorInfo& Info() const override = 0;
   virtual bool AllowsArena() const { return true; }
 };
 
@@ -140,7 +126,7 @@ class CPUAllocator : public IDeviceAllocator {
  public:
   void* Alloc(size_t size) override;
   void Free(void* p) override;
-  const AllocatorInfo& Info() const override;
+  const ONNXRuntimeAllocatorInfo& Info() const override;
 };
 
 using AllocatorPtr = std::shared_ptr<IAllocator>;

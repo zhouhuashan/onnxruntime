@@ -10,7 +10,7 @@ namespace onnxruntime {
 
 namespace nuphar {
 
-static void RegisterNupharKernels(std::function<void(KernelCreateInfo&&)> fn) {
+static void RegisterNupharKernels(std::function<void(KernelCreateInfo&&)>) {
 }
 
 }  // namespace nuphar

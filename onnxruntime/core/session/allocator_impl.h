@@ -20,8 +20,8 @@ class AllocatorWrapper : public IAllocator {
   void Free(void* p) override {
     return (*impl_)->Free(impl_, p);
   }
-  const AllocatorInfo& Info() const override {
-    return *(AllocatorInfo*)(*impl_)->Info(impl_);
+  const ONNXRuntimeAllocatorInfo& Info() const override {
+    return *(ONNXRuntimeAllocatorInfo*)(*impl_)->Info(impl_);
   }
 
  private:

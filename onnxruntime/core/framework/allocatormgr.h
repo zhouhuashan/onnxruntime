@@ -11,7 +11,7 @@ namespace onnxruntime {
 using DeviceAllocatorFactory = std::function<std::unique_ptr<IDeviceAllocator>(int)>;
 
 struct DeviceAllocatorRegistrationInfo {
-  MemType mem_type;
+  ONNXRuntimeMemType mem_type;
   DeviceAllocatorFactory factory;
   size_t max_mem;
 };
@@ -21,7 +21,7 @@ AllocatorPtr CreateAllocator(DeviceAllocatorRegistrationInfo info, int device_id
 class DeviceAllocatorRegistry {
  public:
   void RegisterDeviceAllocator(std::string&& name, DeviceAllocatorFactory factory, size_t max_mem,
-                               MemType mem_type = kMemTypeDefault) {
+                               ONNXRuntimeMemType mem_type = ONNXRuntimeMemTypeDefault) {
     DeviceAllocatorRegistrationInfo info({mem_type, factory, max_mem});
     device_allocator_registrations_.emplace(std::move(name), std::move(info));
   }

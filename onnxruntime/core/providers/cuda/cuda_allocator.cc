@@ -38,7 +38,7 @@ void CUDAAllocator::Free(void* p) {
   cudaFree(p);  // do not throw error since it's OK for cudaFree to fail during shutdown
 }
 
-const AllocatorInfo& CUDAAllocator::Info() const {
+const ONNXRuntimeAllocatorInfo& CUDAAllocator::Info() const {
   return info_;
 }
 
@@ -58,8 +58,8 @@ void CUDAPinnedAllocator::Free(void* p) {
   CUDA_CALL_THROW(cudaFreeHost(p));
 }
 
-const AllocatorInfo& CUDAPinnedAllocator::Info() const {
-  static AllocatorInfo cuda_allocator_info(CUDA_PINNED, AllocatorType::kDeviceAllocator, 0, kMemTypeCPUOutput);
+const ONNXRuntimeAllocatorInfo& CUDAPinnedAllocator::Info() const {
+  static constexpr ONNXRuntimeAllocatorInfo cuda_allocator_info(CUDA_PINNED, ONNXRuntimeDeviceAllocator, 0, ONNXRuntimeMemTypeCPUOutput);
   return cuda_allocator_info;
 }
 

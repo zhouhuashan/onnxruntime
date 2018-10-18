@@ -46,7 +46,7 @@ class OpKernel {
     ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
-  const AllocatorInfo& Allocator(MemType mem_type) const {
+  const ONNXRuntimeAllocatorInfo& Allocator(ONNXRuntimeMemType mem_type) const {
     return op_kernel_info_.GetAllocatorInfo(mem_type);
   }
 

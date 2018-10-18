@@ -246,7 +246,7 @@ class InferenceSession::Impl {
   struct SubgraphMemory {
     std::unique_ptr<Graph> graph;
     std::unique_ptr<SessionState> session_state;
-    std::map<AllocatorInfo, BufferUniquePtr> weights_buffers;
+    std::map<ONNXRuntimeAllocatorInfo, BufferUniquePtr> weights_buffers;
   };
 
   /// iterate nodes in graph looking for ones with graph attribute/s
@@ -634,7 +634,7 @@ class InferenceSession::Impl {
     if (!p_provider)
       return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "invalid provider_type");
 
-    auto allocator = p_provider->GetAllocator(kMemTypeDefault);
+    auto allocator = p_provider->GetAllocator(ONNXRuntimeMemTypeDefault);
     if (!allocator)
       return Status(common::ONNXRUNTIME, common::FAIL, "invalid allocator");
 
@@ -1063,7 +1063,7 @@ class InferenceSession::Impl {
   bool is_model_loaded_ = false;      // GUARDED_BY(session_mutex_)
   bool is_inited_ = false;            // GUARDED_BY(session_mutex_)
 
-  std::map<AllocatorInfo, BufferUniquePtr> weights_buffers_;
+  std::map<ONNXRuntimeAllocatorInfo, BufferUniquePtr> weights_buffers_;
   InsertCastTransformer insert_cast_transformer_;
 
   // memory allocations for any subgraphs

@@ -104,7 +104,7 @@ class MLValueTensorSlicer {
 
     const void* tensor_data_raw_;
     MLDataType tensor_data_type_;
-    const AllocatorInfo* tensor_location_;
+    const ONNXRuntimeAllocatorInfo* tensor_location_;
 
     int64_t sequence_length_;
     TensorShape per_iteration_shape_;

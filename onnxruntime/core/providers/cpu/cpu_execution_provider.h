@@ -16,18 +16,18 @@ using FuseRuleFn = std::function<void(const onnxruntime::Graph&, std::vector<std
 class CPUExecutionProvider : public IExecutionProvider {
  public:
   explicit CPUExecutionProvider(const CPUExecutionProviderInfo& info) {
-    DeviceAllocatorRegistrationInfo device_info({kMemTypeDefault, [](int) { return std::make_unique<CPUAllocator>(); }, std::numeric_limits<size_t>::max()});
+    DeviceAllocatorRegistrationInfo device_info({ONNXRuntimeMemTypeDefault, [](int) { return std::make_unique<CPUAllocator>(); }, std::numeric_limits<size_t>::max()});
 #ifdef USE_JEMALLOC
     ONNXRUNTIME_UNUSED_PARAMETER(info);
     //JEMalloc already has memory pool, so just use device allocator.
-    InsertAllocator(kMemTypeDefault,
+    InsertAllocator(ONNXRuntimeMemTypeDefault,
                     std::shared_ptr<IArenaAllocator>(
                         std::make_unique<DummyArena>(std::move(device_info.factory(0)))));
 #else
     if (info.create_arena)
-      InsertAllocator(kMemTypeDefault, CreateAllocator(device_info));
+      InsertAllocator(ONNXRuntimeMemTypeDefault, CreateAllocator(device_info));
     else
-      InsertAllocator(kMemTypeDefault,
+      InsertAllocator(ONNXRuntimeMemTypeDefault,
                       std::shared_ptr<IArenaAllocator>(
                           std::make_unique<DummyArena>(device_info.factory(0))));
 #endif

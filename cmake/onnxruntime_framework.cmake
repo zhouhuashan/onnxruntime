@@ -13,6 +13,7 @@ add_library(onnxruntime_framework ${onnxruntime_framework_srcs})
 
 #TODO: remove ${eigen_INCLUDE_DIRS} from here
 target_include_directories(onnxruntime_framework PRIVATE ${ONNXRUNTIME_ROOT} ${eigen_INCLUDE_DIRS})
+target_compile_definitions(onnxruntime_framework PRIVATE ONNX_RUNTIME_EXPORTS=1 ONNX_RUNTIME_BUILD_DLL=1)
 onnxruntime_add_include_to_target(onnxruntime_framework onnx protobuf::libprotobuf)
 set_target_properties(onnxruntime_framework PROPERTIES FOLDER "Lotus")
 # need onnx to build to create headers that this project includes

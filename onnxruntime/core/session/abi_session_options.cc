@@ -19,12 +19,12 @@ uint32_t ONNXRUNTIME_API_STATUSCALL AddRefCuda(void* this_) {
   return 0;
 }
 
-constexpr ONNXObject cuda_cls = {
+constexpr ONNXObject mkl_cls = {
     AddRefCuda,
     ReleaseCuda,
 };
 
-ONNXRuntimeSessionOptions::ONNXRuntimeSessionOptions() : cls(&cuda_cls), ref_count(1) {
+ONNXRuntimeSessionOptions::ONNXRuntimeSessionOptions() : cls(&mkl_cls), ref_count(1) {
 }
 
 ONNXRuntimeSessionOptions::~ONNXRuntimeSessionOptions() {
@@ -37,7 +37,7 @@ ONNXRuntimeSessionOptions& ONNXRuntimeSessionOptions::operator=(const ONNXRuntim
   throw std::runtime_error("not implemented");
 }
 ONNXRuntimeSessionOptions::ONNXRuntimeSessionOptions(const ONNXRuntimeSessionOptions& other)
-    : cls(&cuda_cls), ref_count(1), value(other.value), custom_op_paths(other.custom_op_paths), provider_factories(other.provider_factories) {
+    : cls(&mkl_cls), ref_count(1), value(other.value), custom_op_paths(other.custom_op_paths), provider_factories(other.provider_factories) {
   for (ONNXRuntimeProviderFactoryPtr* p : other.provider_factories) {
     ONNXRuntimeAddRefToObject(p);
   }

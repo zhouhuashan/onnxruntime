@@ -319,7 +319,7 @@ class Initializer final {
 
   inline void scale_by_axis(const Initializer& other, int axis) {
     int64_t num = 1;
-    for (int k = axis; k < dims_.size(); k++) {
+    for (size_t k = axis; k < dims_.size(); k++) {
       num *= dims_[k];
     }
 
