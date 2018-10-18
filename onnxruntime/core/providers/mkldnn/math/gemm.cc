@@ -89,7 +89,7 @@ Status Gemm<float>::Compute(OpKernelContext* ctx) const {
   if (status == mkldnn_success) {
     return Status::OK();
   } else {
-    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "mkldnn_sgemm failed with status: " + status);
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "mkldnn_sgemm failed with status: ", status);
   }
 }
 

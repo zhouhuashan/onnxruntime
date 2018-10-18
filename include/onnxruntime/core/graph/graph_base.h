@@ -188,7 +188,13 @@ class Node {
     return MutableDefinitions().input_defs;
   }
 
-  using NodeConstIterator = std::set<const Node*>::const_iterator;
+  struct IndexCompare {
+    bool operator()(const Node* lhs, const Node* rhs) {
+      return lhs->Index() < rhs->Index();
+    }
+  };
+  typedef std::set<const Node*, IndexCompare> NodeSet;
+  using NodeConstIterator = NodeSet::const_iterator;
   using EdgeConstIterator = std::set<EdgeEnd*>::const_iterator;
 
   // Functions defined to traverse a Graph as below.
@@ -303,18 +309,13 @@ class Node {
     // Node output edges.
     std::set<EdgeEnd*> output_edges;
 
-    struct IndexCompare {
-      bool operator()(const Node* lhs, const Node* rhs) {
-        return lhs->Index() < rhs->Index();
-      }
-    };
     // Node input nodes, besides input nodes mentioned in <inputs_> above,
     // it also contains all control input nodes;
-    std::set<const Node*, IndexCompare> input_nodes;
+    NodeSet input_nodes;
     // Control input nodes' names.
     std::set<std::string> control_inputs;
     // Node's output nodes.
-    std::set<const Node*> output_nodes;
+    NodeSet output_nodes;
 
    private:
     ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(Relationships);

@@ -105,7 +105,7 @@ void Gemm<float, CPUMathUtil>(
                              A, &lda,
                              &beta, C, &N_);
   if (status != mkldnn_success) {
-    ONNXRUNTIME_THROW("mkldnn_sgemm failed with status: " + status);
+    ONNXRUNTIME_THROW("mkldnn_sgemm failed with status: ", status);
   }
 #elif defined(USE_MLAS)
   int lda = (int)((TransA == CblasNoTrans) ? K : M);
@@ -178,7 +178,7 @@ void GemmEx<float, CPUMathUtil>(
                              A, &lda,
                              &beta, C, &ldc);
   if (status != mkldnn_success) {
-    ONNXRUNTIME_THROW("mkldnn_sgemm failed with status: " + status);
+    ONNXRUNTIME_THROW("mkldnn_sgemm failed with status: ", status);
   }
 #elif defined(USE_MLAS)
   MlasSgemm(TransA, TransB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
