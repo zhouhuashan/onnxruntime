@@ -91,6 +91,9 @@ else()
   endif()
 endif()
 
+set(ENABLE_DATE_TESTING  OFF CACHE BOOL "" FORCE)
+set(USE_SYSTEM_TZ_DB  ON CACHE BOOL "" FORCE)
+
 if(onnxruntime_BUILD_BENCHMARKS)
   if(NOT TARGET benchmark)
     # We will not need to test benchmark lib itself.
@@ -167,9 +170,13 @@ set(REPO_ROOT ${PROJECT_SOURCE_DIR}/..)
 set(ONNXRUNTIME_ROOT ${PROJECT_SOURCE_DIR}/../onnxruntime)
 set(ONNXRUNTIME_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../include/onnxruntime)
 
-include(date)
+add_subdirectory(external/date EXCLUDE_FROM_ALL)
+add_subdirectory(external/gsl EXCLUDE_FROM_ALL)
+add_library(date ALIAS tz)
+add_library(gsl ALIAS GSL)
 
-include(gsl)
+set(date_INCLUDE_DIR $<TARGET_PROPERTY:tz,INTERFACE_INCLUDE_DIRECTORIES>)
+
 # bounds checking behavior.
 # throw instead of calling terminate if there's a bounds checking violation.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGSL_THROW_ON_CONTRACT_VIOLATION")
@@ -332,8 +339,8 @@ if (onnxruntime_USE_JEMALLOC)
 endif()
 
 include_directories(
-    ${ONNXRUNTIME_INCLUDE_DIR}
-    ${gsl_INCLUDE_DIR}
+  ${ONNXRUNTIME_INCLUDE_DIR}
+  $<TARGET_PROPERTY:GSL,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
 if (onnxruntime_USE_MKLDNN)
