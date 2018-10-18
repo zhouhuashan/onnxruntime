@@ -16,7 +16,7 @@ else
   echo "Downloading test data from azure"
   #TODO: check if we have a local cache
   mkdir -p /data/onnx
-  azcopy --recursive --source:https://lotus.blob.core.windows.net/onnx-model-zoo-20180726 --destination:/data/onnx/models  --source-key:$AZURE_BLOB_KEY
+  azcopy --recursive --source:https://lotus.blob.core.windows.net/onnx-model-zoo-20181018 --destination:/data/onnx/models  --source-key:$AZURE_BLOB_KEY
 fi
 
 for D in /data/onnx/*; do
