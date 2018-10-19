@@ -13,6 +13,7 @@
 
 #include "gsl/pointers"
 #include "core/graph/function.h"
+#include "core/graph/function_impl.h"
 #include "core/graph/graph.h"
 #include "core/graph/indexed_sub_graph.h"
 #include "core/graph/op.h"
@@ -1079,10 +1080,14 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   return Status::OK();
 }
 
-Status Graph::VerifyNodeAndOpMatch(const std::unordered_map<std::string, Node*>& output_args) {
+Status Graph::VerifyNodeAndOpMatch(const std::unordered_set<std::string>& inputs_and_initializers) {
   ONNXRUNTIME_RETURN_IF_ERROR(TypeCheckInputsAndInitializers());
-
-  for (auto nodeIndex : NodesInTopologicalOrder()) {
+  // Initialize list of topologically avaliable tensor names
+  LexicalScopeContext lsc;
+  for (auto& initializer_input_name : inputs_and_initializers) {
+    lsc.output_names.insert(initializer_input_name);
+  }
+  for (auto& nodeIndex : NodesInTopologicalOrder()) {
     if (IsSourceNode(nodeIndex) || IsSinkNode(nodeIndex)) {
       continue;
     }
@@ -1092,11 +1097,6 @@ Status Graph::VerifyNodeAndOpMatch(const std::unordered_map<std::string, Node*>&
     ctx.set_ir_version(gsl::narrow_cast<int>(IrVersion()));
     ctx.set_opset_imports(DomainToVersionMap());
     ctx.set_schema_registry(schema_registry_.get());
-    LexicalScopeContext lsc;
-    for (auto& kv : output_args) {
-      GSL_SUPPRESS(es .84)
-      lsc.output_names.insert(kv.first);
-    }
     NodeProto node_proto;
     node.ToProto(node_proto);
     auto& node_name = node.Name();
@@ -1105,11 +1105,26 @@ Status Graph::VerifyNodeAndOpMatch(const std::unordered_map<std::string, Node*>&
     if (!node.Op()) {
       try {
         checker::check_node(node_proto, ctx, lsc);
+        // Accumulate output names of the iterated tensor
+        for (auto& output_name : node_proto.output()) {
+          lsc.output_names.insert(output_name);
+        }
       } catch (const std::exception& ex) {
         return Status(ONNXRUNTIME, FAIL, ex.what());
       }
       auto maxInclusiveVersion = DomainToVersionMap().find(domain)->second;
       node.op_ = schema_registry_->GetSchema(node.OpType(), maxInclusiveVersion, node.Domain());
+      if (!node.op_) {
+        ONNX_NAMESPACE::FunctionBuilderRegistry& function_registry =
+          FunctionBuilderRegistry::OnnxInstance();
+        auto onnx_function_proto = function_registry.GetFunction(node.OpType(), maxInclusiveVersion, ONNX_DOMAIN);
+        if (!onnx_function_proto) {
+          return Status(ONNXRUNTIME, FAIL, "Fatal error: " + node.OpType() + " is not a registered function/op");
+        }
+        auto func_ptr = std::make_unique<onnxruntime::FunctionImpl>(*this, node.Index(), onnx_function_proto);
+        function_container_->functions_.push_back(std::move(func_ptr));
+        node.SetFunctionBody(*function_container_->functions_.back());
+      }
     }
 
     ONNXRUNTIME_RETURN_IF_ERROR(node.UpdateInputArgCount());
@@ -1188,7 +1203,7 @@ Status Graph::Resolve(bool no_proto_sync_required) {
   ONNXRUNTIME_RETURN_IF_ERROR(VerifyNoDuplicateName(inputs_and_initializers, output_args, node_name_to_index));
   ONNXRUNTIME_RETURN_IF_ERROR(BuildConnections(output_args, node_name_to_index));
   ONNXRUNTIME_RETURN_IF_ERROR(PerformTopologicalSortAndCheckIsAcyclic());
-  ONNXRUNTIME_RETURN_IF_ERROR(VerifyNodeAndOpMatch(output_args));
+  ONNXRUNTIME_RETURN_IF_ERROR(VerifyNodeAndOpMatch(inputs_and_initializers));
 
   CleanUnusedInitializers();
 

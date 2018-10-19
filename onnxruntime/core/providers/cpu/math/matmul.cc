@@ -9,11 +9,12 @@
 
 namespace onnxruntime {
 
-ONNX_CPU_OPERATOR_KERNEL(
-    MatMul,
-    1,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-    MatMul<float>);
+ONNX_CPU_OPERATOR_VERSIONED_KERNEL(
+  MatMul,
+  1,
+  9,
+  KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+  MatMul<float>);
 
 template <>
 Status MatMul<float>::Compute(OpKernelContext* ctx) const {

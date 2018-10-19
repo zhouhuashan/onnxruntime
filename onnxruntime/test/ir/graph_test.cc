@@ -132,18 +132,18 @@ TEST(GraphTraversalTest, ReverseDFS) {
     }*/
 
   EXPECT_EQ(enter_leave_sequence.size(), 12);
-  EXPECT_EQ("enter:_Graph_Sink", enter_leave_sequence[0]);
-  EXPECT_EQ("enter:node_4", enter_leave_sequence[1]);
-  EXPECT_EQ("enter:node_3", enter_leave_sequence[2]);
-  EXPECT_EQ("enter:node_2", enter_leave_sequence[3]);
-  EXPECT_EQ("enter:_Graph_Source", enter_leave_sequence[4]);
-  EXPECT_EQ("leave:_Graph_Source", enter_leave_sequence[5]);
-  EXPECT_EQ("leave:node_2", enter_leave_sequence[6]);
-  EXPECT_EQ("enter:node_1", enter_leave_sequence[7]);
-  EXPECT_EQ("leave:node_1", enter_leave_sequence[8]);
-  EXPECT_EQ("leave:node_3", enter_leave_sequence[9]);
-  EXPECT_EQ("leave:node_4", enter_leave_sequence[10]);
-  EXPECT_EQ("leave:_Graph_Sink", enter_leave_sequence[11]);
+  EXPECT_EQ("enter:_Graph_Sink", enter_leave_sequence.at(0));
+  EXPECT_EQ("enter:node_4", enter_leave_sequence.at(1));
+  EXPECT_EQ("enter:node_3", enter_leave_sequence.at(2));
+  EXPECT_EQ("enter:node_2", enter_leave_sequence.at(3));
+  EXPECT_EQ("enter:_Graph_Source", enter_leave_sequence.at(4));
+  EXPECT_EQ("leave:_Graph_Source", enter_leave_sequence.at(5));
+  EXPECT_EQ("leave:node_2", enter_leave_sequence.at(6));
+  EXPECT_EQ("enter:node_1", enter_leave_sequence.at(7));
+  EXPECT_EQ("leave:node_1", enter_leave_sequence.at(8));
+  EXPECT_EQ("leave:node_3", enter_leave_sequence.at(9));
+  EXPECT_EQ("leave:node_4", enter_leave_sequence.at(10));
+  EXPECT_EQ("leave:_Graph_Sink", enter_leave_sequence.at(11));
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName) {

@@ -355,7 +355,7 @@ void MeanVarianceNormalizationAcrossChannels(bool across_channels, bool normaliz
   std::vector<float> result(X);
   Normalize(result, mean_stdev, normalize_variance);
 
-  OpTester test("MeanVarianceNormalization");
+  OpTester test("MeanVarianceNormalization", 7);
   test.AddAttribute("across_channels", across_channels ? one : zero);
   test.AddAttribute("normalize_variance", normalize_variance ? one : zero);
   test.AddInput<float>("input", {N, C, H, W}, X);
@@ -422,11 +422,34 @@ void MeanVarianceNormalizationPerChannel(bool across_channels, bool normalize_va
   result.insert(result.end(), N2C1_result.begin(), N2C1_result.end());
   result.insert(result.end(), N2C2_result.begin(), N2C2_result.end());
 
-  OpTester test("MeanVarianceNormalization");
+  OpTester test("MeanVarianceNormalization", 7);
   test.AddAttribute("across_channels", across_channels ? one : zero);
   test.AddAttribute("normalize_variance", normalize_variance ? one : zero);
   test.AddInput<float>("input", {N, C, H, W}, X);
   test.AddOutput<float>("output", {N, C, H, W}, result);
+  test.Run();
+}
+
+void MeanVarianceNormalizationFunctionAcrossChannels(std::vector<int64_t> axes) {
+  const int64_t N = 2, C = 2, H = 2, W = 3;
+
+  std::vector<float> X = { 3.0f, -3.0f, -1.0f,
+    1.0f, 2.0f, -1.0f,
+    -2.0f, -2.0f, -2.0f,
+    4.0f, 1.0f, 4.0f,
+    0.0f, -2.0f, -2.0f,
+    -4.0f, 5.0f, 7.0f,
+    5.0f, -5.0f, -5.0f,
+    3.0f, 4.0f, 4.0f };
+  auto mean_stdev = MeanStdev(X);
+
+  std::vector<float> result(X);
+  Normalize(result, mean_stdev, 1);
+
+  OpTester test("MeanVarianceNormalization", 9);
+  test.AddAttribute("axes", axes);
+  test.AddInput<float>("input", { N, C, H, W }, X);
+  test.AddOutput<float>("output", { N, C, H, W }, result);
   test.Run();
 }
 
@@ -442,6 +465,9 @@ TEST(TensorOpTest, MeanVarianceNormalizationCPUTest) {
 
   // across_channels: false, normalize_variance: true
   MeanVarianceNormalizationPerChannel(false, true);
+
+  // axes: {0, 1, 2, 3} for across_channels
+  MeanVarianceNormalizationFunctionAcrossChannels({ 0, 1, 2, 3 });
 }
 
 TEST(TensorOpTest, ImageScalerTest) {

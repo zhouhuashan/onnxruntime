@@ -9,11 +9,10 @@
 
 #include "gsl/gsl_util"
 namespace onnxruntime {
-
 template <typename T>
-class MeanVarianceNormalization final : public OpKernel {
+class MeanVarianceNormalization_0 : public OpKernel {
  public:
-  MeanVarianceNormalization(const OpKernelInfo& info) : OpKernel(info) {
+  MeanVarianceNormalization_0(const OpKernelInfo& info) : OpKernel(info) {
     ONNXRUNTIME_ENFORCE(info.GetAttr<int64_t>("across_channels", &across_channels_).IsOK());
     ONNXRUNTIME_ENFORCE(info.GetAttr<int64_t>("normalize_variance", &normalize_variance_).IsOK());
   }
@@ -89,9 +88,26 @@ class MeanVarianceNormalization final : public OpKernel {
     return Status::OK();
   }
 
- private:
+ protected:
   int64_t across_channels_;
   int64_t normalize_variance_;
+};
+
+template <typename T>
+class MeanVarianceNormalization_1 final : public MeanVarianceNormalization_0<T> {
+ public:
+  MeanVarianceNormalization_1(const OpKernelInfo& info) : MeanVarianceNormalization_0<T>(info) {
+    std::vector<int64_t> axes;
+    if (!info.GetAttrs("axes", axes).IsOK()) {
+      axes = {1, 2, 3, 4};
+    }
+    if (find(axes.begin(), axes.end(), 1) != axes.end()) {
+      this->across_channels_ = true;
+    } else {
+      this->across_channels_ = false;
+    }
+	this->normalize_variance_ = 1;
+  }
 };
 
 }  //namespace onnxruntime

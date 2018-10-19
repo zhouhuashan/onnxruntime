@@ -1047,9 +1047,10 @@ Status PRelu<float>::Compute(OpKernelContext* context) const {
       });
 }
 
-ONNX_CPU_OPERATOR_KERNEL(
+ONNX_CPU_OPERATOR_VERSIONED_KERNEL(
     PRelu,
     7,
+    9,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     PRelu<float>);
 

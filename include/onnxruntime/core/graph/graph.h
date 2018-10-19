@@ -97,7 +97,7 @@ class Graph : public GraphBase {
 
   // Infer and set type information across <*this> graph if needed, and verify type/attribute
   // information matches between node and op.
-  ::onnxruntime::common::Status VerifyNodeAndOpMatch(const std::unordered_map<std::string, Node*>& output_args);
+  ::onnxruntime::common::Status VerifyNodeAndOpMatch(const std::unordered_set<std::string>& inputs_and_initializers);
 
   // Set graph inputs/outputs when resolving a graph..
   ::onnxruntime::common::Status SetGraphInputsOutputs();
