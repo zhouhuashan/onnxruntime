@@ -1,6 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// copied from gsl_algorithm, gsl disable 4996 for gsl::copy()
+#ifdef _MSC_VER
+#pragma warning(disable : 4996) 
+#endif
+
 #include "uni_dir_attn_lstm.h"
 
 using namespace onnxruntime::rnn::detail;

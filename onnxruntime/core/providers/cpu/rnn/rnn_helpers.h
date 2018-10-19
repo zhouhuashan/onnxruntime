@@ -19,9 +19,6 @@
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
 
-// copied from gsl_algorithm, gsl disable 4996 for gsl::copy()
-#pragma warning(disable : 4996) 
-
 namespace onnxruntime {
 class Tensor;
 class OpKernelContext;
