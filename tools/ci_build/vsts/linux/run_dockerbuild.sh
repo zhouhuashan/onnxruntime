@@ -2,13 +2,11 @@
 set -e -o -x
 
 SCRIPT_DIR="$( dirname "${BASH_SOURCE[0]}" )"
-SOURCE_ROOT=$SCRIPT_DIR/../../../../
+SOURCE_ROOT=$(realpath $SCRIPT_DIR/../../../../)
 
 while getopts c:o:d:r:p:x: parameter_Option
 do case "${parameter_Option}"
 in
-#Debug,Release
-c) BUILD_CONFIG=${OPTARG};;
 #ubuntu16.04
 o) BUILD_OS=${OPTARG};;
 #cpu, gpu
@@ -23,7 +21,7 @@ done
 
 EXIT_CODE=1
 
-echo "bc=$BUILD_CONFIG bo=$BUILD_OS bd=$BUILD_DEVICE bdir=$BUILD_DIR pv=$PYTHON_VER bex=$BUILD_EXTR_PAR"
+echo "bo=$BUILD_OS bd=$BUILD_DEVICE bdir=$BUILD_DIR pv=$PYTHON_VER bex=$BUILD_EXTR_PAR"
 
 cd $SCRIPT_DIR/docker
 if [ $BUILD_DEVICE = "gpu" ]; then
@@ -38,22 +36,22 @@ set +e
 
 if [ $BUILD_DEVICE = "cpu" ]; then
     docker run -h $HOSTNAME \
-        --rm \
+        --rm -e AZURE_BLOB_KEY \
         --name "lotus-$BUILD_DEVICE" \
-        --volume "$SOURCE_ROOT:$SOURCE_ROOT" \
+        --volume "$SOURCE_ROOT:/lotus_src" \
         --volume "$BUILD_DIR:/home/lotusdev" \
         "lotus-$IMAGE" \
-        /bin/bash $SCRIPT_DIR/run_build.sh \
-        -c $BUILD_CONFIG -d $BUILD_DEVICE -x "$BUILD_EXTR_PAR" &
+        /bin/bash /lotus_src/tools/ci_build/vsts/linux/run_build.sh \
+         -d $BUILD_DEVICE -x "$BUILD_EXTR_PAR" &
 else
     nvidia-docker run -h $HOSTNAME \
-        --rm \
+        --rm -e AZURE_BLOB_KEY \
         --name "lotus-$BUILD_DEVICE" \
-        --volume "$SOURCE_ROOT:$SOURCE_ROOT" \
+        --volume "$SOURCE_ROOT:/lotus_src" \
         --volume "$BUILD_DIR:/home/lotusdev" \
         "lotus-$IMAGE" \
-        /bin/bash $SCRIPT_DIR/run_build.sh \
-        -c $BUILD_CONFIG -d $BUILD_DEVICE -x "$BUILD_EXTR_PAR" &
+        /bin/bash /lotus_src/tools/ci_build/vsts/linux/run_build.sh \
+        -d $BUILD_DEVICE -x "$BUILD_EXTR_PAR" &
 fi
 wait -n
 

@@ -72,12 +72,12 @@ TEST(ONNXModelsTest, non_existing_model) {
 }
 
 #ifdef ONNXRUNTIME_RUN_EXTERNAL_ONNX_TESTS
-TEST(ONNXModelsTest1, bvlc_alexnet_1) {
+TEST(ONNXModelsTest1, DISABLED_bvlc_alexnet_1) {
   using ::google::protobuf::io::CodedInputStream;
   using ::google::protobuf::io::FileInputStream;
   using ::google::protobuf::io::ZeroCopyInputStream;
   int fd;
-  ASSERT_TRUE(Env::Default().FileOpenRd("../models/test_bvlc_alexnet/model.onnx", fd).IsOK());
+  ASSERT_TRUE(Env::Default().FileOpenRd("../models/opset8/test_bvlc_alexnet/model.onnx", fd).IsOK());
   ASSERT_TRUE(fd > 0);
   std::unique_ptr<ZeroCopyInputStream> raw_input(new FileInputStream(fd));
   std::unique_ptr<CodedInputStream> coded_input(new CodedInputStream(raw_input.get()));
@@ -91,7 +91,7 @@ TEST(ONNXModelsTest1, bvlc_alexnet_1) {
   ASSERT_TRUE(Env::Default().FileClose(fd).IsOK());
 
   std::shared_ptr<Model> model;
-  ASSERT_TRUE(Model::Load("../models/test_bvlc_alexnet/model.onnx", model).IsOK());
+  ASSERT_TRUE(Model::Load("../models/opset8/test_bvlc_alexnet/model.onnx", model).IsOK());
 
   // Check the graph input/output/value_info should have the same size as specified in the model file.
   EXPECT_EQ(model_proto.graph().value_info_size(), model->MainGraph().GetValueInfo().size());
@@ -107,7 +107,7 @@ class ONNXModelsTest : public ::testing::TestWithParam<const char*> {
  public:
   std::string GetModelFileName() const {
     std::ostringstream oss;
-    oss << "../models/test_" << GetParam() << "/model.onnx";
+    oss << "../models/opset7/test_" << GetParam() << "/model.onnx";
     return oss.str();
   }
 };
@@ -142,7 +142,7 @@ TEST_P(ONNXModelsTest, LoadFromProtobuf) {
 
 INSTANTIATE_TEST_CASE_P(ONNXModelsTests,
                         ONNXModelsTest,
-                        ::testing::Values("bvlc_alexnet", "bvlc_googlenet", "bvlc_reference_caffenet", "bvlc_reference_rcnn_ilsvrc13", "densenet121", "emotion_ferplus", "inception_v1", "inception_v2", "mnist", "resnet50", "shufflenet", "squeezenet", "tiny_yolov2", "vgg19", "zfnet"));
+                        ::testing::Values("bvlc_alexnet", "bvlc_googlenet", "bvlc_reference_caffenet", "bvlc_reference_rcnn_ilsvrc13", "densenet121", "emotion_ferplus", "inception_v1", "inception_v2", "mnist", "resnet50", "shufflenet", "squeezenet", "tiny_yolov2", "vgg19", "zfnet512"));
 
 #endif
 }  // namespace test

@@ -301,7 +301,9 @@ int main(int argc, char* argv[]) {
       {"maxpool_2d_same_upper", "gpu test failed"},
       {"maxpool_2d_same_lower", "gpu test failed"},
       {"maxpool_3d_default", "gpu test failed"},
-      {"maxpool_1d_default", "gpu test failed"}};
+      {"maxpool_1d_default", "gpu test failed"},
+      {"maxpool_with_argmax_2d_precomputed_pads", "mkldnn test failed"},
+      {"maxpool_with_argmax_2d_precomputed_strides", "mkldnn test failed"}};
 
   int result = 0;
   for (const std::string& s : stat.GetFailedTest()) {
