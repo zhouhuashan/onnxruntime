@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "gsl/span"
+#include "gsl/gsl_algorithm"
 
 #include "core/common/common.h"
 #include "core/common/task_thread_pool.h"
@@ -61,7 +62,8 @@ gsl::span<TAlloc> Allocate(std::shared_ptr<IAllocator> allocator,
   auto span = gsl::make_span(unique_ptr.get(), size);
 
   if (fill) {
-    std::fill(span.begin(), span.end(), fill_value);
+    // Do't use span.begin() it will cause performance issue and stop compiler to optimize the code
+    std::fill_n(unique_ptr.get(), size, fill_value);
   }
 
   return span;
@@ -106,25 +108,28 @@ void ReverseSequence(gsl::span<const T> inputs,
                      const int batch_size,
                      const int input_size,
                      const int num_directions) {
-  typename gsl::span<const T>::const_iterator src;
-  typename gsl::span<T>::iterator dest;
-
   for (int i = 0; i < batch_size; i++) {
     int seq_len = sequence_lengths[i];
 
     if (seq_len == 0)
       continue;
 
+    #pragma loop( hint_parallel(0) ) 
     for (int j = 0; j < seq_len; j++) {
-      src = inputs.cbegin() + j * batch_size * input_size + i * input_size;
-      dest = inputs_reverse.begin() + num_directions * (seq_len - j - 1) * batch_size * input_size + i * input_size;
-      std::copy(src, src + input_size, dest);
+      gsl::span<const T> src = inputs.subspan( j * batch_size * input_size + i * input_size, input_size);
+      gsl::span<T> dest = inputs_reverse.subspan(num_directions * (seq_len - j - 1) * batch_size * input_size + i * input_size, input_size);
+      
+      // Use gsl::copy instead of std::copy() to aloow compiler to optimize the code
+      gsl::copy(src, dest); 
     }
 
+    #pragma loop( hint_parallel(0) ) 
     for (int j = seq_len; j < max_sequence_length; j++) {
-      src = inputs.cbegin() + j * batch_size * input_size + i * input_size;
-      dest = inputs_reverse.begin() + num_directions * j * batch_size * input_size + i * input_size;
-      std::copy(src, src + input_size, dest);
+      gsl::span<const T> src = inputs.subspan(j * batch_size * input_size + i * input_size, input_size);
+      gsl::span<T> dest = inputs_reverse.subspan(num_directions * j * batch_size * input_size + i * input_size, input_size);
+      
+      // Use gsl::copy instead of std::copy() to aloow compiler to optimize the code
+      gsl::copy(src, dest);
     }
   }
 }
