@@ -234,7 +234,7 @@ static inline float sigmoid_probability(float score, float proba, float probb) {
   return 1 - ml_logit(val);  // ref: https://github.com/arnaudsj/libsvm/blob/eaaefac5ebd32d0e07902e1ae740e038eaaf0826/svm.cpp#L1818
 }
 
-static const float ml_sqrt2 = static_cast<float>(std::sqrt(2));
+static const float ml_sqrt2 = 1.41421356f;
 
 static inline void compute_softmax(std::vector<float>& values) {
   std::vector<float> newscores;
