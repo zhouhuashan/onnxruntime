@@ -122,7 +122,7 @@ TEST_F(LoggingTestsFixture, TestLoggerFiltering) {
   MockSink* sink_ptr = new MockSink();
 
   int num_expected_calls = 2;
-#ifdef _DEBUG
+#ifndef NDEBUG
   ++num_expected_calls;  // VLOG output enabled in DEBUG
 #endif
   EXPECT_CALL(*sink_ptr, SendImpl(testing::_, HasSubstr(logid), testing::_))  // Property(&Capture::Severity, Ge(min_log_level))))
@@ -203,7 +203,7 @@ TEST_F(LoggingTestsFixture, TestVLog) {
 
   // we only get the non-default calls from below in this sink
   EXPECT_CALL(*sink_ptr, SendImpl(testing::_, HasSubstr(logid), testing::_))
-#ifdef _DEBUG
+#ifndef NDEBUG
       .Times(2)
       .WillRepeatedly(PrintArgs());
 #else
@@ -229,7 +229,7 @@ TEST_F(LoggingTestsFixture, TestVLog) {
   VLOGS_USER_DEFAULT(0) << "User data";    // ignored due to level
   VLOGF_USER_DEFAULT(0, "User Id %d", 1);  // ignored due to level
 
-#ifdef _DEBUG
+#ifndef NDEBUG
   // test we can globally disable
   logging::vlog_enabled = false;
   VLOGS(*logger, 0) << "Should be ignored.";  // ignored as disabled

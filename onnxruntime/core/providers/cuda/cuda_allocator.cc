@@ -15,7 +15,7 @@ static const CUDAExecutionProvider* GetCUDAExecutionProvider(const SessionState*
 }
 
 void CUDAAllocator::CheckDevice() const {
-#ifdef _DEBUG
+#ifndef NDEBUG
   // check device to match at debug build
   // if it's expected to change, call cudaSetDevice instead of the check
   int current_device;

@@ -265,7 +265,7 @@ struct OpTester {
 
   IOnnxRuntimeOpSchemaRegistryList custom_schema_registries_;
   std::vector<std::shared_ptr<CustomRegistry>> custom_session_registries_;
-#if _DEBUG
+#ifndef NDEBUG
   bool run_called_{};
 #endif
 };
@@ -280,6 +280,8 @@ void ExpectThrow(OpTester& test, const std::string& error_msg) {
     EXPECT_THAT(ex.what(), testing::HasSubstr(error_msg));
   }
 }
+
+void DebugTrap();
 
 }  // namespace test
 }  // namespace onnxruntime

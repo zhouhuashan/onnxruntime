@@ -119,11 +119,19 @@ void Check(const OpTester::Data& expected_data, MLValue& mlvalue, const std::str
   CheckDispatch<VectorMapStringToFloat, VectorMapInt64ToFloat>(expected_data.data_.Type(), expected_data, mlvalue, provider_type);
 }
 
+void DebugTrap() {
+#if _MSC_VER
+    __debugbreak();
+#else
+    raise(SIGTRAP);
+#endif
+}
+
 OpTester::~OpTester() {
-#if _DEBUG
+#ifndef NDEBUG
   if (!run_called_) {
     std::cerr << "Someone forgot to call OpTester::Run()" << std::endl;
-    __debugbreak();
+    DebugTrap();
   }
 #endif
 }
@@ -167,7 +175,7 @@ void OpTester::SetOutputRelErr(const char* name, float v) {
 
 void OpTester::Run(ExpectResult expect_result, const std::string& expected_failure_string, const std::unordered_set<std::string>& excluded_provider_types) {
   try {
-#if _DEBUG
+#ifndef NDEBUG
     run_called_ = true;
 #endif
     // Generate the input & output def lists

@@ -435,7 +435,7 @@ TEST(InferenceSessionTests, CheckRunLogger) {
   run_options.run_tag = "RunTag";
   RunModel(session_object, run_options);
 
-#ifdef _DEBUG
+#ifndef NDEBUG
   // check for some VLOG output to make sure tag was correct. VLOG is not enabled in release build
   auto& msgs = capturing_sink->Messages();
   std::copy(msgs.begin(), msgs.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
@@ -591,7 +591,7 @@ TEST(InferenceSessionTests, ConfigureVerbosityLevel) {
   run_options.run_log_verbosity_level = 1;
   RunModel(session_object, run_options);
 
-#ifdef _DEBUG
+#ifndef NDEBUG
   // check for some VLOG output to make sure tag was correct. VLOG is not enabled in release build
   auto& msgs = capturing_sink->Messages();
   std::copy(msgs.begin(), msgs.end(), std::ostream_iterator<std::string>(std::cout, "\n"));

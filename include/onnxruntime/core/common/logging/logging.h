@@ -54,8 +54,8 @@ namespace logging {
 
 using Timestamp = std::chrono::time_point<std::chrono::system_clock>;
 
-#ifdef _DEBUG
-static bool vlog_enabled = true;  // Set directly based on your needs.
+#ifndef NDEBUG
+ONNXRUNTIME_ATTRIBUTE_UNUSED static bool vlog_enabled = true;  // Set directly based on your needs.
 #else
 constexpr bool vlog_enabled = false;  // no VLOG output
 #endif

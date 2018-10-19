@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_MSC_VER) && !defined(NDEBUG)
 
 #include "core/common/common.h"
 
