@@ -113,22 +113,23 @@ void ReverseSequence(gsl::span<const T> inputs,
 
     if (seq_len == 0)
       continue;
-
-    #pragma loop( hint_parallel(0) ) 
+    
+    // Parallel execute the loop.  
+    #pragma omp for
     for (int j = 0; j < seq_len; j++) {
-      gsl::span<const T> src = inputs.subspan( j * batch_size * input_size + i * input_size, input_size);
+      gsl::span<const T> src = inputs.subspan(j * batch_size * input_size + i * input_size, input_size);
       gsl::span<T> dest = inputs_reverse.subspan(num_directions * (seq_len - j - 1) * batch_size * input_size + i * input_size, input_size);
       
-      // Use gsl::copy instead of std::copy() to aloow compiler to optimize the code
+      // Use gsl::copy instead of std::copy() to allow compiler to optimize the code
       gsl::copy(src, dest); 
     }
 
-    #pragma loop( hint_parallel(0) ) 
+    #pragma omp for
     for (int j = seq_len; j < max_sequence_length; j++) {
       gsl::span<const T> src = inputs.subspan(j * batch_size * input_size + i * input_size, input_size);
       gsl::span<T> dest = inputs_reverse.subspan(num_directions * j * batch_size * input_size + i * input_size, input_size);
-      
-      // Use gsl::copy instead of std::copy() to aloow compiler to optimize the code
+
+      // Use gsl::copy instead of std::copy() to allow compiler to optimize the code
       gsl::copy(src, dest);
     }
   }
