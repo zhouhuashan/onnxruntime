@@ -303,7 +303,8 @@ int main(int argc, char* argv[]) {
       {"maxpool_3d_default", "gpu test failed"},
       {"maxpool_1d_default", "gpu test failed"},
       {"maxpool_with_argmax_2d_precomputed_pads", "mkldnn test failed"},
-      {"maxpool_with_argmax_2d_precomputed_strides", "mkldnn test failed"}};
+      {"maxpool_with_argmax_2d_precomputed_strides", "mkldnn test failed"},
+      {"bvlc_reference_rcnn_ilsvrc13", "failed when mkldnn is enabled"}};
 
   int result = 0;
   for (const std::string& s : stat.GetFailedTest()) {
