@@ -27,14 +27,11 @@ struct TestMap {
 
 // Try recursive type registration and compatibility tests
 using TestMapToMapInt64ToFloat = TestMap<int64_t, MapInt64ToFloat>;
-ONNXRUNTIME_REGISTER_MAP(TestMapToMapInt64ToFloat);
 using TestMapStringToVectorInt64 = TestMap<std::string, VectorInt64>;
-ONNXRUNTIME_REGISTER_MAP(TestMapStringToVectorInt64);
 
 // Trial to see if we resolve the setter properly
 // a map with a key that has not been registered in data_types.cc
 using TestMapMLFloat16ToFloat = TestMap<MLFloat16, float>;
-ONNXRUNTIME_REGISTER_MAP(TestMapMLFloat16ToFloat);
 
 template <typename T>
 struct TestSequence {
@@ -42,53 +39,84 @@ struct TestSequence {
 };
 
 using TestSequenceOfSequence = TestSequence<VectorString>;
-ONNXRUNTIME_REGISTER_SEQ(TestSequenceOfSequence);
 
 /// Adding an Opaque type with type parameters
-struct TestOpaqueType {};
+struct TestOpaqueType_1 {};
+struct TestOpaqueType_2 {};
+
 // String arrays must be extern to make them unique
 // so the instantiated template would produce a unique type as well.
-extern const char TestOpaqueDomain[] = "test_domain";
-extern const char TestOpaqueName[] = "test_name";
+extern const char TestOpaqueDomain_1[] = "test_domain_1";
+extern const char TestOpaqueName_1[] = "test_name_1";
 
-using OpaqueType_1 = OpaqueRegister<TestOpaqueType, TestOpaqueDomain, TestOpaqueName>;
-ONNXRUNTIME_REGISTER_OPAQUE_TYPE(OpaqueType_1);
-using OpaqueType_2 = OpaqueRegister<TestOpaqueType, TestOpaqueDomain, TestOpaqueName, uint64_t, float>;
-ONNXRUNTIME_REGISTER_OPAQUE_TYPE(OpaqueType_2);
+extern const char TestOpaqueDomain_2[] = "test_domain_2";
+extern const char TestOpaqueName_2[] = "test_name_2";
 
-extern const char TestOpaqueDomain_2[] = "test_doma_2";
-extern const char TestOpaqueName_2[] = "test_na_2";
+extern const char TestOpaqueEmpty[] = "";
 
-using OpaqueType_3 = OpaqueRegister<TestOpaqueType, TestOpaqueDomain_2, TestOpaqueName_2>;
-ONNXRUNTIME_REGISTER_OPAQUE_TYPE(OpaqueType_3);
+struct TestOpaqueDomainOnly {};
+struct TestOpaqueNameOnly {};
+struct TestOpaqueNoNames {};
 
 // Register Maps using Opaque types as values. Note that we
 // use the same cpp runtime types but due to Opaque type domain, name
 // and optional parameters we produce separate MLDataTypes that are NOT
 // compatible with each other.
-using MyOpaqueMapCpp = std::unordered_map<int64_t, TestOpaqueType>;
-using MyOpaqueMap_1 = TypeRegister<MyOpaqueMapCpp, OpaqueType_1>;
-ONNXRUNTIME_REGISTER_MAP(MyOpaqueMap_1);
-using MyOpaqueMap_2 = TypeRegister<MyOpaqueMapCpp, OpaqueType_2>;
-ONNXRUNTIME_REGISTER_MAP(MyOpaqueMap_2);
-using MyOpaqueMap_3 = TypeRegister<MyOpaqueMapCpp, OpaqueType_3>;
-ONNXRUNTIME_REGISTER_MAP(MyOpaqueMap_3);
+using MyOpaqueMapCpp_1 = std::map<int64_t, TestOpaqueType_1>;
+using MyOpaqueMapCpp_2 = std::map<int64_t, TestOpaqueType_2>;
 
 // Register Sequence as containing an Opaque type
-using MyOpaqueSeqCpp = std::vector<TestOpaqueType>;
-using MyOpaqueSeq_1 = TypeRegister<MyOpaqueSeqCpp, OpaqueType_1>;
-ONNXRUNTIME_REGISTER_SEQ(MyOpaqueSeq_1);
-using MyOpaqueSeq_2 = TypeRegister<MyOpaqueSeqCpp, OpaqueType_2>;
-ONNXRUNTIME_REGISTER_SEQ(MyOpaqueSeq_2);
-using MyOpaqueSeq_3 = TypeRegister<MyOpaqueSeqCpp, OpaqueType_3>;
-ONNXRUNTIME_REGISTER_SEQ(MyOpaqueSeq_3);
+using MyOpaqueSeqCpp_1 = std::vector<TestOpaqueType_1>;
+using MyOpaqueSeqCpp_2 = std::vector<TestOpaqueType_2>;
+
+ONNXRUNTIME_REGISTER_MAP(MyOpaqueMapCpp_1);
+ONNXRUNTIME_REGISTER_MAP(MyOpaqueMapCpp_2);
+
+ONNXRUNTIME_REGISTER_MAP(TestMapToMapInt64ToFloat);
+ONNXRUNTIME_REGISTER_MAP(TestMapStringToVectorInt64);
+ONNXRUNTIME_REGISTER_MAP(TestMapMLFloat16ToFloat);
+
+ONNXRUNTIME_REGISTER_SEQ(MyOpaqueSeqCpp_1);
+ONNXRUNTIME_REGISTER_SEQ(MyOpaqueSeqCpp_2);
+ONNXRUNTIME_REGISTER_SEQ(TestSequenceOfSequence);
+
+ONNXRUNTIME_REGISTER_OPAQUE_TYPE(TestOpaqueType_1, TestOpaqueDomain_1, TestOpaqueName_1);
+ONNXRUNTIME_REGISTER_OPAQUE_TYPE(TestOpaqueType_2, TestOpaqueDomain_2, TestOpaqueName_2);
+// Special cases
+ONNXRUNTIME_REGISTER_OPAQUE_TYPE(TestOpaqueDomainOnly, TestOpaqueDomain_1, TestOpaqueEmpty);
+ONNXRUNTIME_REGISTER_OPAQUE_TYPE(TestOpaqueNameOnly, TestOpaqueEmpty, TestOpaqueName_1);
+ONNXRUNTIME_REGISTER_OPAQUE_TYPE(TestOpaqueNoNames, TestOpaqueEmpty, TestOpaqueEmpty);
+
+#define REGISTER_ONNX_PROTO(TYPE)                      \
+  {                                                    \
+    MLDataType mltype = DataTypeImpl::GetType<TYPE>(); \
+    DataTypeImpl::RegisterDataType(mltype);            \
+  }
+
+void RegisterTestTypes() {
+  REGISTER_ONNX_PROTO(MyOpaqueMapCpp_1);
+  REGISTER_ONNX_PROTO(MyOpaqueMapCpp_2);
+
+  REGISTER_ONNX_PROTO(TestMapToMapInt64ToFloat);
+  REGISTER_ONNX_PROTO(TestMapStringToVectorInt64);
+  REGISTER_ONNX_PROTO(TestMapMLFloat16ToFloat);
+
+  REGISTER_ONNX_PROTO(MyOpaqueSeqCpp_1);
+  REGISTER_ONNX_PROTO(MyOpaqueSeqCpp_2);
+  REGISTER_ONNX_PROTO(TestSequenceOfSequence);
+
+  REGISTER_ONNX_PROTO(TestOpaqueType_1);
+  REGISTER_ONNX_PROTO(TestOpaqueType_2);
+  REGISTER_ONNX_PROTO(TestOpaqueDomainOnly);
+  REGISTER_ONNX_PROTO(TestOpaqueNameOnly);
+  REGISTER_ONNX_PROTO(TestOpaqueNoNames);
+}
 
 // Use of Opaque types in recursive definitions. I.e. we would like to use
 // it within Maps(values) and Sequences(Values) and it should work properly
 // Use the example.
 
 namespace test {
-
 using namespace ONNX_NAMESPACE;
 
 template <TensorProto_DataType T>
@@ -105,43 +133,42 @@ struct MapTypeProto : TypeProto {
   }
 };
 
-// TODO: Add tests with Opaque type within Maps and Sequences.
-TEST(DataTypeTest, OpaqueRegistrationTest) {
+class DataTypeTest : public testing::Test {
+ public:
+  static void SetUpTestCase() {
+    RegisterTestTypes();
+  }
+};
+
+TEST_F(DataTypeTest, OpaqueRegistrationTest) {
   // No parameters
   TypeProto opaque_proto_1;
   auto* mop = opaque_proto_1.mutable_opaque_type();
-  mop->mutable_domain()->assign(TestOpaqueDomain);
-  mop->mutable_name()->assign(TestOpaqueName);
+  mop->mutable_domain()->assign(TestOpaqueDomain_1);
+  mop->mutable_name()->assign(TestOpaqueName_1);
 
-  EXPECT_TRUE(DataTypeImpl::GetType<OpaqueType_1>()->IsCompatible(opaque_proto_1));
+  EXPECT_TRUE(DataTypeImpl::GetType<TestOpaqueType_1>()->IsCompatible(opaque_proto_1));
   // OpaqueType_2 has the same domain and name but also has parameters
   // so it is not compatible
-  EXPECT_FALSE(DataTypeImpl::GetType<OpaqueType_2>()->IsCompatible(opaque_proto_1));
-  // Even though the OpaqueType_3 has no parameters and its domain and names
-  // are of the same length they are not supposed to be compatible
-  EXPECT_FALSE(DataTypeImpl::GetType<OpaqueType_3>()->IsCompatible(opaque_proto_1));
+  EXPECT_FALSE(DataTypeImpl::GetType<TestOpaqueType_2>()->IsCompatible(opaque_proto_1));
 
   // Now change domain and name for that of OpaqueType_3
   // now we are supposed to be compatible with OpaqueType_2 but not
   // OpaqueType_1
   mop->mutable_domain()->assign(TestOpaqueDomain_2);
   mop->mutable_name()->assign(TestOpaqueName_2);
-  EXPECT_FALSE(DataTypeImpl::GetType<OpaqueType_1>()->IsCompatible(opaque_proto_1));
-  EXPECT_FALSE(DataTypeImpl::GetType<OpaqueType_2>()->IsCompatible(opaque_proto_1));
-  EXPECT_TRUE(DataTypeImpl::GetType<OpaqueType_3>()->IsCompatible(opaque_proto_1));
+  EXPECT_FALSE(DataTypeImpl::GetType<TestOpaqueType_1>()->IsCompatible(opaque_proto_1));
+  EXPECT_TRUE(DataTypeImpl::GetType<TestOpaqueType_2>()->IsCompatible(opaque_proto_1));
 
   // assign back original domain/name and add params
-  mop->mutable_domain()->assign(TestOpaqueDomain);
-  mop->mutable_name()->assign(TestOpaqueName);
-  mop->add_parameters()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_UINT64);
-  mop->add_parameters()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+  mop->mutable_domain()->assign(TestOpaqueDomain_2);
+  mop->mutable_name()->assign(TestOpaqueName_2);
 
-  EXPECT_FALSE(DataTypeImpl::GetType<OpaqueType_1>()->IsCompatible(opaque_proto_1));
-  EXPECT_TRUE(DataTypeImpl::GetType<OpaqueType_2>()->IsCompatible(opaque_proto_1));
-  EXPECT_FALSE(DataTypeImpl::GetType<OpaqueType_3>()->IsCompatible(opaque_proto_1));
+  EXPECT_FALSE(DataTypeImpl::GetType<TestOpaqueType_1>()->IsCompatible(opaque_proto_1));
+  EXPECT_TRUE(DataTypeImpl::GetType<TestOpaqueType_2>()->IsCompatible(opaque_proto_1));
 }
 
-TEST(DataTypeTest, MapStringStringTest) {
+TEST_F(DataTypeTest, MapStringStringTest) {
   TensorTypeProto<TensorProto_DataType_FLOAT> tensor_type;
   EXPECT_TRUE(DataTypeImpl::GetTensorType<float>()->IsCompatible(tensor_type));
   EXPECT_FALSE(DataTypeImpl::GetTensorType<uint64_t>()->IsCompatible(tensor_type));
@@ -153,7 +180,7 @@ TEST(DataTypeTest, MapStringStringTest) {
   EXPECT_FALSE(DataTypeImpl::GetType<MapStringToString>()->IsCompatible(maps2i_type));
 }
 
-TEST(DataTypeTest, MapStringInt64Test) {
+TEST_F(DataTypeTest, MapStringInt64Test) {
   MapTypeProto<TensorProto_DataType_STRING, TensorProto_DataType_STRING> maps2s_type;
   MapTypeProto<TensorProto_DataType_STRING, TensorProto_DataType_INT64> maps2i_type;
   TensorTypeProto<TensorProto_DataType_FLOAT> tensor_type;
@@ -162,7 +189,7 @@ TEST(DataTypeTest, MapStringInt64Test) {
   EXPECT_FALSE(DataTypeImpl::GetType<MapStringToInt64>()->IsCompatible(tensor_type));
 }
 
-TEST(DataTypeTest, MapStringFloatTest) {
+TEST_F(DataTypeTest, MapStringFloatTest) {
   MapTypeProto<TensorProto_DataType_STRING, TensorProto_DataType_FLOAT> maps2f_type;
   MapTypeProto<TensorProto_DataType_STRING, TensorProto_DataType_INT64> maps2i_type;
   TensorTypeProto<TensorProto_DataType_FLOAT> tensor_type;
@@ -171,7 +198,7 @@ TEST(DataTypeTest, MapStringFloatTest) {
   EXPECT_FALSE(DataTypeImpl::GetType<MapStringToFloat>()->IsCompatible(tensor_type));
 }
 
-TEST(DataTypeTest, MapStringDoubleTest) {
+TEST_F(DataTypeTest, MapStringDoubleTest) {
   MapTypeProto<TensorProto_DataType_STRING, TensorProto_DataType_DOUBLE> maps2d_type;
   MapTypeProto<TensorProto_DataType_STRING, TensorProto_DataType_INT64> maps2i_type;
   TensorTypeProto<TensorProto_DataType_FLOAT> tensor_type;
@@ -180,7 +207,7 @@ TEST(DataTypeTest, MapStringDoubleTest) {
   EXPECT_FALSE(DataTypeImpl::GetType<MapStringToDouble>()->IsCompatible(tensor_type));
 }
 
-TEST(DataTypeTest, MapInt64StringTest) {
+TEST_F(DataTypeTest, MapInt64StringTest) {
   MapTypeProto<TensorProto_DataType_INT64, TensorProto_DataType_STRING> mapi2s_type;
   MapTypeProto<TensorProto_DataType_INT64, TensorProto_DataType_INT64> mapi2i_type;
   TensorTypeProto<TensorProto_DataType_FLOAT> tensor_type;
@@ -189,7 +216,7 @@ TEST(DataTypeTest, MapInt64StringTest) {
   EXPECT_FALSE(DataTypeImpl::GetType<MapInt64ToString>()->IsCompatible(tensor_type));
 }
 
-TEST(DataTypeTest, MapInt64DoubleTest) {
+TEST_F(DataTypeTest, MapInt64DoubleTest) {
   MapTypeProto<TensorProto_DataType_INT64, TensorProto_DataType_DOUBLE> mapi2d_type;
   MapTypeProto<TensorProto_DataType_INT64, TensorProto_DataType_INT64> mapi2i_type;
   TensorTypeProto<TensorProto_DataType_FLOAT> tensor_type;
@@ -198,7 +225,7 @@ TEST(DataTypeTest, MapInt64DoubleTest) {
   EXPECT_FALSE(DataTypeImpl::GetType<MapInt64ToString>()->IsCompatible(tensor_type));
 }
 
-TEST(DataTypeTest, RecursiveMapTest) {
+TEST_F(DataTypeTest, RecursiveMapTest) {
   TypeProto map_int64_to_map_int64_to_float;
   auto* mut_map = map_int64_to_map_int64_to_float.mutable_map_type();
   mut_map->set_key_type(TensorProto_DataType_INT64);
@@ -218,31 +245,23 @@ TEST(DataTypeTest, RecursiveMapTest) {
   EXPECT_FALSE(DataTypeImpl::GetType<TestMapToMapInt64ToFloat>()->IsCompatible(map_string_to_vector_of_int64));
 
   // Map that contains an Opaque_1
-  const auto* op1_proto = DataTypeImpl::GetType<OpaqueType_1>();
+  const auto* op1_proto = DataTypeImpl::GetType<TestOpaqueType_1>();
   TypeProto unod_map_int64_to_op1;
   mut_map = unod_map_int64_to_op1.mutable_map_type();
   mut_map->set_key_type(TensorProto_DataType_INT64);
   mut_map->mutable_value_type()->CopyFrom(*op1_proto->GetTypeProto());
-  EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueMap_1>()->IsCompatible(unod_map_int64_to_op1));
+  EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueMapCpp_1>()->IsCompatible(unod_map_int64_to_op1));
 
   // Map that contains an Opaque_2
-  const auto* op2_proto = DataTypeImpl::GetType<OpaqueType_2>();
+  const auto* op2_proto = DataTypeImpl::GetType<TestOpaqueType_2>();
   TypeProto unod_map_int64_to_op2;
   mut_map = unod_map_int64_to_op2.mutable_map_type();
   mut_map->set_key_type(TensorProto_DataType_INT64);
   mut_map->mutable_value_type()->CopyFrom(*op2_proto->GetTypeProto());
-  EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueMap_2>()->IsCompatible(unod_map_int64_to_op2));
-
-  // Map that contains an Opaque_3
-  const auto* op3_proto = DataTypeImpl::GetType<OpaqueType_3>();
-  TypeProto unod_map_int64_to_op3;
-  mut_map = unod_map_int64_to_op3.mutable_map_type();
-  mut_map->set_key_type(TensorProto_DataType_INT64);
-  mut_map->mutable_value_type()->CopyFrom(*op3_proto->GetTypeProto());
-  EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueMap_3>()->IsCompatible(unod_map_int64_to_op3));
+  EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueMapCpp_2>()->IsCompatible(unod_map_int64_to_op2));
 }
 
-TEST(DataTypeTest, RecursiveVectorTest) {
+TEST_F(DataTypeTest, RecursiveVectorTest) {
   TypeProto seq_of_seq_string;
   auto* mut_seq = seq_of_seq_string.mutable_sequence_type();
   mut_seq = mut_seq->mutable_elem_type()->mutable_sequence_type();
@@ -252,7 +271,7 @@ TEST(DataTypeTest, RecursiveVectorTest) {
   EXPECT_FALSE(DataTypeImpl::GetType<VectorMapStringToFloat>()->IsCompatible(seq_of_seq_string));
 }
 
-TEST(DataTypeTest, VectorMapStringToFloatTest) {
+TEST_F(DataTypeTest, VectorMapStringToFloatTest) {
   TypeProto vector_map_string_to_float;
   vector_map_string_to_float.mutable_sequence_type()->mutable_elem_type()->mutable_map_type()->set_key_type(TensorProto_DataType_STRING);
   vector_map_string_to_float.mutable_sequence_type()->mutable_elem_type()->mutable_map_type()->mutable_value_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
@@ -267,7 +286,7 @@ TEST(DataTypeTest, VectorMapStringToFloatTest) {
   EXPECT_FALSE(DataTypeImpl::GetType<VectorMapStringToFloat>()->IsCompatible(tensor_type));
 }
 
-TEST(DataTypeTest, VectorMapInt64ToFloatTest) {
+TEST_F(DataTypeTest, VectorMapInt64ToFloatTest) {
   TypeProto type_proto;
   type_proto.mutable_sequence_type()->mutable_elem_type()->mutable_map_type()->set_key_type(TensorProto_DataType_INT64);
   type_proto.mutable_sequence_type()->mutable_elem_type()->mutable_map_type()->mutable_value_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
@@ -282,7 +301,7 @@ TEST(DataTypeTest, VectorMapInt64ToFloatTest) {
   EXPECT_FALSE(DataTypeImpl::GetType<VectorMapInt64ToFloat>()->IsCompatible(tensor_type));
 }
 
-TEST(DataTypeTest, DataUtilsTest) {
+TEST_F(DataTypeTest, DataUtilsTest) {
   using namespace ONNX_NAMESPACE::Utils;
   // Test Tensor
   {
@@ -327,8 +346,8 @@ TEST(DataTypeTest, DataUtilsTest) {
     EXPECT_TRUE(DataTypeImpl::GetType<TestMapToMapInt64ToFloat>()->IsCompatible(from_dt_proto));
   }
   {
-    const std::string opaque_map_2("map(int64,opaque(test_domain,test_name,p(tensor(uint64),tensor(float))))");
-    const auto* map_proto = DataTypeImpl::GetType<MyOpaqueMap_2>()->GetTypeProto();
+    const std::string opaque_map_2("map(int64,opaque(test_domain_2,test_name_2))");
+    const auto* map_proto = DataTypeImpl::GetType<MyOpaqueMapCpp_2>()->GetTypeProto();
     EXPECT_NE(map_proto, nullptr);
     DataType map_dt = DataTypeUtils::ToType(*map_proto);
     EXPECT_NE(map_dt, nullptr);
@@ -337,7 +356,7 @@ TEST(DataTypeTest, DataUtilsTest) {
     // Expect internalized strings
     EXPECT_EQ(map_dt, map_from_str);
     const auto& from_dt_proto = DataTypeUtils::ToTypeProto(map_dt);
-    EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueMap_2>()->IsCompatible(from_dt_proto));
+    EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueMapCpp_2>()->IsCompatible(from_dt_proto));
   }
   // Test simple seq
   {
@@ -367,10 +386,10 @@ TEST(DataTypeTest, DataUtilsTest) {
     const auto& from_dt_proto = DataTypeUtils::ToTypeProto(seq_dt);
     EXPECT_TRUE(DataTypeImpl::GetType<VectorMapStringToFloat>()->IsCompatible(from_dt_proto));
   }
-  // Test Sequence with opque_2
+  // Test Sequence with opaque_2
   {
-    const std::string seq_opaque_2("seq(opaque(test_domain,test_name,p(tensor(uint64),tensor(float))))");
-    const auto* seq_proto = DataTypeImpl::GetType<MyOpaqueSeq_2>()->GetTypeProto();
+    const std::string seq_opaque_2("seq(opaque(test_domain_2,test_name_2))");
+    const auto* seq_proto = DataTypeImpl::GetType<MyOpaqueSeqCpp_2>()->GetTypeProto();
     EXPECT_NE(seq_proto, nullptr);
     DataType seq_dt = DataTypeUtils::ToType(*seq_proto);
     EXPECT_NE(seq_dt, nullptr);
@@ -379,12 +398,12 @@ TEST(DataTypeTest, DataUtilsTest) {
     // Expect internalized strings
     EXPECT_EQ(seq_dt, seq_from_str);
     const auto& from_dt_proto = DataTypeUtils::ToTypeProto(seq_dt);
-    EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueSeq_2>()->IsCompatible(from_dt_proto));
+    EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueSeqCpp_2>()->IsCompatible(from_dt_proto));
   }
-  // Test Opaque type no parameters
+  // Test Opaque type opaque_1
   {
-    const std::string opaque_q("opaque(test_domain,test_name,p())");
-    const auto* op_proto = DataTypeImpl::GetType<OpaqueType_1>()->GetTypeProto();
+    const std::string opaque_q("seq(opaque(test_domain_1,test_name_1))");
+    const auto* op_proto = DataTypeImpl::GetType<MyOpaqueSeqCpp_1>()->GetTypeProto();
     EXPECT_NE(op_proto, nullptr);
     DataType op_dt = DataTypeUtils::ToType(*op_proto);
     EXPECT_NE(op_dt, nullptr);
@@ -393,21 +412,49 @@ TEST(DataTypeTest, DataUtilsTest) {
     // Expect internalized strings
     EXPECT_EQ(op_dt, op_from_str);
     const auto& from_dt_proto = DataTypeUtils::ToTypeProto(op_dt);
-    EXPECT_TRUE(DataTypeImpl::GetType<OpaqueType_1>()->IsCompatible(from_dt_proto));
+    EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueSeqCpp_1>()->IsCompatible(from_dt_proto));
   }
-  // Test Opaque type with parameters
+  // Test TestOpaqueDomainOnly
   {
-    const std::string opaque_2("opaque(test_domain,test_name,p(tensor(uint64),tensor(float)))");
-    const auto* op_proto = DataTypeImpl::GetType<OpaqueType_2>()->GetTypeProto();
+    const std::string opaque_q("opaque(test_domain_1,)");
+    const auto* op_proto = DataTypeImpl::GetType<TestOpaqueDomainOnly>()->GetTypeProto();
     EXPECT_NE(op_proto, nullptr);
     DataType op_dt = DataTypeUtils::ToType(*op_proto);
     EXPECT_NE(op_dt, nullptr);
-    EXPECT_EQ(opaque_2, *op_dt);
+    EXPECT_EQ(opaque_q, *op_dt);
     DataType op_from_str = DataTypeUtils::ToType(*op_dt);
     // Expect internalized strings
     EXPECT_EQ(op_dt, op_from_str);
     const auto& from_dt_proto = DataTypeUtils::ToTypeProto(op_dt);
-    EXPECT_TRUE(DataTypeImpl::GetType<OpaqueType_2>()->IsCompatible(from_dt_proto));
+    EXPECT_TRUE(DataTypeImpl::GetType<TestOpaqueDomainOnly>()->IsCompatible(from_dt_proto));
+  }
+  // Test TestOpaqueNameOnly
+  {
+    const std::string opaque_q("opaque(test_name_1)");
+    const auto* op_proto = DataTypeImpl::GetType<TestOpaqueNameOnly>()->GetTypeProto();
+    EXPECT_NE(op_proto, nullptr);
+    DataType op_dt = DataTypeUtils::ToType(*op_proto);
+    EXPECT_NE(op_dt, nullptr);
+    EXPECT_EQ(opaque_q, *op_dt);
+    DataType op_from_str = DataTypeUtils::ToType(*op_dt);
+    // Expect internalized strings
+    EXPECT_EQ(op_dt, op_from_str);
+    const auto& from_dt_proto = DataTypeUtils::ToTypeProto(op_dt);
+    EXPECT_TRUE(DataTypeImpl::GetType<TestOpaqueNameOnly>()->IsCompatible(from_dt_proto));
+  }
+  // Test TestOpaqueNoNames
+  {
+    const std::string opaque_q("opaque()");
+    const auto* op_proto = DataTypeImpl::GetType<TestOpaqueNoNames>()->GetTypeProto();
+    EXPECT_NE(op_proto, nullptr);
+    DataType op_dt = DataTypeUtils::ToType(*op_proto);
+    EXPECT_NE(op_dt, nullptr);
+    EXPECT_EQ(opaque_q, *op_dt);
+    DataType op_from_str = DataTypeUtils::ToType(*op_dt);
+    // Expect internalized strings
+    EXPECT_EQ(op_dt, op_from_str);
+    const auto& from_dt_proto = DataTypeUtils::ToTypeProto(op_dt);
+    EXPECT_TRUE(DataTypeImpl::GetType<TestOpaqueNoNames>()->IsCompatible(from_dt_proto));
   }
 }
 

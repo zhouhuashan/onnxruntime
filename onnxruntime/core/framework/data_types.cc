@@ -142,11 +142,6 @@ void AssignOpaqueDomainName(const char* domain, const char* name,
   mutable_opaque->mutable_name()->assign(name);
 }
 
-void AddOpaqueParameter(const ONNX_NAMESPACE::TypeProto& param_proto,
-                        ONNX_NAMESPACE::TypeProto& proto) {
-  proto.mutable_opaque_type()->add_parameters()->CopyFrom(param_proto);
-}
-
 bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Tensor& tensor_proto,
                   const ONNX_NAMESPACE::TypeProto_Tensor& type_proto);
 
@@ -238,56 +233,34 @@ bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Sequence& sequence_proto,
 bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Opaque& opaque_proto, const ONNX_NAMESPACE::TypeProto_Opaque& type_proto) {
   const auto& lhs = opaque_proto;
   const auto& rhs = type_proto;
-  if (!rhs.has_domain() && !lhs.domain().empty()) {
+  bool lhs_domain = lhs.has_domain() && !lhs.domain().empty();
+  bool rhs_domain = rhs.has_domain() && !rhs.domain().empty();
+
+  if ((lhs_domain != rhs_domain) ||
+      (lhs_domain && rhs_domain && lhs.domain() != lhs.domain())) {
     return false;
   }
-  if (rhs.has_domain() && lhs.domain() != rhs.domain()) {
+
+  bool lhs_name = lhs.has_name() && !lhs.name().empty();
+  bool rhs_name = rhs.has_name() && !rhs.name().empty();
+
+  if ((lhs_name != rhs_name) ||
+      (lhs_name && rhs_name && lhs.name() != rhs.name())) {
     return false;
   }
-  if (!rhs.has_name() && !lhs.name().empty()) {
-    return false;
-  }
-  if (rhs.has_name() && lhs.name() != rhs.name()) {
-    return false;
-  }
-  bool result = true;
-  if (lhs.parameters_size() == rhs.parameters_size()) {
-    for (int i = 0; i < rhs.parameters_size() && result; ++i) {
-      const auto& lparam = lhs.parameters(i);
-      const auto& rparam = rhs.parameters(i);
-      if (lparam.value_case() == rparam.value_case()) {
-        switch (lparam.value_case()) {
-          case TypeProto::ValueCase::kTensorType:
-            result = IsCompatible(lparam.tensor_type(), rparam.tensor_type());
-            break;
-          case TypeProto::ValueCase::kSequenceType:
-            result = IsCompatible(lparam.sequence_type(), rparam.sequence_type());
-            break;
-          case TypeProto::ValueCase::kMapType:
-            result = IsCompatible(lparam.map_type(), rparam.map_type());
-            break;
-          case TypeProto::ValueCase::kOpaqueType:
-            result = IsCompatible(lparam.opaque_type(), rparam.opaque_type());
-            break;
-          default:
-            ONNXRUNTIME_ENFORCE(false);
-            break;
-        }
-      } else {
-        result = false;
-      }
-    }
-  } else {
-    result = false;
-  }
-  return result;
+
+  return true;
 }
 
+void RegisterAllProtos(const std::function<void(MLDataType)>&);
+
 class DataTypeRegistry {
-  mutable std::mutex lock_;
   std::unordered_map<DataType, MLDataType> mapping_;
 
-  DataTypeRegistry() = default;
+  DataTypeRegistry() {
+    RegisterAllProtos([this](MLDataType mltype) { RegisterDataType(mltype); });
+  }
+
   ~DataTypeRegistry() = default;
 
  public:
@@ -299,15 +272,18 @@ class DataTypeRegistry {
     return inst;
   }
 
-  void RegisterDataType(ONNX_NAMESPACE::DataType type, MLDataType mltype) {
-    std::lock_guard<std::mutex> g(lock_);
+  void RegisterDataType(MLDataType mltype) {
+    using namespace ONNX_NAMESPACE;
+    const auto* proto = mltype->GetTypeProto();
+    ONNXRUNTIME_ENFORCE(proto != nullptr, "Only ONNX MLDataType can be registered");
+    DataType type = Utils::DataTypeUtils::ToType(*proto);
     auto p = mapping_.insert(std::make_pair(type, mltype));
     ONNXRUNTIME_ENFORCE(p.second, "We do not expect duplicate registration of types for: ", type);
   }
+
   MLDataType GetMLDataType(const ONNX_NAMESPACE::TypeProto& proto) const {
     using namespace ONNX_NAMESPACE;
     DataType type = Utils::DataTypeUtils::ToType(proto);
-    std::lock_guard<std::mutex> g(lock_);
     auto p = mapping_.find(type);
     if (p != mapping_.end()) {
       return p->second;
@@ -322,12 +298,6 @@ struct TypeProtoImpl {
   }
   TypeProto& mutable_type_proto() {
     return proto_;
-  }
-
-  void RegisterTypeProto(MLDataType mltype) const {
-    using namespace ONNX_NAMESPACE;
-    DataType type = Utils::DataTypeUtils::ToType(proto_);
-    DataTypeRegistry::instance().RegisterDataType(type, mltype);
   }
 
   TypeProto proto_;
@@ -365,10 +335,6 @@ ONNX_NAMESPACE::TypeProto& TensorTypeBase::mutable_type_proto() {
   return impl_->mutable_type_proto();
 }
 
-void onnxruntime::TensorTypeBase::RegisterDataType() const {
-  impl_->RegisterTypeProto(this);
-}
-
 bool TensorTypeBase::IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const {
   const auto* thisProto = GetTypeProto();
   if (&type_proto == thisProto) {
@@ -382,6 +348,11 @@ bool TensorTypeBase::IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) c
   ONNXRUNTIME_ENFORCE(thisProto->tensor_type().has_elem_type());
 
   return data_types_internal::IsCompatible(thisProto->tensor_type(), type_proto.tensor_type());
+}
+
+MLDataType TensorTypeBase::Type() {
+  static TensorTypeBase tensor_base;
+  return &tensor_base;
 }
 
 /// NoTensorTypeBase
@@ -400,10 +371,6 @@ ONNX_NAMESPACE::TypeProto& NonTensorTypeBase::mutable_type_proto() {
 
 const ONNX_NAMESPACE::TypeProto* NonTensorTypeBase::GetTypeProto() const {
   return impl_->GetProto();
-}
-
-void onnxruntime::NonTensorTypeBase::RegisterDataType() const {
-  impl_->RegisterTypeProto(this);
 }
 
 bool NonTensorTypeBase::IsMapCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const {
@@ -478,6 +445,59 @@ ONNXRUNTIME_REGISTER_SEQ(VectorDouble);
 ONNXRUNTIME_REGISTER_SEQ(VectorMapStringToFloat);
 ONNXRUNTIME_REGISTER_SEQ(VectorMapInt64ToFloat);
 
+// Used for Tensor Proto registrations
+#define REGISTER_TENSOR_PROTO(TYPE, reg_fn)                  \
+  {                                                          \
+    MLDataType mltype = DataTypeImpl::GetTensorType<TYPE>(); \
+    reg_fn(mltype);                                          \
+  }
+
+#define REGISTER_ONNX_PROTO(TYPE, reg_fn)              \
+  {                                                    \
+    MLDataType mltype = DataTypeImpl::GetType<TYPE>(); \
+    reg_fn(mltype);                                    \
+  }
+
+namespace data_types_internal {
+
+void RegisterAllProtos(const std::function<void(MLDataType)>& reg_fn) {
+  REGISTER_TENSOR_PROTO(int32_t, reg_fn);
+  REGISTER_TENSOR_PROTO(float, reg_fn);
+  REGISTER_TENSOR_PROTO(bool, reg_fn);
+  REGISTER_TENSOR_PROTO(std::string, reg_fn);
+  REGISTER_TENSOR_PROTO(int8_t, reg_fn);
+  REGISTER_TENSOR_PROTO(uint8_t, reg_fn);
+  REGISTER_TENSOR_PROTO(uint16_t, reg_fn);
+  REGISTER_TENSOR_PROTO(int16_t, reg_fn);
+  REGISTER_TENSOR_PROTO(int64_t, reg_fn);
+  REGISTER_TENSOR_PROTO(double, reg_fn);
+  REGISTER_TENSOR_PROTO(uint32_t, reg_fn);
+  REGISTER_TENSOR_PROTO(uint64_t, reg_fn);
+  REGISTER_TENSOR_PROTO(MLFloat16, reg_fn);
+
+  REGISTER_ONNX_PROTO(MapStringToString, reg_fn);
+  REGISTER_ONNX_PROTO(MapStringToInt64, reg_fn);
+  REGISTER_ONNX_PROTO(MapStringToFloat, reg_fn);
+  REGISTER_ONNX_PROTO(MapStringToDouble, reg_fn);
+  REGISTER_ONNX_PROTO(MapInt64ToString, reg_fn);
+  REGISTER_ONNX_PROTO(MapInt64ToInt64, reg_fn);
+  REGISTER_ONNX_PROTO(MapInt64ToFloat, reg_fn);
+  REGISTER_ONNX_PROTO(MapInt64ToDouble, reg_fn);
+
+  REGISTER_ONNX_PROTO(VectorString, reg_fn);
+  REGISTER_ONNX_PROTO(VectorFloat, reg_fn);
+  REGISTER_ONNX_PROTO(VectorInt64, reg_fn);
+  REGISTER_ONNX_PROTO(VectorDouble, reg_fn);
+
+  REGISTER_ONNX_PROTO(VectorMapStringToFloat, reg_fn);
+  REGISTER_ONNX_PROTO(VectorMapInt64ToFloat, reg_fn);
+}
+}  // namespace data_types_internal
+
+void DataTypeImpl::RegisterDataType(MLDataType mltype) {
+  data_types_internal::DataTypeRegistry::instance().RegisterDataType(mltype);
+}
+
 MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
   const auto& registry = data_types_internal::DataTypeRegistry::instance();
 
@@ -515,7 +535,7 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
         default:
           ONNXRUNTIME_NOT_IMPLEMENTED("tensor type ", tensor_type.elem_type(), " is not supported");
       }
-    } break; // kTensorType
+    } break;  // kTensorType
     case TypeProto::ValueCase::kMapType: {
       auto maptype = proto.map_type();
       auto keytype = maptype.key_type();
@@ -534,8 +554,7 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
               default:
                 break;
             }
-          }
-          break;
+          } break;
           case TensorProto_DataType_INT64:
             switch (keytype) {
               case TensorProto_DataType_STRING:
@@ -566,9 +585,9 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
                 break;
             }
             break;
-            default:
-              break;
-          }
+          default:
+            break;
+        }
         MLDataType type = registry.GetMLDataType(proto);
         ONNXRUNTIME_ENFORCE(type != nullptr, "Map with key type: ", keytype, " value type: ", value_elem_type, " is not registered");
         return type;
@@ -580,8 +599,7 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
         }
         return type;
       }
-    }
-    break; // kMapType
+    } break;  // kMapType
     case TypeProto::ValueCase::kSequenceType: {
       auto& seq_type = proto.sequence_type();
       auto& val_type = seq_type.elem_type();
@@ -626,7 +644,7 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
             default:
               break;
           }
-        } // kTensorType
+        }  // kTensorType
         break;
         default:
           break;
@@ -705,11 +723,6 @@ std::ostream& operator<<(std::ostream& out, const MLDataType data_type) {
     return out << "(null)";
 
   return out << typeid(*data_type).name();
-}
-
-MLDataType TensorTypeBase::Type() {
-  static TensorTypeBase tensor_base;
-  return &tensor_base;
 }
 
 }  // namespace onnxruntime

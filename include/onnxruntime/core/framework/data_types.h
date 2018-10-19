@@ -91,94 +91,16 @@ class DataTypeImpl {
 
   static MLDataType TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto);
 
+  // Registers ONNX_NAMESPACE::DataType (internalized string) with
+  // MLDataType. DataType is produced by internalizing an instance of
+  // TypeProto contained within MLDataType
+  static void RegisterDataType(MLDataType);
+
   static const std::vector<MLDataType>& AllTensorTypes();
   static const std::vector<MLDataType>& AllFixedSizeTensorTypes();
 };
 
 std::ostream& operator<<(std::ostream& out, MLDataType data_type);
-
-/**
- * \brief OpaqueTypes registration helper
- *        Helps to create a type that combines Opaque type
- *        types info and use it for querying corresponding MLDataType.
- *
- * \param CPPType - cpp type that implements Opaque
- * \param D - domain must be const char[] with extern linkage
- * \param N - name must be const char[] with extern linkage
- * \param Params - optional list of parameter types that must be
- *        preregistered
- *
- * \details  Must use an OpaqueRegister helper to register OpaqueTypes:
- *         extern const char domain[]; extern const char name[];
- *         Params must be preregistered types.
- *         using MyOpaqueType = OpaqueRegister<MyCppOpaqueType, domain, name, optional_params>;
- *         ONNXRUNTIME_REGISTER_OPAQUE_TYPE(MyOpaqueType); // Runtime type is MyCppOpaqueType.
- */
-template <typename CPPType, const char D[], const char N[],
-          typename... Params>
-struct OpaqueRegister {
-  using cpp_type = CPPType;
-};
-
-/**
- * \brief   Registration helper for Maps and Sequences
- *
- * \details Needed to support recursive registration of types
- *          including Opaque types and/or more complex types as Sequences
- *          of Opaque Types in Maps.
- *
- *          When using CPPTypes you still register Maps and Sequences as before
- *          Providing that both keys and values either fundamental TensorContained
- *          types OR previously registered more complex types. E.g.:
- *            using MyMap = std::map<int64_t, std::string>;
- *            ONNXRUNTIME_REGISTER_MAP(MyMap); // Runtime type MyMap
- *            using MySequence = std::vector<int64_t>;
- *            ONNXRUNTIME_REGISTER_SEQ(MySequence); // Runtime type is std::vector<int64_t>
- *            using ComplexSequence = std::vector<MyMap>; // MyMap is previously registered
- *            ONNXRUNTIME_REGISTER_SEQ(ComplexSequence); // Runtime type is std::vector<MyMap>;
- *          Alternate using registration helper producing the same results
- *            using MyMap = TypeRegister<std::map<int64_t, std::string>>;
- *            ONNXRUNTIME_REGISTER_MAP(MyMap); // Runtime type std::map<int64_t, std::string>
- *            using  MySequence = TypeRegister<std::vector<int64_t>>;
- *            ONNXRUNTIME_REGISTER_SEQ(MySequence); // Runtime type is std::vector<int64_t>
- *
- *         Must use an OpaqueRegister helper to register OpaqueTypes:
- *             extern const char domain[]; extern const char name[];
- *             Params must be preregistered types.
- *             using MyOpaqueType = OpaqueRegister<MyCppOpaqueType, domain, name, optional_params>;
- *             ONNXRUNTIME_REGISTER_OPAQUE_TYPE(MyOpaqueType); // Runtime type is MyCppOpaqueType.
- *             use DataTypeImpl::GetType<MyOpaqueType>() to query MLDataType
- *
- *          However, if you want to register maps or sequences of OpaqueTypes you'd need
- *          to use a registration helper:
- *             using MyMap = std::map<int64_t, MyCppOpaqueType>;
- *             using MyOpaqueType = OpaqueRegister<MyCppOpaqueType, domain, name, optional_params>;
- *             using MyOpaqueMap =- TypeRegister<MyMap, MyOpaqueType>;
- *             ONNXRUNTIME_REGISTER_MAP(MyOpaqueMap); // Runtime type std::map<int64_t, MyCppOpaqueType>
- *             use DataTypeImpl::GetType<MyOpaqueMap>() to get MLDataType
- *             using MySequence = std::vector<MyCppOpaqueType>;
- *             using MyOpaqueSequence = TypeRegister<MySequence, MyOpaqueType>;
- *             ONNXRUNTIME_REGISTER_SERQ(MyOpaqueSequence); // Runtime type is std::vector<MyCppOpaqueType>
-*              use DataTypeImpl::GetType<MyOpaqueSequence>() to get MLDataType
- */
-template <typename... Types>
-struct TypeRegister;
-
-// Support classic case
-// CPPType is a runtime type
-template <typename CPPType>
-struct TypeRegister<CPPType> {
-  using cpp_type = CPPType;
-  using value_type = CPPType;
-};
-
-// Support nested Opaque type registration
-template <typename CPPType, typename T, const char D[], const char N[],
-          typename... Params>
-struct TypeRegister<CPPType, OpaqueRegister<T, D, N, Params...>> {
-  using cpp_type = CPPType;
-  using value_type = OpaqueRegister<T, D, N, Params...>;
-};
 
 /*
  * Type registration helpers
@@ -257,7 +179,7 @@ struct SetMapTypes {
     MLDataType dt = GetMLDataType<V, IsTensorContainedType<V>::value>::Get();
     const auto* value_proto = dt->GetTypeProto();
     ONNXRUNTIME_ENFORCE(value_proto != nullptr, typeid(V).name(),
-                " expected to be a registered ONNX type");
+                        " expected to be a registered ONNX type");
     CopyMutableMapValue(*value_proto, proto);
   }
 };
@@ -274,50 +196,16 @@ struct SetSequenceType {
     MLDataType dt = GetMLDataType<T, IsTensorContainedType<T>::value>::Get();
     const auto* elem_proto = dt->GetTypeProto();
     ONNXRUNTIME_ENFORCE(elem_proto != nullptr, typeid(T).name(),
-                " expected to be a registered ONNX type");
+                        " expected to be a registered ONNX type");
     CopyMutableSeqElement(*elem_proto, proto);
   }
 };
 
-/// OpaqueTypes handlers
+/// OpaqueTypes helpers
 ///
-
-/// This queries each of the parameter types from the type
-// system and copy them to Opaque proto
-template <typename... Params>
-struct AddOpaqueParam;
-
-template <>
-struct AddOpaqueParam<> {
-  static void Add(ONNX_NAMESPACE::TypeProto&) {}
-};
-
 void AssignOpaqueDomainName(const char* domain, const char* name,
                             ONNX_NAMESPACE::TypeProto& proto);
 
-template <typename T, const char D[], const char N[], typename... Params>
-struct AddOpaqueParam<OpaqueRegister<T, D, N, Params...>> {
-  static void Add(ONNX_NAMESPACE::TypeProto& proto) {
-    // Set domain and name first
-    AssignOpaqueDomainName(D, N, proto);
-    AddOpaqueParam<Params...>::Add(proto);
-  }
-};
-
-void AddOpaqueParameter(const ONNX_NAMESPACE::TypeProto& param_proto,
-                        ONNX_NAMESPACE::TypeProto& proto);
-
-template <typename P, typename... Params>
-struct AddOpaqueParam<P, Params...> {
-  static void Add(ONNX_NAMESPACE::TypeProto& proto) {
-    MLDataType dt = GetMLDataType<P, IsTensorContainedType<P>::value>::Get();
-    const auto* param_proto = dt->GetTypeProto();
-    ONNXRUNTIME_ENFORCE(param_proto != nullptr, typeid(P).name(),
-                " expected to be a registered ONNX type");
-    AddOpaqueParameter(*param_proto, proto);
-    AddOpaqueParam<Params...>::Add(proto);
-  }
-};
 }  // namespace data_types_internal
 
 /// All tensors base
@@ -354,9 +242,6 @@ class TensorTypeBase : public DataTypeImpl {
 
  protected:
   ONNX_NAMESPACE::TypeProto& mutable_type_proto();
-  // Associates a type string from ONNX_NAMESPACE::DataUtils with
-  // MLDataType
-  void RegisterDataType() const;
 
   TensorTypeBase();
   ~TensorTypeBase();
@@ -396,7 +281,6 @@ class TensorType : public TensorTypeBase {
   TensorType() {
     using namespace data_types_internal;
     TensorContainedTypeSetter<elemT>::SetTensorElementType(this->mutable_type_proto());
-    this->RegisterDataType();
   }
 };
 
@@ -422,10 +306,6 @@ class NonTensorTypeBase : public DataTypeImpl {
 
   ONNX_NAMESPACE::TypeProto& mutable_type_proto();
 
-  // Associates a type string from ONNX_NAMESPACE::DataUtils with
-  // MLDataType
-  void RegisterDataType() const;
-
   bool IsMapCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const;
 
   bool IsSequenceCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const;
@@ -437,12 +317,9 @@ class NonTensorTypeBase : public DataTypeImpl {
   Impl* impl_;
 };
 
-template <typename T, typename... Types>
-class NonTensorType;
-
 // This is where T is the actual CPPRuntimeType
 template <typename T>
-class NonTensorType<T> : public NonTensorTypeBase {
+class NonTensorType : public NonTensorTypeBase {
  private:
   static void Delete(void* p) {
     delete static_cast<T*>(p);
@@ -465,12 +342,6 @@ class NonTensorType<T> : public NonTensorTypeBase {
   NonTensorType() = default;
 };
 
-// Specialize for Opaque registration type to make sure we
-// instantiate/Destroy CPPType and not OpaqueRegister<>
-template <typename CPPType, const char D[], const char N[], typename... Params>
-class NonTensorType<OpaqueRegister<CPPType, D, N, Params...>> : public NonTensorType<CPPType> {
-};
-
 /**
  * \brief MapType. Use this type to register
  * mapping types.
@@ -481,11 +352,8 @@ class NonTensorType<OpaqueRegister<CPPType, D, N, Params...>> : public NonTensor
  *          The type is required to have mapped_type and
  *          key_type defined
  */
-template <typename... Types>
-class MapType;
-
 template <typename CPPType>
-class MapType<CPPType> : public NonTensorType<CPPType> {
+class MapType : public NonTensorType<CPPType> {
  public:
   static_assert(data_types_internal::IsTensorContainedType<typename CPPType::key_type>::value,
                 "Requires one of the tensor fundamental types as key");
@@ -500,29 +368,6 @@ class MapType<CPPType> : public NonTensorType<CPPType> {
   MapType() {
     using namespace data_types_internal;
     SetMapTypes<typename CPPType::key_type, typename CPPType::mapped_type>::Set(this->mutable_type_proto());
-    this->RegisterDataType();
-  }
-};
-
-// Same as above registered with TypeRegister helper with one parameter
-template <typename CPPType, typename... Types>
-class MapType<TypeRegister<CPPType, Types...>> : public NonTensorType<CPPType> {
- public:
-  static_assert(data_types_internal::IsTensorContainedType<typename CPPType::key_type>::value,
-                "Requires one of the tensor fundamental types as key");
-
-
-  static MLDataType Type();
-
-  bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override {
-    return this->IsMapCompatible(type_proto);
-  }
-
- private:
-  MapType() {
-    using namespace data_types_internal;
-    SetMapTypes<typename CPPType::key_type, typename TypeRegister<CPPType, Types...>::value_type>::Set(this->mutable_type_proto());
-    this->RegisterDataType();
   }
 };
 
@@ -532,16 +377,12 @@ class MapType<TypeRegister<CPPType, Types...>> : public NonTensorType<CPPType> {
  *  \param T - CPP type that you wish to register as Sequence
  *             runtime type.
  *
- * \details Usage: ONNXRUNTIME_REGISTER_SEQUENCE(C++Type)
+ * \details Usage: ONNXRUNTIME_REGISTER_SEQ(C++Type)
  *          The type is required to have value_type defined
  */
-template <typename... Types>
-class SequenceType;
-
 template <typename CPPType>
-class SequenceType<CPPType> : protected NonTensorType<CPPType> {
+class SequenceType : public NonTensorType<CPPType> {
  public:
-
   static MLDataType Type();
 
   bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override {
@@ -551,46 +392,25 @@ class SequenceType<CPPType> : protected NonTensorType<CPPType> {
  private:
   SequenceType() {
     data_types_internal::SetSequenceType<typename CPPType::value_type>::Set(this->mutable_type_proto());
-    this->RegisterDataType();
-  }
-};
-
-// Same as above using TypeRegister
-template <typename CPPType, typename... Types>
-class SequenceType<TypeRegister<CPPType, Types...>> : public NonTensorType<CPPType> {
- public:
-
-  static MLDataType Type();
-
-  bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override {
-    return this->IsSequenceCompatible(type_proto);
-  }
-
- private:
-  SequenceType() {
-    data_types_internal::SetSequenceType<typename TypeRegister<Types...>::value_type>::Set(this->mutable_type_proto());
-    this->RegisterDataType();
   }
 };
 
 /**
- * \brief Opaque Registration type
+ * \brief OpaqueType
  *
- * \param An OpaqueRegister with type parameters
+ * \param T - cpp runtume that implements the Opaque type
  *
- * \details Usage:
- *   struct YourOpaqueType {};
- *   using OpaqueType_1 = OpaqueRegister<CPPRuntimeType>;
- *   ONNXRUNTIME_REGISTER_OPAQUE_TYPE(OpaqueType_1);
- *   With parameter types
- *   using OpaqueType_2 = OpaqueRegister<CPPRuntimeType, uint64_t, float, double>;
- *   ONNXRUNTIME_REGISTER_OPAQUE_TYPE(OpaqueType_2);
- *   To query your type: DataTypeImpl::GetType<OpaqueType_2>();
+ * \param const char D[] - domain must be extern to be unique
+ *
+ * \param const char N[] - name must be extern to be unique
+ *
+ * \details Only one CPP type can be associated with a particular
+ *          OpaqueType registration
+ *
  */
-template <typename T>
-class OpaqueType : protected NonTensorType<T> {
+template <typename T, const char D[], const char N[]>
+class OpaqueType : public NonTensorType<T> {
  public:
-
   static MLDataType Type();
 
   bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override {
@@ -599,8 +419,7 @@ class OpaqueType : protected NonTensorType<T> {
 
  private:
   OpaqueType() {
-    data_types_internal::AddOpaqueParam<T>::Add(this->mutable_type_proto());
-    this->RegisterDataType();
+    data_types_internal::AssignOpaqueDomainName(D, N, this->mutable_type_proto());
   }
 };
 
@@ -639,7 +458,7 @@ class NonOnnxType : public DataTypeImpl {
 // thus a simple way to pre-instantiate a given template
 // at a registration time does not currently work and the macro
 // is needed.
-#define ONNXRUNTIME_REGISTER_TENSOR_TYPE(ELEM_TYPE)             \
+#define ONNXRUNTIME_REGISTER_TENSOR_TYPE(ELEM_TYPE)     \
   template <>                                           \
   MLDataType TensorType<ELEM_TYPE>::Type() {            \
     static TensorType<ELEM_TYPE> tensor_type;           \
@@ -650,9 +469,9 @@ class NonOnnxType : public DataTypeImpl {
     return TensorType<ELEM_TYPE>::Type();               \
   }
 
-#define ONNXRUNTIME_REGISTER_MAP(TYPE)               \
+#define ONNXRUNTIME_REGISTER_MAP(TYPE)       \
   template <>                                \
-    MLDataType MapType<TYPE>::Type() {       \
+  MLDataType MapType<TYPE>::Type() {         \
     static MapType<TYPE> map_type;           \
     return &map_type;                        \
   }                                          \
@@ -661,7 +480,7 @@ class NonOnnxType : public DataTypeImpl {
     return MapType<TYPE>::Type();            \
   }
 
-#define ONNXRUNTIME_REGISTER_SEQ(TYPE)               \
+#define ONNXRUNTIME_REGISTER_SEQ(TYPE)       \
   template <>                                \
   MLDataType SequenceType<TYPE>::Type() {    \
     static SequenceType<TYPE> sequence_type; \
@@ -672,25 +491,25 @@ class NonOnnxType : public DataTypeImpl {
     return SequenceType<TYPE>::Type();       \
   }
 
-#define ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(TYPE)     \
-  template <>                                \
-  MLDataType NonOnnxType<TYPE>::Type() {     \
-    static NonOnnxType<TYPE> non_onnx_type;  \
-    return &non_onnx_type;                   \
-  }                                          \
-  template <>                                \
-  MLDataType DataTypeImpl::GetType<TYPE>() { \
-    return NonOnnxType<TYPE>::Type();        \
+#define ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(TYPE) \
+  template <>                                    \
+  MLDataType NonOnnxType<TYPE>::Type() {         \
+    static NonOnnxType<TYPE> non_onnx_type;      \
+    return &non_onnx_type;                       \
+  }                                              \
+  template <>                                    \
+  MLDataType DataTypeImpl::GetType<TYPE>() {     \
+    return NonOnnxType<TYPE>::Type();            \
   }
 
-#define ONNXRUNTIME_REGISTER_OPAQUE_TYPE(REGISTRATION_TYPE)       \
-  template <>                                             \
-  MLDataType OpaqueType<REGISTRATION_TYPE>::Type() {      \
-    static OpaqueType<REGISTRATION_TYPE> opaque_type;     \
-    return &opaque_type;                                  \
-  }                                                       \
-  template <>                                             \
-  MLDataType DataTypeImpl::GetType<REGISTRATION_TYPE>() { \
-    return OpaqueType<REGISTRATION_TYPE>::Type();         \
+#define ONNXRUNTIME_REGISTER_OPAQUE_TYPE(CPPType, Domain, Name) \
+  template <>                                                   \
+  MLDataType OpaqueType<CPPType, Domain, Name>::Type() {        \
+    static OpaqueType<CPPType, Domain, Name> opaque_type;       \
+    return &opaque_type;                                        \
+  }                                                             \
+  template <>                                                   \
+  MLDataType DataTypeImpl::GetType<CPPType>() {                 \
+    return OpaqueType<CPPType, Domain, Name>::Type();           \
   }
 }  // namespace onnxruntime

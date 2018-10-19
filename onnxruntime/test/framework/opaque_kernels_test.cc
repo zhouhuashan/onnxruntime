@@ -89,14 +89,15 @@ class SparseTensorSample final {
 extern const char kTestDomain[] = "ai.onnx";
 extern const char kSparseTensorName[] = "SparseTensorSample";
 
-// We tie in the CPP Runtype, domain, name and tensors.
-// First tensor is values with its own shape, then indicies with its own shape
-// The last tensor represents the dimension of the SparseTensor
-// All of the Opaque param types must be pre-reg and have they TypeProto defined.
-using TestSparseTensorType = OpaqueRegister<SparseTensorSample, kTestDomain, kSparseTensorName,
-                                            int64_t, int64_t, int64_t>;
+ONNXRUNTIME_REGISTER_OPAQUE_TYPE(SparseTensorSample, kTestDomain, kSparseTensorName);
 
-ONNXRUNTIME_REGISTER_OPAQUE_TYPE(TestSparseTensorType);
+class OpaqueTypeTests : public testing::Test {
+ public:
+  static void SetUpTestCase() {
+    MLDataType mltype = DataTypeImpl::GetType<SparseTensorSample>();
+    DataTypeImpl::RegisterDataType(mltype);
+  }
+};
 
 /**
  *  @brief This class represents an operator kernel which takes as input 3 tensors
@@ -128,12 +129,12 @@ class ConstructSparseTensor final : public OpKernel {
 
     // Copy data. With some effort we could hold shallow copies of the input Tensors
     // but I will leave this for now.
-    SparseTensorSample* output_sparse_tensor = ctx->Output<TestSparseTensorType>(0);
-    output_sparse_tensor->Values().assign(values_tensor.template Data<int64_t>(),
-                                          values_tensor.template Data<int64_t>() + val_shape[0]);
-    output_sparse_tensor->Indicies().assign(indicies_tensor.template Data<int64_t>(),
-                                            indicies_tensor.template Data<int64_t>() + ind_shape[0]);
-    output_sparse_tensor->Size() = *shape_tensor.template Data<int64_t>();
+    SparseTensorSample* output_sparse_tensor = ctx->Output<SparseTensorSample>(0);
+    output_sparse_tensor->Values().assign(values_tensor.Data<int64_t>(),
+                                          values_tensor.Data<int64_t>() + val_shape[0]);
+    output_sparse_tensor->Indicies().assign(indicies_tensor.Data<int64_t>(),
+                                            indicies_tensor.Data<int64_t>() + ind_shape[0]);
+    output_sparse_tensor->Size() = *shape_tensor.Data<int64_t>();
 
     return Status::OK();
   }
@@ -152,12 +153,12 @@ class FetchSparseTensorShape final : public OpKernel {
 
   Status Compute(OpKernelContext* ctx) const override {
     ONNXRUNTIME_ENFORCE(ctx->InputCount() == 1, "Expecting a single SparseTensorSample input");
-    const SparseTensorSample* sparse_input = ctx->Input<TestSparseTensorType>(0);
+    const SparseTensorSample* sparse_input = ctx->Input<SparseTensorSample>(0);
     // Always a single dimension of 1 bc we are storing a single number
     const int64_t dims[1] = {1};
     TensorShape output_shape(dims, 1);
     Tensor* sparse_shape = ctx->Output(0, output_shape);
-    int64_t* shape_data = sparse_shape->template MutableData<int64_t>();
+    int64_t* shape_data = sparse_shape->MutableData<int64_t>();
     ONNXRUNTIME_ENFORCE(shape_data != nullptr);
     *shape_data = sparse_input->Size();
 
@@ -180,7 +181,7 @@ KernelDefBuilder ConstructSparseTensorDef() {
       .TypeConstraint("sparse_shape",
                       DataTypeImpl::GetTensorType<int64_t>())
       .TypeConstraint("sparse_rep",
-                      DataTypeImpl::GetType<TestSparseTensorType>());
+                      DataTypeImpl::GetType<SparseTensorSample>());
   return def;
 }
 
@@ -191,7 +192,7 @@ KernelDefBuilder ConstructFetchSparseShape() {
       .SinceVersion(8)
       .Provider(onnxruntime::kCpuExecutionProvider)
       .TypeConstraint("sparse_rep",
-                      DataTypeImpl::GetType<TestSparseTensorType>())
+                      DataTypeImpl::GetType<SparseTensorSample>())
       .TypeConstraint("sparse_tensor_shape",
                       DataTypeImpl::GetTensorType<int64_t>());
   return def;
@@ -239,7 +240,7 @@ ONNX_NAMESPACE::OpSchema GetConstructSparseTensorSchema() {
           "Only int64 is allowed")
       .TypeConstraint(
           "T",
-          {"opaque(ai.onnx,SparseTensorSample,p(tensor(int64),tensor(int64),tensor(int64)))"},
+          {"opaque(ai.onnx,SparseTensorSample)"},
           "Opaque object");
   schema.SinceVersion(8);
   return schema;
@@ -263,7 +264,7 @@ ONNX_NAMESPACE::OpSchema GetFetchSparseShapeSchema() {
           OpSchema::Single)
       .TypeConstraint(
           "T1",
-          {"opaque(ai.onnx,SparseTensorSample,p(tensor(int64),tensor(int64),tensor(int64)))"},
+          {"opaque(ai.onnx,SparseTensorSample)"},
           "Only int64 is allowed")
       .TypeConstraint(
           "T",
@@ -273,7 +274,7 @@ ONNX_NAMESPACE::OpSchema GetFetchSparseShapeSchema() {
   return schema;
 }
 
-TEST(OpaqueTypeTests, RunModel) {
+TEST_F(OpaqueTypeTests, RunModel) {
   SessionOptions so;
   so.enable_sequential_execution = true;
   so.session_logid = "SparseTensorTest";
@@ -325,7 +326,7 @@ TEST(OpaqueTypeTests, RunModel) {
     inputs.push_back(&sparse_shape_arg);
 
     //Output is our custom data type
-    TypeProto output_sparse_tensor(*DataTypeImpl::GetType<TestSparseTensorType>()->GetTypeProto());
+    TypeProto output_sparse_tensor(*DataTypeImpl::GetType<SparseTensorSample>()->GetTypeProto());
     auto& output_sparse_tensor_arg = graph.GetOrCreateNodeArg("sparse_rep", &output_sparse_tensor);
     outputs.push_back(&output_sparse_tensor_arg);
 

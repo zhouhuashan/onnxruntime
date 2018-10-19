@@ -15,36 +15,6 @@ namespace onnxruntime {
    Represents both tensors and non-tensors.
 */
 class MLValue {
- private:
-  template <typename Result, typename TReg>
-  struct Fetcher {
-    static const Result& Get(const MLValue& ml_value) {
-      ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<TReg>() == ml_value.type_,
-                  DataTypeImpl::GetType<TReg>(), " != ", ml_value.type_);
-      return *static_cast<Result*>(ml_value.data_.get());
-    }
-    static Result* GetMutable(MLValue& ml_value) {
-      ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<TReg>() == ml_value.type_,
-                  DataTypeImpl::GetType<TReg>(), " != ", ml_value.type_);
-      return static_cast<Result*>(ml_value.data_.get());
-    }
-  };
-
-  template <typename T, typename... Types>
-  struct TypeRegistrationDispatcher;
-
-  template <typename T>
-  struct TypeRegistrationDispatcher<T> : public Fetcher<T, T> {
-  };
-
-  template <typename T, typename... Types>
-  struct TypeRegistrationDispatcher<TypeRegister<T, Types...>> : public Fetcher<T, TypeRegister<T, Types...>> {
-  };
-
-  template <typename T, const char D[], const char N[], typename... Params>
-  struct TypeRegistrationDispatcher<OpaqueRegister<T, D, N, Params...>> : public Fetcher<T, OpaqueRegister<T, D, N, Params...>> {
-  };
-
  public:
   MLValue() : data_(nullptr) {}
   virtual ~MLValue() = default;
@@ -63,13 +33,15 @@ class MLValue {
   }
 
   template <typename T>
-  const auto& Get() const {
-    return TypeRegistrationDispatcher<T>::Get(*this);
+  const T& Get() const {
+    ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<T>() == type_, DataTypeImpl::GetType<T>(), " != ", type_);
+    return *static_cast<T*>(data_.get());
   }
 
   template <typename T>
-  auto* GetMutable() {
-    return TypeRegistrationDispatcher<T>::GetMutable(*this);
+  T* GetMutable() {
+    ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<T>() == type_, DataTypeImpl::GetType<T>(), " != ", type_);
+    return static_cast<T*>(data_.get());
   }
 
   bool IsTensor() const {
