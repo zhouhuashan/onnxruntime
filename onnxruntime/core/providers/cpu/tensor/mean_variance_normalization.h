@@ -99,7 +99,7 @@ class MeanVarianceNormalization_1 final : public MeanVarianceNormalization_0<T> 
   MeanVarianceNormalization_1(const OpKernelInfo& info) : MeanVarianceNormalization_0<T>(info) {
     std::vector<int64_t> axes;
     if (!info.GetAttrs("axes", axes).IsOK()) {
-      axes = {1, 2, 3, 4};
+      axes = {0, 2, 3};
     }
     if (find(axes.begin(), axes.end(), 1) != axes.end()) {
       this->across_channels_ = true;
