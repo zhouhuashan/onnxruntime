@@ -36,7 +36,7 @@ apt-get update && apt-get install -y --no-install-recommends \
         unzip \
         zip \
         rsync libunwind8 \
-        python3-setuptools python3-numpy python3-wheel python python3-pip
+        python3-setuptools python3-numpy python3-wheel python python3-pip python3-pytest
 
 if [ $PYTHON_VER != "3.5" ]; then
     apt-get install -y --no-install-recommends \

@@ -46,6 +46,10 @@ target_compile_options(onnxruntime_pybind11_state PRIVATE "-Wno-cast-function-ty
 endif()
 target_include_directories(onnxruntime_pybind11_state PRIVATE ${ONNXRUNTIME_ROOT} ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIR})
 target_include_directories(onnxruntime_pybind11_state PRIVATE ${pybind11_INCLUDE_DIRS})
+if(UNIX)  
+  set(ONNXRUNTIME_SO_LINK_FLAG "-Xlinker --version-script=${ONNXRUNTIME_ROOT}/python/version_script.lds -Xlinker --no-undefined")
+endif()
+
 set(onnxruntime_pybind11_state_libs
     onnxruntime_session
     ${PROVIDERS_CUDA}
@@ -68,10 +72,10 @@ set(onnxruntime_pybind11_state_dependencies
 add_dependencies(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_dependencies})
 if (MSVC)
   # if MSVC, pybind11 looks for release version of python lib (pybind11/detail/common.h undefs _DEBUG)
-  target_link_libraries(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_libs} ${onnxruntime_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE})
+  target_link_libraries(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_libs} ${onnxruntime_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE} ${ONNXRUNTIME_SO_LINK_FLAG})
 else()
-  target_link_libraries(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_libs} ${onnxruntime_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY})
-  set_target_properties(onnxruntime_pybind11_state PROPERTIES LINK_FLAGS "-Wl,-rpath,\$ORIGIN")
+  target_link_libraries(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_libs} ${onnxruntime_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY} ${ONNXRUNTIME_SO_LINK_FLAG})
+  set_target_properties(onnxruntime_pybind11_state PROPERTIES LINK_FLAGS "-Xlinker -rpath=\$ORIGIN")
 endif()
 
 set_target_properties(onnxruntime_pybind11_state PROPERTIES PREFIX "")
