@@ -387,6 +387,71 @@ Return Value:
     }
 }
 
+#if defined(MLAS_SSE2_INTRINSICS) || defined(MLAS_NEON_INTRINSICS)
+
+inline
+void
+MlasSgemmTransposePackB16x4(
+    float* D,
+    const float* B,
+    size_t ldb
+    )
+/*++
+
+Routine Description:
+
+    This routine transposes elements from the source matrix to the destination
+    packed buffer.
+
+    4 columns of 16 rows from the source matrix are transposed to 16 columns of 4
+    rows in the destination packed buffer.
+
+Arguments:
+
+    D - Supplies the address of the destination packed buffer.
+
+    B - Supplies the address of the source matrix.
+
+    ldb - Supplies the number of elements per row of the source matrix.
+
+Return Value:
+
+    None.
+
+--*/
+{
+    for (unsigned n = 0; n < 4; n++) {
+
+        MLAS_FLOAT32X4 t0 = MlasLoadFloat32x4(&B[ldb * 0]);
+        MLAS_FLOAT32X4 t1 = MlasLoadFloat32x4(&B[ldb * 1]);
+        MLAS_FLOAT32X4 t2 = MlasLoadFloat32x4(&B[ldb * 2]);
+        MLAS_FLOAT32X4 t3 = MlasLoadFloat32x4(&B[ldb * 3]);
+
+#if defined(MLAS_NEON_INTRINSICS)
+        float32x4x2_t z0 = vzipq_f32(t0, t2);
+        float32x4x2_t z1 = vzipq_f32(t1, t3);
+        float32x4x2_t o0 = vzipq_f32(z0.val[0], z1.val[0]);
+        float32x4x2_t o1 = vzipq_f32(z0.val[1], z1.val[1]);
+        t0 = o0.val[0];
+        t1 = o0.val[1];
+        t2 = o1.val[0];
+        t3 = o1.val[1];
+#else
+        _MM_TRANSPOSE4_PS(t0, t1, t2, t3);
+#endif
+
+        MlasStoreAlignedFloat32x4(&D[0], t0);
+        MlasStoreAlignedFloat32x4(&D[16], t1);
+        MlasStoreAlignedFloat32x4(&D[32], t2);
+        MlasStoreAlignedFloat32x4(&D[48], t3);
+
+        D += 4;
+        B += ldb * 4;
+    }
+}
+
+#endif
+
 void
 MlasSgemmTransposePackB(
     float* D,
@@ -442,6 +507,17 @@ Return Value:
         while (x >= 4) {
 
             SgemmTransposePackB16x4Routine(&D[0], &b[0], ldb);
+
+            b += 4;
+            D += 16 * 4;
+            x -= 4;
+        }
+
+#elif defined(MLAS_SSE2_INTRINSICS) || defined(MLAS_NEON_INTRINSICS)
+
+        while (x >= 4) {
+
+            MlasSgemmTransposePackB16x4(&D[0], &b[0], ldb);
 
             b += 4;
             D += 16 * 4;
