@@ -80,6 +80,7 @@ int main(int argc, char* argv[]) {
   int p_models = GetNumCpuCores();
   bool enable_cuda = false;
   bool enable_mkl = false;
+  bool enable_nuphar = false;
   ONNXRuntimeLoggingLevel logging_level = ONNXRUNTIME_LOGGING_LEVEL_kWARNING;
   {
     int ch;
@@ -127,6 +128,8 @@ int main(int argc, char* argv[]) {
             enable_cuda = true;
           } else if (!strcmp(optarg, "mkldnn")) {
             enable_mkl = true;
+          } else if (!strcmp(optarg, "nuphar")) {
+            enable_nuphar = true;
           } else {
             usage();
             return -1;
@@ -210,7 +213,17 @@ int main(int argc, char* argv[]) {
       return -1;
 #endif
     }
-
+    if (enable_nuphar) {
+#ifdef USE_NUPHAR
+      ONNXRuntimeProviderFactoryPtr* f;
+      ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeCreateNupharExecutionProviderFactory(0, "stackvm", &f));
+      sf.AppendExecutionProvider(f);
+      ONNXRuntimeReleaseObject(f);
+#else
+      fprintf(stderr, "Nuphar is supported in this build");
+      return -1;
+#endif
+    }
     TestEnv args(tests, stat, sf);
     Status st = RunTests(args, p_models, concurrent_session_runs, static_cast<size_t>(repeat_count), GetDefaultThreadPool(Env::Default()));
     if (!st.IsOK()) {

@@ -7,7 +7,7 @@ namespace onnxruntime {
 namespace test {
 #ifdef USE_TVM
 IExecutionProvider* TestNupharExecutionProvider() {
-  static NupharExecutionProviderInfo info;
+  static NupharExecutionProviderInfo info(0);
   static NupharExecutionProvider nuphar_provider(info);
   return &nuphar_provider;
 }

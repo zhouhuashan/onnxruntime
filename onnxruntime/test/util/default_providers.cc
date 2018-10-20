@@ -39,7 +39,7 @@ std::unique_ptr<IExecutionProvider> DefaultMkldnnExecutionProvider(bool enable_a
 
 std::unique_ptr<IExecutionProvider> DefaultNupharExecutionProvider() {
 #ifdef USE_NUPHAR
-  NupharExecutionProviderInfo nuphar_pi;
+  NupharExecutionProviderInfo nuphar_pi(0);
   return CreateNupharExecutionProvider(nuphar_pi);
 #else
   return nullptr;
