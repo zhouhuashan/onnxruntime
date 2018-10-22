@@ -699,7 +699,7 @@ class InferenceSession::Impl {
 
       auto output_provider_type = p_output_provider->Type();
 
-      if (output_provider_type == fetched_provider_type) {
+      if (output_provider_type == fetched_provider_type || fetched_tensor_location.mem_type == ONNXRuntimeMemTypeCPUOutput) {
         user_fetches[idx] = fetched_mlvalue;
         continue;
       }

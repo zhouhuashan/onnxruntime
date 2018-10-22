@@ -45,6 +45,8 @@ option(onnxruntime_USE_LLVM "Build tvm with LLVM" OFF)
 option(onnxruntime_USE_OPENMP "Build with OpenMP support" OFF)
 option(onnxruntime_BUILD_SHARED_LIB "Build a shared library" OFF)
 option(onnxruntime_ENABLE_MICROSOFT_INTERNAL "Use this option to enable/disable microsoft internal only code" OFF)
+option(onnxruntime_USE_NUPHAR "Build with Nupha" OFF)
+option(onnxruntime_USE_BRAINSLICE "Build with BrainSlice" OFF)
 
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(ONNX_ML 1)

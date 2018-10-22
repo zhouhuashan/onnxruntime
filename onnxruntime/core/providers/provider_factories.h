@@ -35,4 +35,23 @@ struct CUDAExecutionProviderInfo {
 std::unique_ptr<IExecutionProvider>
 CreateCUDAExecutionProvider(const CUDAExecutionProviderInfo& info);
 
+namespace fpga {
+struct FPGAInfo {
+  //Ip address of FPGA device
+  uint32_t ip;
+  //Is the FPGA already configured.
+  bool need_configure;
+  //Following field only meaningful when need_configure is True.
+  //Path to the instruction bin file
+  const char* inst_file;
+  //Path to the data bin file
+  const char* data_file;
+  //Path to the schema bin file
+  const char* schema_file;
+};
+}  // namespace fpga
+
+std::unique_ptr<IExecutionProvider>
+CreateBrainSliceExecutionProvider(const fpga::FPGAInfo& info);
+
 }  // namespace onnxruntime

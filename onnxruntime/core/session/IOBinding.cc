@@ -86,6 +86,12 @@ common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_
       return Status::OK();
     }
 
+    //If node require input on cpu and input tensor is allocated with pinned memory allocator, don't do copy
+    if (node_input_on_cpu && (input_tensor_loc.mem_type == ONNXRuntimeMemTypeCPU || input_tensor_loc.mem_type == ONNXRuntimeMemTypeCPUOutput)) {
+      new_mlvalue = orig_mlvalue;
+      return Status::OK();
+    }
+
     auto* node_provider = exec_providers.Get(required_provider_type);
     ONNXRUNTIME_ENFORCE(node_provider);
     ONNXRUNTIME_RETURN_IF_ERROR(AllocateHelper(session_state, target_device_id, required_provider_type, orig_mlvalue, new_mlvalue));

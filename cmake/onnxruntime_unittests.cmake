@@ -5,6 +5,11 @@ find_package(Threads)
 
 
 set(TEST_SRC_DIR ${ONNXRUNTIME_ROOT}/test)
+set(TEST_INC_DIR ${ONNXRUNTIME_ROOT} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS} ${onnxruntime_CUDNN_HOME}/include)
+if (onnxruntime_USE_TVM)
+  list(APPEND TEST_INC_DIR ${TVM_INCLUDES})
+endif()
+
 function(AddTest)
   cmake_parse_arguments(_UT "" "TARGET" "LIBS;SOURCES;DEPENDS" ${ARGN})
 
@@ -25,11 +30,7 @@ function(AddTest)
   endif(_UT_DEPENDS)
 
   target_link_libraries(${_UT_TARGET} PRIVATE ${_UT_LIBS} ${onnxruntime_EXTERNAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-  if (onnxruntime_USE_TVM)
-    target_include_directories(${_UT_TARGET} PRIVATE ${ONNXRUNTIME_ROOT} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS} ${onnxruntime_CUDNN_HOME}/include ${TVM_INCLUDES})
-  else()
-    target_include_directories(${_UT_TARGET} PRIVATE ${ONNXRUNTIME_ROOT} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS} ${onnxruntime_CUDNN_HOME}/include)
-  endif()
+  target_include_directories(${_UT_TARGET} PRIVATE ${TEST_INC_DIR})
 
   if (WIN32)
     #It's cmake bug, cannot add this compile option for cuda compiler
@@ -44,6 +45,9 @@ function(AddTest)
     endif()
     if (onnxruntime_USE_TVM)
       target_compile_options(${_UT_TARGET} PRIVATE ${DISABLED_WARNINGS_FOR_TVM})
+    endif()
+    if (onnxruntime_USE_BRAINSLICE)
+      target_compile_options(${_UT_TARGET} PRIVATE ${DISABLED_WARNINGS_FOR_FPGA})
     endif()
   endif()
 
@@ -96,6 +100,10 @@ if(onnxruntime_USE_CUDA)
   list(APPEND onnxruntime_test_framework_src_patterns  ${TEST_SRC_DIR}/framework/cuda/*)
 endif()
 
+if(onnxruntime_USE_BRAINSLICE)
+  list(APPEND onnxruntime_test_framework_src_patterns  ${TEST_SRC_DIR}/providers/brain_slice/*)
+endif()
+
 file(GLOB_RECURSE onnxruntime_test_providers_src
   "${TEST_SRC_DIR}/providers/*.h"
   "${TEST_SRC_DIR}/providers/*.cc"
@@ -104,6 +112,15 @@ file(GLOB_RECURSE onnxruntime_test_providers_src
   ${TEST_SRC_DIR}/framework/TestAllocatorManager.cc
   ${TEST_SRC_DIR}/framework/TestAllocatorManager.h
   )
+ 
+if(NOT onnxruntime_USE_BRAINSLICE)
+  file(GLOB_RECURSE onnxruntime_brainslice_providers_src
+  "${TEST_SRC_DIR}/providers/brain_slice/*.h"
+  "${TEST_SRC_DIR}/providers/brain_slice/*.cc"
+  )
+  
+  list(REMOVE_ITEM onnxruntime_test_providers_src ${onnxruntime_brainslice_providers_src})
+endif()
 
 # tests from lowest level library up.
 # the order of libraries should be maintained, with higher libraries being added first in the list
@@ -380,6 +397,10 @@ if (onnxruntime_USE_OPENBLAS)
   else()
     list(APPEND onnx_test_libs openblas)
   endif()
+endif()
+
+if (onnxruntime_USE_BRAINSLICE)
+    list(APPEND onnx_test_libs onnxruntime_providers_brainslice)
 endif()
 
 if (onnxruntime_USE_MKLDNN)

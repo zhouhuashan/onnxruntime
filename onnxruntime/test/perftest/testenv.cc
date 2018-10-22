@@ -33,6 +33,13 @@ Status SessionFactory::create(std::shared_ptr<::onnxruntime::InferenceSession>& 
 #else
       ONNXRUNTIME_THROW("This executable was not built with CUDA");
 #endif
+    } else if (provider == onnxruntime::kBrainSliceExecutionProvider) {
+#ifdef USE_BRAINSLICE
+      onnxruntime::fpga::FPGAInfo info = {0, false, "", "", ""};
+      ONNXRUNTIME_RETURN_IF_ERROR(sess->RegisterExecutionProvider(::onnxruntime::CreateBrainSliceExecutionProvider(info)));
+#else
+      ONNXRUNTIME_THROW("This executable was not built with BrainSlice");
+#endif
     }
     //TODO: add more
   }

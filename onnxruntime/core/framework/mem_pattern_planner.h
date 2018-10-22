@@ -65,7 +65,7 @@ class MemPatternPlanner {
     return pattern;
   }
 
- private:
+ protected:
   struct MLValueAllocationBlock {
     int index_{-1};
     MemoryBlock block_;

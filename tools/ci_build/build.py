@@ -89,6 +89,9 @@ Use the individual flags to only run the specified stages.
     parser.add_argument("--use_llvm", action="store_true", help="Build tvm with llvm")
     parser.add_argument("--enable_msinternal", action="store_true", help="Enable for Microsoft internal builds only.")
     parser.add_argument("--llvm_path", help="Path to llvm dir")
+    parser.add_argument("--use_brainslice", action="store_true", help="Build with brain slice")
+    parser.add_argument("--brain_slice_package_path", help="Path to brain slice pacakges")
+    parser.add_argument("--use_nuphar", action='store_true', help="Build with nuphar")
     return parser.parse_args()
 
 def is_windows():
@@ -187,8 +190,13 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
                  "-Donnxruntime_USE_OPENMP=" + ("ON" if args.use_openmp else "OFF"),
                  "-Donnxruntime_USE_TVM=" + ("ON" if args.use_tvm else "OFF"),
                  "-Donnxruntime_USE_LLVM=" + ("ON" if args.use_llvm else "OFF"),
-                 "-Donnxruntime_ENABLE_MICROSOFT_INTERNAL=" + ("ON" if args.enable_msinternal else "OFF")
+                 "-Donnxruntime_ENABLE_MICROSOFT_INTERNAL=" + ("ON" if args.enable_msinternal else "OFF"),
+                 "-Donnxruntime_USE_BRAINSLICE=" + ("ON" if args.use_brainslice else "OFF"),
+                 "-Donnxruntime_USE_NUPHAR=" + ("ON" if args.use_nuphar else "OFF"),
                  ]
+    if args.use_brainslice:
+        cmake_args += ["-Dlotus_FPGA_CORE_LIB_PATH=%s/%s" % (args.brain_slice_package_path, "CatapultFpgaCoreLib.3.88.2659"),
+                       "-Dlotus_BS_CLIENT_PACKAGE=%s/%s" % (args.brain_slice_package_path, "BrainSlice.v2.PP.Client.1.0.1")]
 
     if args.use_llvm:
         cmake_args += ["-DLLVM_DIR=%s" % args.llvm_path]
