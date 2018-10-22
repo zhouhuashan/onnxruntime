@@ -4,6 +4,7 @@
 #include "core/framework/parallel_executor.h"
 
 #include <chrono>
+#include <memory>
 #include <thread>
 #include <vector>
 #include "core/common/common.h"
@@ -24,7 +25,7 @@ Status ParallelExecutor::Execute(const SessionState& session_state,
   auto tp = session_state.Profiler().StartTime();
 
   node_refs_ = session_state.GetGraph()->GetNodeRefs();
-  root_frame_.reset(new ExecutionFrame(feeds, output_names, fetches, session_state));
+  root_frame_ = std::make_unique<ExecutionFrame>(feeds, output_names, fetches, session_state);
 
   const auto& root_nodes = session_state.GetGraph()->GetRootNodes();
   //std::cout << "start nodes:" << std::endl;

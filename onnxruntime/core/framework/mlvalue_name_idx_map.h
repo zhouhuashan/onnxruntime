@@ -8,6 +8,8 @@
 
 #include "core/common/common.h"
 
+//This class is not thread-safe
+//TODO: this is a static hash lookup, it's easy to do it better
 namespace onnxruntime {
 class MLValueNameIdxMap {
  public:
@@ -18,15 +20,14 @@ class MLValueNameIdxMap {
   // Add MLValue name to map and return index associated with it.
   // If entry already existed the existing index value is returned.
   int Add(const std::string& name) {
-    int idx;
-    common::Status status = GetIdx(name, idx);
-
-    if (!status.IsOK()) {
+    auto it = map_.find(name);
+    if (it == map_.end()) {
+      int idx;
       idx = mlvalue_max_idx_++;
-      map_.insert({name, idx});
+      map_.insert(it, {name, idx});
+      return idx;
     }
-
-    return idx;
+    return it->second;
   }
 
   common::Status GetIdx(const std::string& name, int& idx) const {
@@ -50,10 +51,7 @@ class MLValueNameIdxMap {
  private:
   ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(MLValueNameIdxMap);
 
-  // using std::atomic so each call to Add is guaranteed to get a unique index number.
-  // we could use a raw int at the cost of thread safety, but as we populate the map during
-  // initialization the performance cost of std::atomic is acceptable.
-  std::atomic<int> mlvalue_max_idx_{0};
+  int mlvalue_max_idx_ = 0;
   std::unordered_map<std::string, int> map_;
 };
 

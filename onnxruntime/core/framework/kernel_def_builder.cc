@@ -14,7 +14,7 @@ bool KernelDef::IsConflict(const KernelDef& other) const {
   //check types
   auto other_types = other.TypeConstraints();
   bool type_conflict = false;
-  for (auto it : type_constraints_) {
+  for (const auto& it : type_constraints_) {
     if (other_types.count(it.first)) {
       for (auto type : it.second) {
         if (std::find(other_types[it.first].begin(), other_types[it.first].end(), type) != other_types[it.first].end())
@@ -56,9 +56,6 @@ bool KernelDef::IsConflict(const KernelDef& other) const {
     if (other_output_mem_types.count(it.first) && other_output_mem_types[it.first] == it.second)
       return false;
   }
-  if (output_memory_type_args_.empty() && !other.OutputMemoryType().empty())
-    return false;
-
-  return true;
+  return !(output_memory_type_args_.empty() && !other.OutputMemoryType().empty());
 }
 }  // namespace onnxruntime

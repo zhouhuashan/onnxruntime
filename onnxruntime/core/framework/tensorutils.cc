@@ -7,6 +7,7 @@
 #pragma warning(disable : 4244)
 #endif
 #include "core/framework/tensorutils.h"
+#include "core/framework/allocator.h"
 
 #include <algorithm>
 
@@ -186,24 +187,25 @@ Status TensorUtils::UnpackTensor(const ONNX_NAMESPACE::TensorProto& tensor,
   return Status::OK();
 }
 
-#define CASE_PROTO_TRACE(X, Y)                                         \
-  case ONNX_NAMESPACE::TensorProto_DataType::TensorProto_DataType_##X: \
-    size *= sizeof(Y);                                                 \
+#define CASE_PROTO_TRACE(X, Y)                                                            \
+  case ONNX_NAMESPACE::TensorProto_DataType::TensorProto_DataType_##X:                    \
+    if (!IAllocator::CalcMemSizeForArrayWithAlignment<alignment>(size, sizeof(Y), out)) { \
+      return common::Status(common::ONNXRUNTIME, common::FAIL, "Invalid TensorProto");    \
+    }                                                                                     \
     break;
 
+template <size_t alignment>
 common::Status GetSizeInBytesFromTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_proto, size_t* out) {
   const auto& dims = tensor_proto.dims();
-  int64_t size = 1;
+  size_t size = 1;
   for (int i = 0; i < dims.size(); ++i) {
     if (dims[i] < 0) {
-      size = -1;
-      break;
+      return common::Status(common::ONNXRUNTIME, common::FAIL, "Invalid TensorProto");
     }
-    size *= dims[i];
+    if (!IAllocator::CalcMemSizeForArray(size, static_cast<size_t>(dims[i]), &size)) {
+      return common::Status(common::ONNXRUNTIME, common::FAIL, "Invalid TensorProto");
+    }
   }
-  //If 'size' is too big, size*sizeof(T) could overflow. Then Allocator may allocate less memory than needed
-  //Here max(sizeof(T)) is 8. 63 - 8 = 55.
-  if (size < 0 || size >= (1LL << 55)) return common::Status(common::ONNXRUNTIME, common::FAIL, "Invalid TensorProto");
   switch (tensor_proto.data_type()) {
     CASE_PROTO_TRACE(FLOAT, float);
     CASE_PROTO_TRACE(DOUBLE, double);
@@ -221,9 +223,9 @@ common::Status GetSizeInBytesFromTensorProto(const ONNX_NAMESPACE::TensorProto& 
     default:
       return common::Status(common::ONNXRUNTIME, common::NOT_IMPLEMENTED);
   }
-  *out = size;
   return Status::OK();
 }
 
+template common::Status GetSizeInBytesFromTensorProto<256>(const ONNX_NAMESPACE::TensorProto& tensor_proto, size_t* out);
 }  // namespace utils
 }  // namespace onnxruntime

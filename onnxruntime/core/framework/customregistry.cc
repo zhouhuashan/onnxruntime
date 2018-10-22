@@ -4,7 +4,7 @@
 #include "core/framework/customregistry.h"
 namespace onnxruntime {
 
-common::Status CustomRegistry::RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator) {
+common::Status CustomRegistry::RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, const KernelCreateFn& kernel_creator) {
   return Register(kernel_def_builder, kernel_creator);
 }
 

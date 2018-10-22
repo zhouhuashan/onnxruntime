@@ -33,21 +33,21 @@ Status Slice::ComputeInternal(OpKernelContext* ctx) const {
   if (output_size == 0) {
     return Status::OK();
   }
-
-  CudaAsyncBuffer<int64_t> starts_buffer(this, dimension_count);
+  int device_id = 0;
+  CudaAsyncBuffer<int64_t> starts_buffer(this, device_id, dimension_count);
   gsl::span<int64_t> starts_buffer_span = starts_buffer.CpuSpan();
   for (int i = 0; i < dimension_count; ++i) {
     starts_buffer_span[i] = starts[i];
   }
   starts_buffer.CopyToGpu();
 
-  CudaAsyncBuffer<int64_t> input_strides(this, dimension_count);
+  CudaAsyncBuffer<int64_t> input_strides(this, device_id, dimension_count);
   ONNXRUNTIME_ENFORCE(TensorPitches::Calculate(input_strides.CpuSpan(), input_dimensions));
   input_strides.CopyToGpu();
 
   TensorPitches output_pitches(output_dims);
 
-  CudaAsyncBuffer<fast_divmod> div_strides(this, dimension_count);
+  CudaAsyncBuffer<fast_divmod> div_strides(this, device_id, dimension_count);
   gsl::span<fast_divmod> div_strides_span = div_strides.CpuSpan();
   for (int i = 0; i < dimension_count; ++i) {
     div_strides_span[i] = fast_divmod(gsl::narrow_cast<int>(output_pitches[i]));

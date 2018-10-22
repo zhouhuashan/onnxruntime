@@ -21,7 +21,7 @@
 namespace onnxruntime {
 
 #if defined(PLATFORM_X86)
-static inline void GetCPUID(int function_id, int data[4]) {
+static inline void GetCPUID(int function_id, int data[4]) {  // NOLINT
 #if defined(_MSC_VER)
   __cpuid(reinterpret_cast<int*>(data), function_id);
 #elif defined(__GNUC__)

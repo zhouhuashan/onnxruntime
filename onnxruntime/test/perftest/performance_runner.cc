@@ -93,7 +93,7 @@ bool PerformanceRunner::Initialize() {
   if (provider_type == onnxruntime::kMklDnnExecutionProvider) {
     provider_type = onnxruntime::kCpuExecutionProvider;
   }
-  AllocatorPtr cpu_allocator = io_binding_->GetCPUAllocator(provider_type);
+  AllocatorPtr cpu_allocator = io_binding_->GetCPUAllocator(0, provider_type);
   test_case->SetAllocator(cpu_allocator);
 
   if (test_case->GetDataCount() <= 0) {

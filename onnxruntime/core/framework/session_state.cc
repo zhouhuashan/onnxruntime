@@ -83,8 +83,8 @@ const MemoryPatternGroup* SessionState::GetMemoryPatternGroup(const std::vector<
   auto it = mem_patterns_.find(key);
   if (it == mem_patterns_.end())
     return nullptr;
-  else
-    return it->second.get();
+
+  return it->second.get();
 }
 
 Status SessionState::UpdateMemoryPatternGroupCache(const std::vector<TensorShape>& input_shape,

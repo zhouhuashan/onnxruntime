@@ -8,7 +8,7 @@ namespace onnxruntime {
 namespace cuda {
 
 template <>
-Status BinaryElementwise<ShouldNotBroadcast>::Prepare(OpKernelContext* context, BinaryElementwisePreparation* p) const {
+Status BinaryElementwise<ShouldNotBroadcast>::Prepare(OpKernelContext* context, int /*device_id*/, BinaryElementwisePreparation* p) const {
   p->lhs_tensor = context->Input<Tensor>(0);
   p->rhs_tensor = context->Input<Tensor>(1);
   if (!(p->lhs_tensor->Shape() == p->rhs_tensor->Shape()))
@@ -45,7 +45,7 @@ static Status ComputeOutputShape(const std::string& node_name, const TensorShape
 }
 
 Status BinaryElementwiseBroadcastPrepare(
-    const Tensor* lhs_tensor,
+    int device_id, const Tensor* lhs_tensor,
     const Tensor* rhs_tensor,
     Tensor* output_tensor,
     BinaryElementwisePreparation* p,
@@ -59,13 +59,13 @@ Status BinaryElementwiseBroadcastPrepare(
   p->output_tensor = output_tensor;
   const auto& output_shape = output_tensor->Shape();
 
-  ONNXRUNTIME_RETURN_IF_ERROR(p->BinaryElementwiseBroadcastPrepareHelper(lhs_shape, rhs_shape, output_shape));
+  ONNXRUNTIME_RETURN_IF_ERROR(p->BinaryElementwiseBroadcastPrepareHelper(device_id, lhs_shape, rhs_shape, output_shape));
 
   return Status::OK();
 }
 
 template <>
-Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, BinaryElementwisePreparation* p) const {
+Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, int device_id, BinaryElementwisePreparation* p) const {
   auto lhs_tensor = context->Input<Tensor>(0);
   auto rhs_tensor = context->Input<Tensor>(1);
   const auto& lhs_shape = lhs_tensor->Shape();
@@ -75,7 +75,7 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
   ONNXRUNTIME_RETURN_IF_ERROR(ComputeOutputShape(Node().Name(), lhs_shape, rhs_shape, output_shape));
   auto output_tensor = context->Output(0, output_shape);
 
-  ONNXRUNTIME_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(lhs_tensor, rhs_tensor, output_tensor, p));
+  ONNXRUNTIME_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(device_id, lhs_tensor, rhs_tensor, output_tensor, p));
 
   return Status::OK();
 }
@@ -105,7 +105,7 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
   template <>                                                                                                    \
   Status x<T>::ComputeInternal(OpKernelContext* context) const {                                                 \
     BinaryElementwisePreparation prepare(this);                                                                  \
-    Prepare(context, &prepare);                                                                                  \
+    Prepare(context, 0, &prepare);                                                                               \
     ONNXRUNTIME_RETURN_IF_ERROR(prepare.CopyToGpu());                                                            \
     Impl_##x<typename ToCudaType<T>::MappedType>(                                                                \
         prepare.output_rank_or_simple_broadcast,                                                                 \
@@ -211,7 +211,7 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
     BinaryElementwisePreparation prepare(this);
     if (input_count == 2) {
       // special case for 2 tensors to avoid memset zero
-      ONNXRUNTIME_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(context->Input<Tensor>(0), context->Input<Tensor>(1), output_tensor, &prepare));
+      ONNXRUNTIME_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(0, context->Input<Tensor>(0), context->Input<Tensor>(1), output_tensor, &prepare));
       Impl_Add<CudaT>(
           prepare.output_rank_or_simple_broadcast,
           prepare.lhs_padded_strides.GpuPtr(),
@@ -227,7 +227,7 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
       // for more than 2 inputs, we need to accumulate into output tensor, as the shape from input0 + input1 might be different from output shape
       CUDA_RETURN_IF_ERROR(cudaMemset(output_tensor->MutableDataRaw(), 0, output_shape.Size() * sizeof(CudaT)));
       for (int index = 0; index < input_count; index++) {
-        ONNXRUNTIME_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(output_tensor, context->Input<Tensor>(index), output_tensor, &prepare));
+        ONNXRUNTIME_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(0, output_tensor, context->Input<Tensor>(index), output_tensor, &prepare));
         Impl_Add<CudaT>(
             prepare.output_rank_or_simple_broadcast,
             prepare.lhs_padded_strides.GpuPtr(),

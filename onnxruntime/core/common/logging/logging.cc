@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <ctime>
+#include <utility>
 
 #include "core/common/exceptions.h"
 #include "core/common/logging/isink.h"
@@ -133,7 +134,7 @@ void LoggingManager::CreateDefaultLogger(const std::string& logger_id) {
 }
 
 std::unique_ptr<Logger> LoggingManager::CreateLogger(std::string logger_id) {
-  return CreateLogger(logger_id, default_min_severity_, default_filter_user_data_, default_max_vlog_level_);
+  return CreateLogger(std::move(logger_id), default_min_severity_, default_filter_user_data_, default_max_vlog_level_);
 }
 
 std::unique_ptr<Logger> LoggingManager::CreateLogger(std::string logger_id,

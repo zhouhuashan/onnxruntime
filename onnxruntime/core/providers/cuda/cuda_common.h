@@ -45,8 +45,11 @@ class CudaKernel : public OpKernel {
   virtual Status ComputeInternal(OpKernelContext* p_op_kernel_context) const = 0;
 
   template <typename T>
-  inline IAllocatorUniquePtr<T> AllocateBufferOnCPUPinned(size_t count_or_bytes) const {
-    return IAllocator::MakeUniquePtr<T>(provider_->GetAllocator(ONNXRuntimeMemTypeCPU), count_or_bytes);
+  inline IAllocatorUniquePtr<T> AllocateBufferOnCPUPinned(int id, size_t count_or_bytes) const {
+    AllocatorPtr allocator = provider_->GetAllocator(id, ONNXRuntimeMemTypeCPU);
+    if (!allocator)
+      return nullptr;
+    return IAllocator::MakeUniquePtr<T>(allocator, count_or_bytes);
   }
 
   template <typename T>
@@ -63,22 +66,24 @@ class CudaKernel : public OpKernel {
   template <typename T>
   class CudaAsyncBuffer {
    public:
-    CudaAsyncBuffer(const CudaKernel* op_kernel) : op_kernel_(op_kernel), gpu_copy_(nullptr), count_(0) {}
+    CudaAsyncBuffer(const CudaKernel* op_kernel) : gpu_copy_(nullptr), count_(0), op_kernel_(op_kernel) {}
 
-    CudaAsyncBuffer(const CudaKernel* op_kernel, size_t count) : CudaAsyncBuffer(op_kernel) {
-      AllocCpuPtr(count);
+    CudaAsyncBuffer(const CudaKernel* op_kernel, int device_id, size_t count) : CudaAsyncBuffer(op_kernel) {
+      AllocCpuPtr(device_id, count);
     }
 
-    CudaAsyncBuffer(const CudaKernel* op_kernel, const T& value) : CudaAsyncBuffer(op_kernel, 1) {
+    CudaAsyncBuffer(const CudaKernel* op_kernel, int device_id, const T& value) : CudaAsyncBuffer(op_kernel, device_id, 1) {
       *CpuPtr() = value;
     }
 
-    CudaAsyncBuffer(const CudaKernel* op_kernel, const std::vector<T>& vec) : CudaAsyncBuffer(op_kernel, vec.size()) {
+    CudaAsyncBuffer(const CudaKernel* op_kernel, int device_id, const std::vector<T>& vec) : CudaAsyncBuffer(op_kernel, device_id, vec.size()) {
       memcpy(CpuPtr(), vec.data(), vec.size() * sizeof(T));
     }
 
-    void AllocCpuPtr(size_t count) {
-      cpu_pinned_copy_ = op_kernel_->AllocateBufferOnCPUPinned<T>(count);
+    void AllocCpuPtr(int id, size_t count) {
+      cpu_pinned_copy_ = op_kernel_->AllocateBufferOnCPUPinned<T>(id, count);
+      if (cpu_pinned_copy_ == nullptr)
+        throw std::runtime_error("alloc failed");
       count_ = count;
     }
 
@@ -158,12 +163,12 @@ class ToCudaType<MLFloat16> {
 
 inline bool CalculateFdmStrides(gsl::span<fast_divmod> p, const std::vector<int64_t>& dims) {
   int stride = 1;
-  if (p.size() < gsl::narrow_cast<ptrdiff_t>(dims.size()))
+  if (dims.empty() || p.size() < gsl::narrow_cast<ptrdiff_t>(dims.size()))
     return false;
-  auto rank = p.size();
-  for (int i = 0; i < rank; i++) {
+  std::ptrdiff_t rank = p.size();
+  for (std::ptrdiff_t i = 0; i < rank; i++) {
     p[rank - 1 - i] = fast_divmod(stride);
-    if (i < dims.size() - 1) {
+    if (static_cast<size_t>(i) < dims.size() - 1) {
       stride *= static_cast<int>(dims[dims.size() - 1 - i]);
     }
   }

@@ -258,7 +258,7 @@ void RunSession(InferenceSession& session_object,
                 std::vector<float>& values_y) {
   // prepare inputs
   MLValue ml_value;
-  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(ONNXRuntimeMemTypeDefault), dims_x, values_x, &ml_value);
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(0, ONNXRuntimeMemTypeDefault), dims_x, values_x, &ml_value);
   NameMLValMap feeds;
   feeds.insert(std::make_pair("X", ml_value));
 
@@ -326,7 +326,7 @@ TEST(CustomKernelTests, CustomABIKernelWithBuildInSchema) {
   //Register a foo kernel which is doing Add, but bind to Mul.
   MLEdgeType floatTensorType = {
       MLEdgeClass::kTensor,
-      MLTensorDataType::kFloat};
+      {MLTensorDataType::kFloat}};
 
   MLTypeConstraint constraint = {"T", &floatTensorType, 1};
 
@@ -414,7 +414,7 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
       {true, true, true},
   };
 
-  for (int case_index = 0; case_index < sizeof(test_cases) / sizeof(test_cases[0]); ++case_index) {
+  for (size_t case_index = 0; case_index < sizeof(test_cases) / sizeof(test_cases[0]); ++case_index) {
     SessionOptions so;
 
     so.session_logid = "InferenceSessionTests.NoTimeout";
@@ -426,7 +426,7 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
     EXPECT_TRUE(session_object.RegisterCustomRegistry(registry).IsOK());
 
     // Input and output parameters
-    MLFormalParameter input_param = {MLFormalParameterOptions::kSingle, MLFormalParameterTypeFormat::kLabel, "T"};
+    MLFormalParameter input_param = {MLFormalParameterOptions::kSingle, MLFormalParameterTypeFormat::kLabel, {"T"}};
     if (!test_cases[case_index].type_label) {
       assert(!test_cases[case_index].type_inf);
       input_param.type_format = MLFormalParameterTypeFormat::kEdgeType;
@@ -446,12 +446,12 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
     }
 
     MLFormalParameter inputs[] = {input_param, input_param};
-    MLEdgeType edgeTypes[] = {{MLEdgeClass::kTensor, MLTensorDataType::kUInt32},
-                              {MLEdgeClass::kTensor, MLTensorDataType::kUInt64},
-                              {MLEdgeClass::kTensor, MLTensorDataType::kInt32},
-                              {MLEdgeClass::kTensor, MLTensorDataType::kInt64},
-                              {MLEdgeClass::kTensor, MLTensorDataType::kFloat},
-                              {MLEdgeClass::kTensor, MLTensorDataType::kDouble}};
+    MLEdgeType edgeTypes[] = {{MLEdgeClass::kTensor, {MLTensorDataType::kUInt32}},
+                              {MLEdgeClass::kTensor, {MLTensorDataType::kUInt64}},
+                              {MLEdgeClass::kTensor, {MLTensorDataType::kInt32}},
+                              {MLEdgeClass::kTensor, {MLTensorDataType::kInt64}},
+                              {MLEdgeClass::kTensor, {MLTensorDataType::kFloat}},
+                              {MLEdgeClass::kTensor, {MLTensorDataType::kDouble}}};
 
     MLTypeConstraint constraints[] = {
         {"T1", edgeTypes, sizeof(edgeTypes) / sizeof(edgeTypes[0])},
@@ -511,7 +511,7 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
       def.type_inference_function = [](void* reg_ctx, IMLTypeInferenceContext* ctx) -> MLStatus {
         EXPECT_EQ(reg_ctx, (void*)123);
         VerifyTestAttributes(MLTypeInferenceContext(ctx));
-        MLEdgeType output_type = {MLEdgeClass::kTensor, MLTensorDataType::kFloat};
+        MLEdgeType output_type = {MLEdgeClass::kTensor, {MLTensorDataType::kFloat}};
         MLTypeInferenceContext(ctx).SetOutputEdgeType(0, &output_type);
         return MLStatus::OK;
       };
@@ -537,7 +537,7 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
     // Register a foo kernel which is doing Add, but bind to Mul.
     MLEdgeType floatTensorType = {
         MLEdgeClass::kTensor,
-        MLTensorDataType::kFloat};
+        {MLTensorDataType::kFloat}};
 
     MLTypeConstraint kernel_constraint = {"T", &floatTensorType, 1};
 

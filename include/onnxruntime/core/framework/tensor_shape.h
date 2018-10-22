@@ -16,13 +16,13 @@ class TensorShape : private std::vector<int64_t> {
   // number represents a unique symbolic dimension.
   // Private inheritance is used to prevent ambiguity of element versus dimension size
  public:
-  TensorShape();
+  TensorShape() = default;
 
   TensorShape(const int64_t* dimension_sizes, size_t dimension_count);
 
   TensorShape(const std::vector<int64_t>& dims);
 
-  TensorShape(const TensorShape& other);
+  TensorShape(const TensorShape& /*other*/) = default;
 
   TensorShape(const std::vector<int64_t>& dims, size_t start, size_t end);
 
@@ -64,8 +64,10 @@ class TensorShape : private std::vector<int64_t> {
   const std::vector<int64_t>& GetDims() const { return *this; }
 
   /**
-     Return the total number of elements. Returns 1 for an empty (rank 0) TensorShape.
-  */
+   * Return the total number of elements. Returns 1 for an empty (rank 0) TensorShape.
+   *
+   * May return -1
+   */
   int64_t Size() const;
 
   /**

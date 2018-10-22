@@ -29,7 +29,7 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
 
   OpKernelInfo(const OpKernelInfo& other);
 
-  const ONNXRuntimeAllocatorInfo& GetAllocatorInfo(ONNXRuntimeMemType mem_type) const;
+  const ONNXRuntimeAllocatorInfo& GetAllocatorInfo(int device_id, ONNXRuntimeMemType mem_type) const;
 
   const KernelDef& GetKernelDef() const;
 

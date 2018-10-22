@@ -214,8 +214,4 @@ inline std::string GetCurrentTimeString() {
 
 struct null_type {};
 
-inline size_t Align256(size_t v) {
-  return (v + 255) & ~static_cast<size_t>(255);
-}
-
 }  // namespace onnxruntime

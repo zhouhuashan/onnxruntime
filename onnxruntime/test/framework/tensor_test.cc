@@ -16,7 +16,7 @@ template <typename T>
 void CPUTensorTest(std::vector<int64_t> dims, const int offset = 0) {
   //not own the buffer
   TensorShape shape(dims);
-  auto alloc = TestCPUExecutionProvider()->GetAllocator(ONNXRuntimeMemTypeDefault);
+  auto alloc = TestCPUExecutionProvider()->GetAllocator(0, ONNXRuntimeMemTypeDefault);
   auto data = alloc->Alloc(sizeof(T) * (shape.Size() + offset));
   EXPECT_TRUE(data);
   Tensor t(DataTypeImpl::GetType<T>(), shape, data, alloc->Info(), nullptr, offset);
@@ -126,7 +126,7 @@ TEST(TensorTest, CPUUInt64TensorOffsetTest) {
 
 TEST(TensorTest, EmptyTensorTest) {
   auto type = DataTypeImpl::GetType<float>();
-  Tensor t(type, TensorShape({1, 0}), nullptr, TestCPUExecutionProvider()->GetAllocator(ONNXRuntimeMemTypeDefault)->Info());
+  Tensor t(type, TensorShape({1, 0}), nullptr, TestCPUExecutionProvider()->GetAllocator(0, ONNXRuntimeMemTypeDefault)->Info());
   auto& shape = t.Shape();
   EXPECT_EQ(shape.Size(), 0);
   EXPECT_EQ(t.DataType(), type);
@@ -142,7 +142,7 @@ TEST(TensorTest, EmptyTensorTest) {
 
 TEST(TensorTest, TensorCopyAssignOpTest) {
   TensorShape shape({1, 2, 3});
-  auto alloc = TestCPUExecutionProvider()->GetAllocator(ONNXRuntimeMemTypeDefault);
+  auto alloc = TestCPUExecutionProvider()->GetAllocator(0, ONNXRuntimeMemTypeDefault);
   auto data = alloc->Alloc(sizeof(int) * shape.Size());
   EXPECT_TRUE(data);
   Tensor t1(DataTypeImpl::GetType<int>(), shape, data, alloc->Info());
@@ -167,7 +167,7 @@ TEST(TensorTest, StringTensorTest) {
 #endif
   {
     TensorShape shape({2, 3});
-    auto alloc = TestCPUExecutionProvider()->GetAllocator(ONNXRuntimeMemTypeDefault);
+    auto alloc = TestCPUExecutionProvider()->GetAllocator(0, ONNXRuntimeMemTypeDefault);
     auto buffer = alloc->Alloc(sizeof(std::string) * (shape.Size()));
     Tensor t(DataTypeImpl::GetType<std::string>(), shape, buffer, alloc->Info(), alloc);
 

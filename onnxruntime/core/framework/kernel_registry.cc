@@ -35,8 +35,8 @@ const ::ONNX_NAMESPACE::TypeProto* FindTypeBinding(const onnxruntime::Node& node
     const onnxruntime::NodeArg* arg = actual_outputs[i];
     if (!arg->Exists()) continue;
     auto& formal = op_schema.outputs()[std::min(i, last_formal)];
-    auto formal_typestr = formal.GetTypeStr();  // for easier debugging
-    auto formal_name = formal.GetName();        // for easier debugging
+    const auto& formal_typestr = formal.GetTypeStr();  // for easier debugging
+    const auto& formal_name = formal.GetName();        // for easier debugging
     if ((formal_typestr == name) || (formal_name == name)) {
       return arg->TypeAsProto();
     }
@@ -213,9 +213,8 @@ Status KernelRegistry::FindKernel(const onnxruntime::Node& node,
     if (VerifyKernelDef(node, *i->second.kernel_def, error_str)) {
       *kernel_create_info = &i->second;
       return Status::OK();
-    } else {
-      error_strs.push_back(error_str);
     }
+    error_strs.push_back(error_str);
   }
 
   // In the case of CPU execution provider there is no value in creating a function
@@ -247,9 +246,8 @@ bool KernelRegistry::CanExecutionProviderCreateKernel(
     std::string error_str;
     if (VerifyKernelDef(node, *i->second.kernel_def, error_str, exec_provider)) {
       return true;
-    } else {
-      error_strs.push_back(error_str);
     }
+    error_strs.push_back(error_str);
   }
   LOGS_DEFAULT(INFO) << node.OpType() << " kernel is not supported in " << exec_provider
                      << " Encountered following errors: " << ToString(error_strs);

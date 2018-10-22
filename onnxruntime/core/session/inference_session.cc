@@ -59,7 +59,7 @@ class InferenceSession::Impl {
     int pool_size = session_options_.session_thread_pool_size == 0
                         ? std::thread::hardware_concurrency() / 2
                         : session_options_.session_thread_pool_size;
-    thread_pool_.reset(new TaskThreadPool(pool_size));
+    thread_pool_ = std::make_unique<TaskThreadPool>(pool_size);
 
     session_state_.SetThreadPool(thread_pool_.get());
     session_state_.SetEnableMemoryPattern(session_options.enable_mem_pattern);
@@ -414,9 +414,8 @@ class InferenceSession::Impl {
         auto retval = CheckTypes(input_type, expected_type);
         if (!retval.IsOK()) {
           return retval;
-        } else {
-          continue;
         }
+        continue;
       }
 
       auto expected_element_type = expected_type->AsTensorType()->GetElementType();
@@ -575,11 +574,11 @@ class InferenceSession::Impl {
           if (node_provider_type == tensor_provider_type) {
             new_fetches[idx] = fetches[idx];
             continue;
-          } else {
+          }
             // leave the new_fetches[idx] as it is since it'll get allocated on the appropriate
             // provider by the op kernel context when requested.
             continue;
-          }
+
         } else {
           new_fetches[idx] = fetches[idx];
           continue;
@@ -616,7 +615,7 @@ class InferenceSession::Impl {
         continue;
       }
       seen_outputs.insert(def_name);
-      auto weight = weights.at(mlvalue_idx);
+      const auto& weight = weights.at(mlvalue_idx);
       new_fetches[idx] = weight;
     }
 
@@ -628,13 +627,14 @@ class InferenceSession::Impl {
   }
 
   common::Status AllocateHelper(onnxruntime::ProviderType provider_type,
+                                int device_id,
                                 const Tensor& fetched_tensor,
                                 MLValue& output_mlvalue) {
     auto* p_provider = execution_providers_.Get(provider_type);
     if (!p_provider)
       return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "invalid provider_type");
 
-    auto allocator = p_provider->GetAllocator(ONNXRuntimeMemTypeDefault);
+    auto allocator = p_provider->GetAllocator(device_id, ONNXRuntimeMemTypeDefault);
     if (!allocator)
       return Status(common::ONNXRUNTIME, common::FAIL, "invalid allocator");
 
@@ -680,7 +680,7 @@ class InferenceSession::Impl {
       auto& output_mlvalue = user_fetches[idx];
       if (!output_mlvalue.IsAllocated()) {
         if (fetched_provider_type != onnxruntime::kCpuExecutionProvider) {
-          ONNXRUNTIME_RETURN_IF_ERROR(AllocateHelper(onnxruntime::kCpuExecutionProvider,
+          ONNXRUNTIME_RETURN_IF_ERROR(AllocateHelper(onnxruntime::kCpuExecutionProvider, 0,
                                                      fetched_tensor,
                                                      output_mlvalue));
         } else {
@@ -862,10 +862,9 @@ class InferenceSession::Impl {
   std::string EndProfiling() {
     if (is_model_loaded_) {
       return session_profiler_.WriteProfileData();
-    } else {
+    }
       LOGS(*session_logger_, ERROR) << "Could not write a profile because no model was loaded.";
       return std::string();
-    }
   }
 
  private:
@@ -996,9 +995,8 @@ class InferenceSession::Impl {
   common::Status WaitForNotification(Notification* p_executor_done, int64_t timeout_in_ms) {
     if (timeout_in_ms > 0) {
       ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, "timeout_in_ms >0 is not supported");  // TODO
-    } else {
-      p_executor_done->WaitForNotification();
     }
+    p_executor_done->WaitForNotification();
 
     return Status::OK();
   }

@@ -20,16 +20,16 @@ class CPUExecutionProvider : public IExecutionProvider {
 #ifdef USE_JEMALLOC
     ONNXRUNTIME_UNUSED_PARAMETER(info);
     //JEMalloc already has memory pool, so just use device allocator.
-    InsertAllocator(ONNXRuntimeMemTypeDefault,
-                    std::shared_ptr<IArenaAllocator>(
-                        std::make_unique<DummyArena>(std::move(device_info.factory(0)))));
+    InsertAllocator(
+        std::shared_ptr<IArenaAllocator>(
+            std::make_unique<DummyArena>(std::move(device_info.factory(0)))));
 #else
     if (info.create_arena)
-      InsertAllocator(ONNXRuntimeMemTypeDefault, CreateAllocator(device_info));
+      InsertAllocator(CreateAllocator(device_info));
     else
-      InsertAllocator(ONNXRuntimeMemTypeDefault,
-                      std::shared_ptr<IArenaAllocator>(
-                          std::make_unique<DummyArena>(device_info.factory(0))));
+      InsertAllocator(
+          std::shared_ptr<IArenaAllocator>(
+              std::make_unique<DummyArena>(device_info.factory(0))));
 #endif
   }
 

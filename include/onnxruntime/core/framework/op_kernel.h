@@ -46,8 +46,8 @@ class OpKernel {
     ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
-  const ONNXRuntimeAllocatorInfo& Allocator(ONNXRuntimeMemType mem_type) const {
-    return op_kernel_info_.GetAllocatorInfo(mem_type);
+  const ONNXRuntimeAllocatorInfo& Allocator(int id, ONNXRuntimeMemType mem_type) const {
+    return op_kernel_info_.GetAllocatorInfo(id, mem_type);
   }
 
   const OpKernelInfo& Info() const { return op_kernel_info_; }
@@ -111,6 +111,10 @@ class OpKernelContext {
     return static_cast<int>(kernel_->Node().OutputDefs().size());
   }
 
+  /**
+   * return an allocator on device 0, with memtype of ONNXRuntimeMemTypeDefault
+   *
+   */
   Status GetTempSpaceAllocator(AllocatorPtr* output) const;
 
   /**

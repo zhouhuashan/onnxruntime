@@ -23,12 +23,9 @@ bool InsertCastTransformer::NeedInsertCast(const onnxruntime::Node* node, const 
   //If the node's input is float16 and currently the node is not assigned to any XP.
   //we need insert a cast to float, and put the node on CPU for default behavior.
   //TODO: a better check is to check does the CPU kernel with float exist or not.
-  if (input->Type() != nullptr &&
-      DataTypeImpl::TypeFromProto(*input->TypeAsProto()) == DataTypeImpl::GetTensorType<MLFloat16>() &&
-      node->GetExecutionProviderType().empty()) {
-    return true;
-  }
-  return false;
+  return input->Type() != nullptr &&
+         DataTypeImpl::TypeFromProto(*input->TypeAsProto()) == DataTypeImpl::GetTensorType<MLFloat16>() &&
+         node->GetExecutionProviderType().empty();
 }
 
 onnxruntime::NodeArg* AddCastNode(onnxruntime::Graph& graph,

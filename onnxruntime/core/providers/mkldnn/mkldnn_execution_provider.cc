@@ -33,11 +33,11 @@ ONNX_OPERATOR_KERNEL_EX(
 MKLDNNExecutionProvider::MKLDNNExecutionProvider(const MKLDNNExecutionProviderInfo& /*info*/) {
   DeviceAllocatorRegistrationInfo default_allocator_info({ONNXRuntimeMemTypeDefault,
                                                           [](int) { return std::make_unique<MKLDNNAllocator>(); }, std::numeric_limits<size_t>::max()});
-  InsertAllocator(ONNXRuntimeMemTypeDefault, CreateAllocator(default_allocator_info));
+  InsertAllocator(CreateAllocator(default_allocator_info));
 
   DeviceAllocatorRegistrationInfo cpu_allocator_info({ONNXRuntimeMemTypeCPUOutput,
                                                       [](int) { return std::make_unique<MKLDNNCPUAllocator>(); }, std::numeric_limits<size_t>::max()});
-  InsertAllocator(ONNXRuntimeMemTypeCPUOutput, CreateAllocator(cpu_allocator_info));
+  InsertAllocator(CreateAllocator(cpu_allocator_info));
 }
 
 MKLDNNExecutionProvider::~MKLDNNExecutionProvider() {

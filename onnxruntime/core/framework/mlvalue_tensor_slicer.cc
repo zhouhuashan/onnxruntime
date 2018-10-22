@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #include "core/framework/mlvalue_tensor_slicer.h"
+#include <cassert>
 
 namespace onnxruntime {
 
@@ -24,24 +25,33 @@ MLValueTensorSlicer<T> MLValueTensorSlicer<T>::Create(T& mlvalue, int64_t slice_
 };
 
 template <typename T>
-MLValueTensorSlicer<T>::Iterator::Iterator(T& mlvalue, int64_t slice_dimension, int64_t dim0_offset,
-                                           int64_t position, Direction direction) noexcept
+MLValueTensorSlicer<T>::Iterator::Iterator(T& mlvalue, size_t slice_dimension, size_t dim0_offset,
+                                           int64_t position, Direction direction)
     : mlvalue_{&mlvalue},
       position_{position},
       increment_by_{direction == Direction::kForward ? 1 : -1},
       position_materialized_{-1} {
-  const Tensor& tensor = mlvalue.template Get<Tensor>();
+  const auto& tensor = mlvalue.template Get<Tensor>();
   tensor_data_type_ = tensor.DataType();
   tensor_location_ = &tensor.Location();
 
-  const auto& shape = tensor.Shape();
+  const TensorShape& shape = tensor.Shape();
   sequence_length_ = shape[slice_dimension];
   per_iteration_shape_ = shape.Slice(slice_dimension + 1);
-  per_iteration_offset_ = per_iteration_shape_.Size() * tensor.DataType()->Size();
+  const int64_t per_iteration_shape_size = per_iteration_shape_.Size();
+  assert(per_iteration_shape_size >= 0);
+  if (!IAllocator::CalcMemSizeForArray(static_cast<size_t>(per_iteration_shape_size), tensor.DataType()->Size(), &per_iteration_offset_))
+    throw std::runtime_error("size overflow");
+  const int64_t slice_dimension_size = shape.Slice(slice_dimension).Size();
+  assert(slice_dimension_size >= 0);
 
+  size_t total_len;
+  if (!IAllocator::CalcMemSizeForArray(static_cast<size_t>(slice_dimension_size), tensor.DataType()->Size(), &total_len))
+    throw std::runtime_error("size overflow");
+  if (!IAllocator::CalcMemSizeForArray(dim0_offset, total_len, &total_len))
+    throw std::runtime_error("size overflow");
   // move tensor_data_raw_ to the start of the section to slice
-  tensor_data_raw_ = static_cast<const char*>(tensor.DataRaw()) +
-                     (dim0_offset * shape.Slice(slice_dimension).Size() * tensor.DataType()->Size());
+  tensor_data_raw_ = static_cast<const char*>(tensor.DataRaw()) + total_len;
 
   // constrain position_ to valid bounds of 0 to sequence_length_ if forward, or -1 to sequence_length_ - 1 if reverse
   if (direction == Direction::kForward) {

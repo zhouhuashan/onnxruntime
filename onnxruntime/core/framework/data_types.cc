@@ -156,11 +156,8 @@ bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Opaque& opaque_proto,
 
 bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Tensor& tensor_proto,
                   const ONNX_NAMESPACE::TypeProto_Tensor& type_proto) {
-  if (!(type_proto.has_elem_type() &&
-        type_proto.elem_type() == tensor_proto.elem_type())) {
-    return false;
-  }
-  return true;
+  return type_proto.has_elem_type() &&
+         type_proto.elem_type() == tensor_proto.elem_type();
   /* Currently all Tensors with all kinds of shapes
      are mapped into the same MLDataType (same element type)
      so we omit shape from IsCompatible consideration
@@ -244,15 +241,11 @@ bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Opaque& opaque_proto, const ON
   bool lhs_name = lhs.has_name() && !lhs.name().empty();
   bool rhs_name = rhs.has_name() && !rhs.name().empty();
 
-  if ((lhs_name != rhs_name) ||
-      (lhs_name && rhs_name && lhs.name() != rhs.name())) {
-    return false;
-  }
-
-  return true;
+  return !((lhs_name != rhs_name) ||
+           (lhs_name && rhs_name && lhs.name() != rhs.name()));
 }
 
-void RegisterAllProtos(const std::function<void(MLDataType)>&);
+void RegisterAllProtos(const std::function<void(MLDataType)>& /*reg_fn*/);
 
 class DataTypeRegistry {
   std::unordered_map<DataType, MLDataType> mapping_;
@@ -503,7 +496,7 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
 
   switch (proto.value_case()) {
     case TypeProto::ValueCase::kTensorType: {
-      auto tensor_type = proto.tensor_type();
+      const auto& tensor_type = proto.tensor_type();
       ONNXRUNTIME_ENFORCE(tensor_type.has_elem_type());
       switch (tensor_type.elem_type()) {
         case TensorProto_DataType_FLOAT:
@@ -537,9 +530,9 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
       }
     } break;  // kTensorType
     case TypeProto::ValueCase::kMapType: {
-      auto maptype = proto.map_type();
+      const auto& maptype = proto.map_type();
       auto keytype = maptype.key_type();
-      auto value_type = maptype.value_type();
+      const auto& value_type = maptype.value_type();
 
       if (value_type.value_case() == TypeProto::ValueCase::kTensorType &&
           IsTensorTypeScalar(value_type.tensor_type())) {
@@ -591,14 +584,14 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
         MLDataType type = registry.GetMLDataType(proto);
         ONNXRUNTIME_ENFORCE(type != nullptr, "Map with key type: ", keytype, " value type: ", value_elem_type, " is not registered");
         return type;
-      } else {  // not if(scalar tensor) pre-reg types
+      }  // not if(scalar tensor) pre-reg types
         MLDataType type = registry.GetMLDataType(proto);
         if (type == nullptr) {
           DataType str_type = ONNX_NAMESPACE::Utils::DataTypeUtils::ToType(proto);
           ONNXRUNTIME_NOT_IMPLEMENTED("type: ", *str_type, " is not registered");
         }
         return type;
-      }
+
     } break;  // kMapType
     case TypeProto::ValueCase::kSequenceType: {
       auto& seq_type = proto.sequence_type();

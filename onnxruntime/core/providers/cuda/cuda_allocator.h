@@ -25,6 +25,7 @@ class CUDAAllocator : public IDeviceAllocator {
   const ONNXRuntimeAllocatorInfo info_;
 };
 
+//TODO: add a default constructor
 class CUDAPinnedAllocator : public IDeviceAllocator {
  public:
   virtual void* Alloc(size_t size) override;

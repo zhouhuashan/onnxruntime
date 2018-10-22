@@ -25,7 +25,7 @@ inline MLStatus ToABIStatus(StatusCode statusCode) {
   return static_cast<MLStatus>(statusCode);
 }
 
-inline MLStatus ToABIStatus(Status status) {
+inline MLStatus ToABIStatus(const Status& status) {
   return static_cast<MLStatus>(status.Code());
 }
 

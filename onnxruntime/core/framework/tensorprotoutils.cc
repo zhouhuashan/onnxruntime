@@ -50,9 +50,12 @@ common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
   if (tensor_size < 0) {
     return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "Invalid shape ", tensor_shape);
   }
-  size_t size_to_allocate = sizeof(T) * gsl::narrow<size_t>(tensor_size);
+  size_t size_to_allocate;
+  if (!IAllocator::CalcMemSizeForArrayWithAlignment<256>(static_cast<size_t>(tensor_size), sizeof(T), &size_to_allocate)) {
+    return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "size overflow");
+  }
 
-  if (preallocated && preallocated_size != Align256(size_to_allocate))
+  if (preallocated && preallocated_size != size_to_allocate)
     return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "The buffer planner is not consistent with tensor buffer size, expected ", size_to_allocate, ", got ", preallocated_size);
   //TODO(@chasun): size_to_allocate could be zero. We shouldn't pass zero to alloc->Alloc()
   T* p_data = static_cast<T*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
@@ -77,9 +80,12 @@ common::Status GetTensorByTypeFromTensorProto<std::string>(const TensorProto& te
   if (tensor_size < 0) {
     return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
   }
-  size_t size_to_allocate = sizeof(std::string) * gsl::narrow_cast<size_t>(tensor_size);
+  size_t size_to_allocate;
+  if (!IAllocator::CalcMemSizeForArrayWithAlignment<256>(static_cast<size_t>(tensor_size), sizeof(std::string), &size_to_allocate)) {
+    return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "size overflow");
+  }
 
-  if (preallocated && preallocated_size != Align256(size_to_allocate))
+  if (preallocated && preallocated_size != size_to_allocate)
     return Status(ONNXRUNTIME, FAIL, "The buffer planner is not consistent with tensor buffer size");
 
   std::string* p_data = static_cast<std::string*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
@@ -114,9 +120,12 @@ common::Status GetTensorByTypeFromTensorProto<MLFloat16>(const TensorProto& tens
     return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
   }
   static_assert(sizeof(MLFloat16) == sizeof(uint16_t), "MLFloat16 must has 16 bit size");
-  size_t size_to_allocate = sizeof(MLFloat16) * gsl::narrow_cast<size_t>(tensor_size);
+  size_t size_to_allocate;
+  if (!IAllocator::CalcMemSizeForArrayWithAlignment<256>(static_cast<size_t>(tensor_size), sizeof(MLFloat16), &size_to_allocate)) {
+    return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "size overflow");
+  }
 
-  if (preallocated && preallocated_size != Align256(size_to_allocate))
+  if (preallocated && preallocated_size != size_to_allocate)
     return Status(ONNXRUNTIME, FAIL, "The buffer planner is not consistent with tensor buffer size");
 
   MLFloat16* p_data = static_cast<MLFloat16*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));

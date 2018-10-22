@@ -47,8 +47,8 @@ class MLValueTensorSlicer {
     enum class Direction { kForward,
                            kReverse };
 
-    explicit Iterator(T& mlvalue, int64_t slice_dimension, int64_t dim0_offset,
-                      int64_t position, Direction direction = Direction::kForward) noexcept;
+    explicit Iterator(T& mlvalue, size_t slice_dimension, size_t dim0_offset,
+                      int64_t position, Direction direction = Direction::kForward);
 
     bool operator==(const Iterator& other) const noexcept {
       return mlvalue_ == other.mlvalue_ && position_ == other.position_;

@@ -50,15 +50,13 @@ inline void CastData<MLFloat16, float>(const Tensor* in, Tensor* out, const Tens
 
 template <typename SrcType,
           typename DstType>
-inline void CastFloat16Data(const Tensor* in, Tensor* out, const TensorShape& shape, const OpKernelInfo& info) {
-  auto* p_provider = info.GetExecutionProvider();
-  ONNXRUNTIME_ENFORCE(p_provider);
-  auto allocator = p_provider->GetAllocator(ONNXRuntimeMemTypeDefault);
+inline void CastFloat16Data(const Tensor* in, Tensor* out, const TensorShape& shape, const AllocatorPtr& allocator) {
   ONNXRUNTIME_ENFORCE(allocator != nullptr);
-  void* buffer = allocator->Alloc(sizeof(float) * shape.Size());
+  const int64_t len = shape.Size();
+  ONNXRUNTIME_ENFORCE(len > 0);
+  void* buffer = allocator->AllocArray(sizeof(float), len);
   ONNXRUNTIME_ENFORCE(buffer);
-  Tensor tmp_tensor(DataTypeImpl::GetType<float>(), shape, buffer, allocator->Info(), allocator);
-
+  Tensor tmp_tensor(DataTypeImpl::GetType<float>(), shape, buffer, allocator->Info(), nullptr);
   if (std::is_same<SrcType, MLFloat16>::value) {
     CastData<MLFloat16, float>(in, &tmp_tensor, shape);  // first cast to float
     CastData<float, DstType>(&tmp_tensor, out, shape);   // then cast to the destination type.
@@ -66,6 +64,7 @@ inline void CastFloat16Data(const Tensor* in, Tensor* out, const TensorShape& sh
     CastData<SrcType, float>(in, &tmp_tensor, shape);
     CastData<float, MLFloat16>(&tmp_tensor, out, shape);
   }
+  allocator->Free(buffer);
 }
 
 template <typename T>
@@ -89,8 +88,11 @@ class Cast final : public OpKernel {
 
   template <typename SrcType,
             typename DstType>
-  void CastFloat16Data(const Tensor* in, Tensor* out, const TensorShape& shape, const OpKernelInfo& info) const {
-    ::onnxruntime::CastFloat16Data<SrcType, DstType>(in, out, shape, info);
+  Status CastFloat16Data(const Tensor* in, Tensor* out, const TensorShape& shape, OpKernelContext* context) const {
+    AllocatorPtr allocator;
+    ONNXRUNTIME_RETURN_IF_ERROR(context->GetTempSpaceAllocator(&allocator));
+    ::onnxruntime::CastFloat16Data<SrcType, DstType>(in, out, shape, allocator);
+    return Status::OK();
   }
 
   ONNX_NAMESPACE::TensorProto_DataType to_;

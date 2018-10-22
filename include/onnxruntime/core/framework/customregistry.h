@@ -27,7 +27,7 @@ class CustomRegistry : public KernelRegistry, public onnxruntime::OnnxRuntimeOpS
    * Call this before invoking Initialize().
    * @return OK if success.
    */
-  common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator);
+  common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, const KernelCreateFn& kernel_creator);
 
   common::Status RegisterCustomKernel(KernelCreateInfo&);
 

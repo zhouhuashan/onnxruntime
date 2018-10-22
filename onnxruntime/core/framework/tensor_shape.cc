@@ -6,8 +6,6 @@
 #include "core/common/common.h"
 namespace onnxruntime {
 
-TensorShape::TensorShape() {}
-
 TensorShape::TensorShape(const std::vector<int64_t>& dims) : std::vector<int64_t>(dims) {
 }
 
@@ -17,8 +15,6 @@ TensorShape::TensorShape(const int64_t* dimension_sizes, size_t dimension_count)
   }
 }
 
-TensorShape::TensorShape(const TensorShape& other) : std::vector<int64_t>(other) {
-}
 
 TensorShape::TensorShape(const std::vector<int64_t>& dims, size_t start, size_t end) {
   assign(dims.begin() + start, dims.begin() + end);

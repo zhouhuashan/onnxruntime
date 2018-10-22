@@ -3,6 +3,8 @@
 
 #include "core/providers/cpu/tensor/cast_op.h"
 #include <sstream>
+#include "core/common/common.h"
+
 using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 
@@ -72,15 +74,16 @@ const std::vector<MLDataType> castOpTypeConstraints{
         if (std::is_same<in_type, float>::value) {                                                                                 \
           CastData<float, MLFloat16>(X, Y, shape);                                                                                 \
         } else {                                                                                                                   \
-          CastFloat16Data<in_type, MLFloat16>(X, Y, shape, Info());                                                                \
+          auto st = CastFloat16Data<in_type, MLFloat16>(X, Y, shape, context);                                                     \
+          if (!st.IsOK()) return st;                                                                                               \
         }                                                                                                                          \
         break;                                                                                                                     \
       case TensorProto_DataType_STRING:                                                                                            \
-        ONNXRUNTIME_THROW("Casting to and from strings is not supported yet."); /*break;*/                                                 \
+        ONNXRUNTIME_THROW("Casting to and from strings is not supported yet."); /*break;*/                                         \
       case TensorProto_DataType_UNDEFINED:                                                                                         \
-        ONNXRUNTIME_THROW("Cast op must have 'to' argument of type DataType"); /*break;*/                                                  \
+        ONNXRUNTIME_THROW("Cast op must have 'to' argument of type DataType"); /*break;*/                                          \
       default:                                                                                                                     \
-        ONNXRUNTIME_THROW("Unexpected 'to' argument value: ", to_);                                                                        \
+        ONNXRUNTIME_THROW("Unexpected 'to' argument value: ", to_);                                                                \
     }                                                                                                                              \
     return Status::OK();                                                                                                           \
   }
@@ -109,32 +112,31 @@ Status Cast<MLFloat16>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& shape = X->Shape();
   Tensor* Y = context->Output(0, TensorShape(shape));
-  const auto& op_kernel_info = Info();
-
+  Status st;
   switch (to_) {
     case TensorProto_DataType_BOOL:
-      CastFloat16Data<MLFloat16, bool>(X, Y, shape, op_kernel_info);
+      st = CastFloat16Data<MLFloat16, bool>(X, Y, shape, context);
       break;
     case TensorProto_DataType_INT16:
-      CastFloat16Data<MLFloat16, int16_t>(X, Y, shape, op_kernel_info);
+      st = CastFloat16Data<MLFloat16, int16_t>(X, Y, shape, context);
       break;
     case TensorProto_DataType_INT32:
-      CastFloat16Data<MLFloat16, int32_t>(X, Y, shape, op_kernel_info);
+      st = CastFloat16Data<MLFloat16, int32_t>(X, Y, shape, context);
       break;
     case TensorProto_DataType_INT64:
-      CastFloat16Data<MLFloat16, int64_t>(X, Y, shape, op_kernel_info);
+      st = CastFloat16Data<MLFloat16, int64_t>(X, Y, shape, context);
       break;
     case TensorProto_DataType_UINT8:
-      CastFloat16Data<MLFloat16, uint8_t>(X, Y, shape, op_kernel_info);
+      st = CastFloat16Data<MLFloat16, uint8_t>(X, Y, shape, context);
       break;
     case TensorProto_DataType_UINT16:
-      CastFloat16Data<MLFloat16, uint16_t>(X, Y, shape, op_kernel_info);
+      st = CastFloat16Data<MLFloat16, uint16_t>(X, Y, shape, context);
       break;
     case TensorProto_DataType_UINT32:
-      CastFloat16Data<MLFloat16, uint32_t>(X, Y, shape, op_kernel_info);
+      st = CastFloat16Data<MLFloat16, uint32_t>(X, Y, shape, context);
       break;
     case TensorProto_DataType_UINT64:
-      CastFloat16Data<MLFloat16, uint64_t>(X, Y, shape, op_kernel_info);
+      st = CastFloat16Data<MLFloat16, uint64_t>(X, Y, shape, context);
       break;
     case TensorProto_DataType_FLOAT:
       CastData<MLFloat16, float>(X, Y, shape);
@@ -143,10 +145,10 @@ Status Cast<MLFloat16>::Compute(OpKernelContext* context) const {
       // no op
       break;
     case TensorProto_DataType_DOUBLE:
-      CastFloat16Data<MLFloat16, double>(X, Y, shape, op_kernel_info);
+      st = CastFloat16Data<MLFloat16, double>(X, Y, shape, context);
       break;
     case TensorProto_DataType_INT8:
-      CastFloat16Data<MLFloat16, int8_t>(X, Y, shape, op_kernel_info);
+      st = CastFloat16Data<MLFloat16, int8_t>(X, Y, shape, context);
       break;
     case TensorProto_DataType_STRING:
       ONNXRUNTIME_THROW("Casting to and from strings is not supported yet."); /*break;*/
@@ -155,7 +157,7 @@ Status Cast<MLFloat16>::Compute(OpKernelContext* context) const {
     default:
       ONNXRUNTIME_THROW("Unexpected 'to' argument value: ", to_);
   }
-  return Status::OK();
+  return st;
 }
 
 }  //namespace onnxruntime

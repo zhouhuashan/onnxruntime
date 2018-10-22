@@ -63,15 +63,15 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
 
   DeviceAllocatorRegistrationInfo default_allocator_info({ONNXRuntimeMemTypeDefault,
                                                           [](int id) { return std::make_unique<CUDAAllocator>(id); }, std::numeric_limits<size_t>::max()});
-  InsertAllocator(ONNXRuntimeMemTypeDefault, CreateAllocator(default_allocator_info, device_id_));
+  InsertAllocator(CreateAllocator(default_allocator_info, device_id_));
 
   DeviceAllocatorRegistrationInfo pinned_allocator_info({ONNXRuntimeMemTypeCPUOutput,
                                                          [](int) { return std::make_unique<CUDAPinnedAllocator>(); }, std::numeric_limits<size_t>::max()});
-  InsertAllocator(ONNXRuntimeMemTypeCPUOutput, CreateAllocator(pinned_allocator_info, device_id_));
+  InsertAllocator(CreateAllocator(pinned_allocator_info, device_id_));
 }
 
 CUDAExecutionProvider::~CUDAExecutionProvider() {
-  auto cpu_alloc = GetAllocator(ONNXRuntimeMemTypeCPU);
+  auto cpu_alloc = GetAllocator(0, ONNXRuntimeMemTypeCPU);
   std::lock_guard<std::mutex> lock(deferred_release_cpu_ptr_mutex_);
   auto it = deferred_release_cpu_ptr_.begin();
   while (it != deferred_release_cpu_ptr_.end()) {
@@ -104,7 +104,7 @@ void CUDAExecutionProvider::ReleasePerThreadStuffs() const {
   }
 }
 
-AllocatorPtr CUDAExecutionProvider::GetAllocator(ONNXRuntimeMemType mem_type) const {
+AllocatorPtr CUDAExecutionProvider::GetAllocator(int id, ONNXRuntimeMemType mem_type) const {
   // Pinned memory allocator is shared between threads, but CUDA memory allocator is per-thread or it may cause result changes
   // A hypothesis is that arena allocator is not aligned with CUDA output cache, and data from different kernel writes may
   // cause cacheline to contain dirty data.
@@ -123,7 +123,7 @@ AllocatorPtr CUDAExecutionProvider::GetAllocator(ONNXRuntimeMemType mem_type) co
     }
     return per_thread_default_allocator_;
   } else {
-    return IExecutionProvider::GetAllocator(mem_type);
+    return IExecutionProvider::GetAllocator(id, mem_type);
   }
 }
 
@@ -146,7 +146,7 @@ void CUDAExecutionProvider::AddDeferredReleaseCPUPtr(void* p) {
 }
 
 Status CUDAExecutionProvider::OnRunStart() {
-  auto cpu_alloc = GetAllocator(ONNXRuntimeMemTypeCPU);
+  auto cpu_alloc = GetAllocator(0, ONNXRuntimeMemTypeCPU);
   // check if cudaEvents has passed for deferred release
   // note that we need to take a mutex in case of multi-threaded Run()
   std::lock_guard<std::mutex> lock(deferred_release_cpu_ptr_mutex_);

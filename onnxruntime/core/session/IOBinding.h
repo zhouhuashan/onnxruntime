@@ -72,8 +72,10 @@ class IOBinding {
 
   /**
     * Get a CPU allocator from provider for async copy later if the provider supports that
+    * If it doesn't support that, return the default allocator from CPU provider
+    * \return a nonnull pointer
     */
-  AllocatorPtr GetCPUAllocator(onnxruntime::ProviderType provider_type) const;
+  AllocatorPtr GetCPUAllocator(int id, onnxruntime::ProviderType provider_type) const;
 
  private:
   friend InferenceSession;

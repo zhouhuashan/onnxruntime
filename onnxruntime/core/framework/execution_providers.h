@@ -30,8 +30,7 @@ class ExecutionProviders {
       return status;
     }
 
-    for (const auto& pair : p_exec_provider->GetAllocatorMap()) {
-      auto allocator = pair.second;
+    for (const auto& allocator : p_exec_provider->GetAllocatorMap()) {
       if (allocator_idx_map_.find(allocator->Info()) != allocator_idx_map_.end()) {
         auto status = ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, allocator->Info(), " allocator already registered.");
         LOGS_DEFAULT(ERROR) << status.ErrorMessage();
@@ -44,8 +43,7 @@ class ExecutionProviders {
 
     ONNXRUNTIME_IGNORE_RETURN_VALUE(provider_idx_map_.insert({provider_id, new_provider_idx}));
 
-    for (const auto& pair : p_exec_provider->GetAllocatorMap()) {
-      auto allocator = pair.second;
+    for (const auto& allocator : p_exec_provider->GetAllocatorMap()) {
       ONNXRUNTIME_IGNORE_RETURN_VALUE(allocator_idx_map_.insert({allocator->Info(), new_provider_idx}));
     }
 

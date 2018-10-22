@@ -24,7 +24,7 @@ class NupharExecutionProvider : public IExecutionProvider {
         {ONNXRuntimeMemTypeDefault,
          [this](int /*id*/) { return std::make_unique<NupharAllocator>(this->tvm_ctx_); },
          std::numeric_limits<size_t>::max()});
-    InsertAllocator(ONNXRuntimeMemTypeDefault, CreateAllocator(allocator_info, tvm_ctx_.device_id));
+    InsertAllocator(CreateAllocator(allocator_info, tvm_ctx_.device_id));
   }
 
   virtual ~NupharExecutionProvider();

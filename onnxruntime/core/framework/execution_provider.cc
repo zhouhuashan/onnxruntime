@@ -1,25 +1,27 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+#include "core/framework/execution_provider.h"
 
 #include "core/graph/graph.h"
 #include "core/framework/computation_capacity.h"
-#include "core/framework/execution_provider.h"
 #include "core/framework/kernel_registry_manager.h"
 #include "core/framework/op_kernel.h"
 #include "core/framework/kernel_registry.h"
 
 namespace onnxruntime {
 
-const AllocatorMap& IExecutionProvider::GetAllocatorMap() const {
-  return allocators_;
+namespace {
+inline int MakeKey(int id, ONNXRuntimeMemType mem_type) {
+  return id << 2 | mem_type;
 }
+}  // namespace
 
-AllocatorPtr
-IExecutionProvider::GetAllocator(ONNXRuntimeMemType mem_type) const {
-  if (allocators_.count(mem_type) > 0)
-    return allocators_.at(mem_type);
-  else
-    return nullptr;
+AllocatorPtr IExecutionProvider::GetAllocator(int id, ONNXRuntimeMemType mem_type) const {
+  auto iter = allocators_.find(MakeKey(id, mem_type));
+  if (iter != allocators_.end()) {
+    return iter->second;
+  }
+  return nullptr;
 }
 
 std::vector<std::unique_ptr<ComputationCapacity>>
@@ -57,8 +59,13 @@ common::Status IExecutionProvider::OnRunStart() { return Status::OK(); }
 
 common::Status IExecutionProvider::OnRunEnd() { return Status::OK(); }
 
-void IExecutionProvider::InsertAllocator(ONNXRuntimeMemType mem_type,
-                                         AllocatorPtr allocator) {
-  allocators_.insert({mem_type, allocator});
+void IExecutionProvider::InsertAllocator(AllocatorPtr allocator) {
+  const ONNXRuntimeAllocatorInfo& info = allocator->Info();
+  const int key = MakeKey(info.id, info.mem_type);
+  auto iter = allocators_.find(key);
+  if (iter != allocators_.end()) {
+    ONNXRUNTIME_THROW("duplicated allocator");
+  }
+  allocators_.insert(iter, {key, allocator});
 }
 }  // namespace onnxruntime

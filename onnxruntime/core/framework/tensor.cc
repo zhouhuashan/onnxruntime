@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 #include "core/framework/tensor.h"
+
+#include <utility>
 #include "core/framework/allocatormgr.h"
 using namespace std;
 namespace onnxruntime {
@@ -13,7 +15,7 @@ Tensor::Tensor(MLDataType p_type,
                AllocatorPtr deleter,
                const int64_t offset)
     : alloc_info_(alloc) {
-  Init(p_type, shape, p_data, alloc, deleter, offset);
+  Init(p_type, shape, p_data, alloc, std::move(deleter), offset);
 }
 
 void Tensor::Init(MLDataType p_type,
@@ -22,16 +24,18 @@ void Tensor::Init(MLDataType p_type,
                   const ONNXRuntimeAllocatorInfo& alloc,
                   AllocatorPtr deleter,
                   const int64_t offset) {
+  if (shape.Size() < 0)
+    throw std::runtime_error("shape.Size() must >=0");
   dtype_ = p_type;
   shape_ = shape;
   p_data_ = p_raw_data;
   // if caller passed in a deleter, that means this tensor own this buffer
   // we will release the buffer when this tensor is deconstructed.
-  buffer_deleter_ = deleter;
+  buffer_deleter_ = std::move(deleter);
   // for string tensors, if this tensor own the buffer (caller passed in the deleter)
   // do the placement new for strings on pre-allocated buffer.
   if (buffer_deleter_ && dtype_ == DataTypeImpl::GetType<string>()) {
-    string* ptr = static_cast<string*>(p_data_);
+    auto* ptr = static_cast<string*>(p_data_);
     for (int64_t i = 0, n = shape.Size(); i < n; ++i) {
       new (ptr + i) string();
     }
@@ -89,7 +93,7 @@ Tensor::~Tensor() {
     // and it is a string tensor, need to explict call string's
     // deconstructor.
     if (dtype_ == DataTypeImpl::GetType<string>()) {
-      string* ptr = static_cast<string*>(p_data_);
+      auto* ptr = static_cast<string*>(p_data_);
       int64_t len = shape_.Size();
       for (int64_t i = 0; i < len; i++)
         ptr[i].~string();

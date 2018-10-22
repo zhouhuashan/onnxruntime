@@ -457,7 +457,6 @@ void BFCArena::FreeAndMaybeCoalesce(BFCArena::ChunkHandle h) {
       // Deletes c
       RemoveFreeChunkFromBin(c->prev);
       Merge(ChunkFromHandle(h)->prev, h);
-      c = ChunkFromHandle(h);
     }
   }
 

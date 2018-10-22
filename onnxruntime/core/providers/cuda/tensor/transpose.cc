@@ -33,10 +33,10 @@ Status Transpose<T>::ComputeInternal(OpKernelContext* ctx) const {
 
   TensorShape output_shape{output_dims};
   Tensor* Y = ctx->Output(0, output_shape);
-
-  CudaAsyncBuffer<int64_t> input_strides(this, rank);
-  CudaAsyncBuffer<int64_t> perm(this, *p_perm);
-  CudaAsyncBuffer<fast_divmod> fdm_output_strides(this, rank);
+  int device_id = 0;
+  CudaAsyncBuffer<int64_t> input_strides(this, device_id, rank);
+  CudaAsyncBuffer<int64_t> perm(this, device_id, *p_perm);
+  CudaAsyncBuffer<fast_divmod> fdm_output_strides(this, device_id, rank);
   ONNXRUNTIME_ENFORCE(TensorPitches::Calculate(input_strides.CpuSpan(), input_dims));
   ONNXRUNTIME_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));
 

@@ -41,7 +41,7 @@ AllocatorPtr GetAllocator(const ExecutionProviders& exec_providers, const ONNXRu
     return nullptr;
   }
 
-  return exec_provider->GetAllocator(allocator_info.mem_type);
+  return exec_provider->GetAllocator(allocator_info.id, allocator_info.mem_type);
 }
 
 AllocatorPtr GetAllocator(const SessionState& session_state, const ONNXRuntimeAllocatorInfo& allocator_info) {

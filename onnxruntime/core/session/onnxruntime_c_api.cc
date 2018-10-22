@@ -335,7 +335,7 @@ static ONNXStatusPtr CreateInferenceSessionImpl(_In_ ONNXEnv* env, _In_ T model_
     ONNXStatusPtr error_code = (*p)->CreateProvider(p, &provider);
     if (error_code)
       return error_code;
-    sess->RegisterExecutionProvider(std::unique_ptr<onnxruntime::IExecutionProvider>((onnxruntime::IExecutionProvider*)provider));
+    sess->RegisterExecutionProvider(std::unique_ptr<onnxruntime::IExecutionProvider>(reinterpret_cast<onnxruntime::IExecutionProvider*>(provider)));
   }
   status = sess->Load(model_path);
   if (!status.IsOK())
@@ -520,10 +520,10 @@ ONNXRUNTIME_API(ONNXValuePtr, ONNXRuntimeONNXValueListGetNthValue, ONNXValueList
 }
 
 ONNXRUNTIME_API(uint32_t, ONNXRuntimeAddRefToObject,void* ptr){
-  return (*(ONNXObject**)ptr)->AddRef(ptr);  
+  return (*static_cast<ONNXObject**>(ptr))->AddRef(ptr);
 }
 ONNXRUNTIME_API(uint32_t, ONNXRuntimeReleaseObject,void* ptr){
-  return (*(ONNXObject**)ptr)->Release(ptr);  
+  return (*static_cast<ONNXObject**>(ptr))->Release(ptr);
 }
 
 #define DEFINE_RELEASE_ONNX_RUNTIME_OBJECT_FUNCTION(INPUT_TYPE, REAL_TYPE) \

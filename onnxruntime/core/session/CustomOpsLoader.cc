@@ -14,8 +14,8 @@ using namespace ::onnxruntime::logging;
 
 namespace onnxruntime {
 CustomOpsLoader::~CustomOpsLoader() {
-  typedef void (*FreeKernelsContainerFn)(KernelsContainer*);
-  typedef void (*FreeSchemasContainerFn)(SchemasContainer*);
+  using FreeKernelsContainerFn = void (*)(KernelsContainer*);
+  using FreeSchemasContainerFn = void (*)(SchemasContainer*);
 
   try {
     for (auto& elem : dso_name_data_map_) {
@@ -73,8 +73,8 @@ Status CustomOpsLoader::LoadCustomOps(const std::string& dso_file_path,
       return Status(ONNXRUNTIME, INVALID_ARGUMENT, "A dso with name " + dso_file_path + " has already been loaded.");
     }
 
-    typedef KernelsContainer* (*GetAllKernelsFn)();
-    typedef SchemasContainer* (*GetAllSchemasFn)();
+    using GetAllKernelsFn = KernelsContainer* (*)();
+    using GetAllSchemasFn = SchemasContainer* (*)();
     void* lib_handle = nullptr;
     ONNXRUNTIME_RETURN_IF_ERROR(Env::Default().LoadLibrary(dso_file_path, &lib_handle));
     dso_name_data_map_[dso_file_path].lib_handle = lib_handle;
@@ -101,8 +101,8 @@ Status CustomOpsLoader::LoadCustomOps(const std::string& dso_file_path,
     custom_registry.reset();
     custom_registry = std::make_shared<CustomRegistry>();
 
-    for (size_t i = 0, end = kernels_container->kernels_list.size(); i < end; ++i) {
-      ONNXRUNTIME_RETURN_IF_ERROR(custom_registry->RegisterCustomKernel(kernels_container->kernels_list[i]));
+    for (auto& i : kernels_container->kernels_list) {
+      ONNXRUNTIME_RETURN_IF_ERROR(custom_registry->RegisterCustomKernel(i));
     }
 
     // get symbol for GetAllSchemas

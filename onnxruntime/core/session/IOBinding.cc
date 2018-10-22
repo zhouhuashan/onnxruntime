@@ -23,12 +23,12 @@ common::Status IOBinding::BindInput(const std::string& name, const MLValue& ml_v
 }
 
 static common::Status AllocateHelper(const SessionState& session_state,
-                                     onnxruntime::ProviderType provider_type,
+                                     int id, onnxruntime::ProviderType provider_type,
                                      const MLValue& fetched_mlvalue,
                                      MLValue& output_mlvalue) {
   auto* p_provider = session_state.GetExecutionProviders().Get(provider_type);
   ONNXRUNTIME_ENFORCE(p_provider);
-  auto allocator = p_provider->GetAllocator(ONNXRuntimeMemTypeDefault);
+  auto allocator = p_provider->GetAllocator(id, ONNXRuntimeMemTypeDefault);
   ONNXRUNTIME_ENFORCE(allocator != nullptr);
   auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
   void* buffer = allocator->Alloc(fetched_tensor.Size());
@@ -51,6 +51,8 @@ common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_
                                                     const std::string& input_name,
                                                     const MLValue& orig_mlvalue,
                                                     MLValue& new_mlvalue) {
+  //TODO: make it configurable
+  const int target_device_id = 0;
   std::vector<SessionState::NodeInfo> node_info_vec;
   ONNXRUNTIME_RETURN_IF_ERROR(session_state.GetInputNodeInfo(input_name, node_info_vec));
 
@@ -86,7 +88,7 @@ common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_
 
     auto* node_provider = exec_providers.Get(required_provider_type);
     ONNXRUNTIME_ENFORCE(node_provider);
-    ONNXRUNTIME_RETURN_IF_ERROR(AllocateHelper(session_state, required_provider_type, orig_mlvalue, new_mlvalue));
+    ONNXRUNTIME_RETURN_IF_ERROR(AllocateHelper(session_state, target_device_id, required_provider_type, orig_mlvalue, new_mlvalue));
     auto* new_tensor = new_mlvalue.GetMutable<Tensor>();
     auto* node_exec_provider = exec_providers.Get(required_provider_type);
     ONNXRUNTIME_ENFORCE(node_exec_provider);
@@ -137,9 +139,8 @@ static std::pair<bool, size_t> Contains(const std::vector<std::string>& output_n
   auto it = std::find(std::begin(output_names), std::end(output_names), oname);
   if (it == std::end(output_names)) {
     return {false, 0};
-  } else {
-    return {true, it - std::begin(output_names)};
   }
+  return {true, it - std::begin(output_names)};
 }
 
 common::Status IOBinding::BindOutput(const std::string& name, const MLValue& ml_value) {
@@ -166,18 +167,18 @@ const std::unordered_map<std::string, MLValue>& IOBinding::GetInputs() const {
   return feeds_;
 }
 
-AllocatorPtr IOBinding::GetCPUAllocator(onnxruntime::ProviderType provider_type) const {
+AllocatorPtr IOBinding::GetCPUAllocator(int id, onnxruntime::ProviderType provider_type) const {
   auto& exec_providers = session_state_.GetExecutionProviders();
   auto* p_provider = exec_providers.Get(provider_type);
   ONNXRUNTIME_ENFORCE(p_provider);
-  auto allocator = p_provider->GetAllocator(ONNXRuntimeMemTypeCPU);
+  auto allocator = p_provider->GetAllocator(id, ONNXRuntimeMemTypeCPU);
 
   // if the provider does not implement CPU allocator, fall back to CPU
   if (allocator)
     return allocator;
 
   auto* cpu_provider = exec_providers.Get(onnxruntime::kCpuExecutionProvider);
-  return cpu_provider->GetAllocator(ONNXRuntimeMemTypeDefault);
+  return cpu_provider->GetAllocator(0, ONNXRuntimeMemTypeDefault);
 }
 
 }  // namespace onnxruntime

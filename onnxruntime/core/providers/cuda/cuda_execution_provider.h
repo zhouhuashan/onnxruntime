@@ -25,7 +25,7 @@ class CUDAExecutionProvider : public IExecutionProvider {
   explicit CUDAExecutionProvider(const CUDAExecutionProviderInfo& info);
   virtual ~CUDAExecutionProvider();
 
-  virtual AllocatorPtr GetAllocator(ONNXRuntimeMemType mem_type = ONNXRuntimeMemTypeDefault) const override;
+  AllocatorPtr GetAllocator(int id, ONNXRuntimeMemType mem_type = ONNXRuntimeMemTypeDefault) const override;
 
   std::string Type() const override {
     return onnxruntime::kCudaExecutionProvider;
@@ -41,7 +41,7 @@ class CUDAExecutionProvider : public IExecutionProvider {
 
   Status CopyTensor(const Tensor& src, Tensor& dst, int exec_queue_id) const override;
 
-  virtual const void* GetExecutionHandle() const noexcept override {
+  const void* GetExecutionHandle() const noexcept override {
     // The CUDA interface does not return anything interesting.
     return nullptr;
   }

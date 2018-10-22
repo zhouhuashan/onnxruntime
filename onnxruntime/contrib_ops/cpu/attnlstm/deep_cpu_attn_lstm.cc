@@ -167,7 +167,7 @@ Status DeepCpuAttnLstmOp::ComputeImpl(OpKernelContext& context) const {
   // output shape is [seq_length, num_directions, batch_size, hidden_size]
   // so it's not a case of all the output for one direction being first.
   // due to that we can only easily check that the end of the output for each direction is valid.
-  const size_t output_size = Y != nullptr ? Y->Shape().Size() : 0;
+  const size_t output_size = Y != nullptr ? static_cast<size_t>(Y->Shape().Size()) : 0;
   const size_t per_direction_offset = batch_size * hidden_size_;
   gsl::span<T> output = Y != nullptr ? Y->MutableDataAsSpan<T>() : gsl::span<T>();
   gsl::span<T> output_1 =

@@ -44,7 +44,7 @@ static common::Status SaveInitializedTensors(const onnxruntime::Graph& graph,
                                              const ExecutionProviders& exec_providers,
                                              const MLValueNameIdxMap& mlvalue_name_idx_map,
                                              std::map<ONNXRuntimeAllocatorInfo, BufferUniquePtr>& weights_buffers,
-                                             SaveTensorFunc save_tensor_func,
+                                             const SaveTensorFunc& save_tensor_func,
                                              const logging::Logger& logger);
 
 static common::Status SaveKernels(const ExecutionProviders& execution_providers,
@@ -234,14 +234,9 @@ common::Status DeserializeTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_
   // deserialize to CPU first for non-CPU allocator, then alloc and copy
   AllocatorPtr deserialize_alloc_ptr;
   std::unique_ptr<Tensor> p_deserialize_tensor;
-  deserialize_alloc_ptr = exec_providers.Get(kCpuExecutionProvider)->GetAllocator(ONNXRuntimeMemTypeDefault);
+  deserialize_alloc_ptr = exec_providers.Get(kCpuExecutionProvider)->GetAllocator(0, ONNXRuntimeMemTypeDefault);
   ONNXRUNTIME_RETURN_IF_ERROR(utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
                                                               deserialize_alloc_ptr));
-
-  if (preallocated && preallocated_size != Align256(p_deserialize_tensor->Size())) {
-    return Status(common::ONNXRUNTIME, common::FAIL, "The buffer planner is not consistent with tensor buffer size");
-  }
-
   const IExecutionProvider* provider = exec_providers.Get(alloc_info);
   ONNXRUNTIME_ENFORCE(provider != nullptr);
   p_tensor = std::make_unique<Tensor>(
@@ -259,9 +254,8 @@ common::Status DeserializeTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_
       return Status(copy_status.Category(),
                     copy_status.Code(),
                     "Failed to copy tensor to execution provider: " + provider->Type());
-    } else {
-      return copy_status;
     }
+    return copy_status;
   }
   mlvalue.Init(p_tensor.release(),
                DataTypeImpl::GetType<Tensor>(),
@@ -274,10 +268,10 @@ static common::Status PlanTensor(MLValuePatternPlanner& planner, const MLValueNa
   int mlvalue_index;
   ONNXRUNTIME_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
   size_t len;
-  Status st = utils::GetSizeInBytesFromTensorProto(tensor_proto, &len);
+  Status st = utils::GetSizeInBytesFromTensorProto<256>(tensor_proto, &len);
   if (st.Code() == common::NOT_IMPLEMENTED) return Status::OK();
   if (!st.IsOK()) return st;
-  return planner.TraceAllocation(mlvalue_index, Align256(len));
+  return planner.TraceAllocation(mlvalue_index, len);
 }
 
 common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
@@ -285,7 +279,7 @@ common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
                                                     const ExecutionProviders& exec_providers,
                                                     const MLValueNameIdxMap& mlvalue_name_idx_map,
                                                     std::map<ONNXRuntimeAllocatorInfo, BufferUniquePtr>& weights_buffers,
-                                                    SaveTensorFunc save_tensor_func,
+                                                    const SaveTensorFunc& save_tensor_func,
                                                     const logging::Logger& logger) {
   LOGS(logger, INFO) << "Saving initialized tensors.";
 
@@ -336,7 +330,7 @@ common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
     // fall back to allocate separate buffer.
 
     // if it->second.get() is null, then fall back to the block not found case
-    if (it->second.get() == nullptr) {
+    if (it->second == nullptr) {
       block = nullptr;
     }
 
@@ -360,7 +354,7 @@ common::Status SaveInitializedTensorsWithSeperateBuffer(const onnxruntime::Graph
                                                         const SequentialExecutionPlan& execution_plan,
                                                         const ExecutionProviders& exec_providers,
                                                         const MLValueNameIdxMap& mlvalue_name_idx_map,
-                                                        SaveTensorFunc save_tensor_func,
+                                                        const SaveTensorFunc& save_tensor_func,
                                                         const logging::Logger& logger) {
   LOGS(logger, INFO) << "Saving initialized tensors.";
 
@@ -389,7 +383,7 @@ common::Status SaveInitializedTensors(const onnxruntime::Graph& graph,
                                       const ExecutionProviders& exec_providers,
                                       const MLValueNameIdxMap& mlvalue_name_idx_map,
                                       std::map<ONNXRuntimeAllocatorInfo, BufferUniquePtr>& weights_buffers,
-                                      SaveTensorFunc save_tensor_func,
+                                      const SaveTensorFunc& save_tensor_func,
                                       const logging::Logger& logger) {
   // if we enable the memory pattern and already have the execution plan
   // go with mem pattern approach, which will allocate a big chunk for all
@@ -397,10 +391,9 @@ common::Status SaveInitializedTensors(const onnxruntime::Graph& graph,
   if (enable_memory_pattern) {
     return SaveInitializedTensorsWithMemPattern(graph, execution_plan, exec_providers,
                                                 mlvalue_name_idx_map, weights_buffers, save_tensor_func, logger);
-  } else {
+  }
     return SaveInitializedTensorsWithSeperateBuffer(graph, execution_plan, exec_providers,
                                                     mlvalue_name_idx_map, save_tensor_func, logger);
-  }
 }
 
 static common::Status CreateOpKernelInternal(const onnxruntime::Node& node,
@@ -462,7 +455,7 @@ common::Status SaveKernels(const ExecutionProviders& execution_providers,
 }
 
 static bool IsArgNameInInputsOutputs(const std::string& name,
-                                     const std::vector<const onnxruntime::NodeArg*> graph_args) {
+                                     const std::vector<const onnxruntime::NodeArg*>& graph_args) {
   auto it = std::find_if(std::begin(graph_args), std::end(graph_args), [&name](const onnxruntime::NodeArg* arg) {
     return arg->Name() == name;
   });

@@ -31,7 +31,7 @@ void TestNupharCopyTensorWithPrimitiveType(IExecutionProvider *nuphar_provider,
 
 TEST(NupharCopyTensorTests, PrimitiveTypesTest) {
   auto nuphar_provider = TestNupharExecutionProvider();
-  auto nuphar_allocator = nuphar_provider->GetAllocator(ONNXRuntimeMemTypeDefault);
+  auto nuphar_allocator = nuphar_provider->GetAllocator(0, ONNXRuntimeMemTypeDefault);
 
   TestNupharCopyTensorWithPrimitiveType<int8_t>(nuphar_provider, nuphar_allocator, {2, 3}, {1, 3, 2, 6, 5, 4});
   TestNupharCopyTensorWithPrimitiveType<uint16_t>(nuphar_provider, nuphar_allocator, {3, 2}, {11, 32, 21, 61, 51, 41});

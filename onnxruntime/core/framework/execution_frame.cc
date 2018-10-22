@@ -83,15 +83,16 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
     return Status::OK();
   }
   auto alloc = GetAllocator(location);
-
-  int64_t len = shape.Size();
-  if (len < 0) {
-    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
+  size_t size;
+  {
+    int64_t len = shape.Size();
+    if (len < 0) {
+      return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
+    }
+    if (!IAllocator::CalcMemSizeForArray(len, element_type->Size(), &size)) {
+      return Status(ONNXRUNTIME, FAIL, "size overflow");
+    }
   }
-  len *= element_type->Size();
-  //safety check for 32 bits systems
-  size_t size = gsl::narrow_cast<size_t>(len);
-
   // create fence if needed
   if (create_fence) {
     ONNXRUNTIME_ENFORCE(p_mlvalue->Fence() == nullptr);
@@ -118,7 +119,8 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
               p_mlvalue, static_cast<void*>(static_cast<char*>(buffer) + block->offset_),
               element_type, location, shape);
           return status;
-        } else if (block->size_ != size) {
+        }
+        if (block->size_ != size) {
           LOGS_DEFAULT(WARNING) << "For mlvalue with index: " << mlvalue_index << ", block in memory pattern size is: "
                                 << block->size_ << " but the actually size is: " << size << ", fall back to default allocation behavior";
         } else if (it == buffers_.end()) {
@@ -181,7 +183,7 @@ Status ExecutionFrame::AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_
   ONNXRUNTIME_ENFORCE(mlvalue_index_reuse >= 0 && mlvalue_index_reuse < all_values_.size());
   MLValue* p_mlvalue_reuse = &all_values_[mlvalue_index_reuse];
 
-  Tensor* reuse_tensor = p_mlvalue_reuse->GetMutable<Tensor>();
+  auto* reuse_tensor = p_mlvalue_reuse->GetMutable<Tensor>();
   void* reuse_buffer = reuse_tensor->MutableDataRaw();
 
   // create fence on reused mlvalue if needed
@@ -474,12 +476,11 @@ Status ExecutionFrame::GetOrCreateNodeOutputMLValue(int index,
     // Now only tensor need to be check.
     VerifyShape(p_mlvalue, parameters);  // TODO find a better way to do this
     return Status::OK();
-  } else {
+  }
     // It's not allocated, then allocate it with given shape and return.
     // Perform allocation based on the allocation plan
     ONNXRUNTIME_RETURN_IF_ERROR(AllocateAsPerAllocationPlan(node_values_[index], parameters));
     return Status::OK();
-  }
 }
 
 Status ExecutionFrame::ReleaseMLValue(int mlvalue_idx) {

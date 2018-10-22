@@ -79,7 +79,7 @@ std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionP
     out << node.OpType() << " (" << node.Name() << ")" << std::endl;
     if (step.free_from_index <= step.free_to_index) {
       out << "Free ml-values: ";
-      std::string sep = "";
+      std::string sep;
       for (int j = step.free_from_index; j <= step.free_to_index; ++j) {
         auto freed_value_index = plan.to_be_freed[j];
         auto name_iter = index_to_name.find(freed_value_index);
@@ -239,8 +239,8 @@ class PlannerImpl {
     int rank1 = shape1.dim_size();
     if (shape2.dim_size() != rank1) return false;
     for (int i = 0; i < rank1; i++) {
-      auto val1 = shape1.dim(i);
-      auto val2 = shape2.dim(i);
+      const auto& val1 = shape1.dim(i);
+      const auto& val2 = shape2.dim(i);
       if (val1.has_dim_value() && val2.has_dim_value() && (val1.dim_value() == val2.dim_value()))
         continue;  // same known dimension
       if (val1.has_dim_param() && val2.has_dim_param() && (val1.dim_param() == val2.dim_param()))
@@ -335,7 +335,7 @@ class PlannerImpl {
     }
 
     // All initializers should be treated as input
-    for (auto pair : graph_.GetAllInitializedTensors()) {
+    for (const auto& pair : graph_.GetAllInitializedTensors()) {
       const auto& initializer_name = pair.first;
       MLValueIndex index = Index(initializer_name);
       ProcessDef(index, graph_.FindNodeArg(pair.first));
@@ -361,7 +361,7 @@ class PlannerImpl {
       auto exec_provider = execution_providers_.Get(graph_, step.node_index);
       ONNXRUNTIME_ENFORCE(exec_provider);
 
-      auto& default_allocator_info = exec_provider->GetAllocator(ONNXRuntimeMemTypeDefault)->Info();
+      auto& default_allocator_info = exec_provider->GetAllocator(0, ONNXRuntimeMemTypeDefault)->Info();
       auto& mem_type_allocated_args = p_kernelDef->OutputMemoryType();
       auto& outputs = pnode->OutputDefs();
       auto num_outputs = outputs.size();
@@ -378,7 +378,7 @@ class PlannerImpl {
             if (memory_type_iter == mem_type_allocated_args.end()) {
               AllocPlan(index).location = default_allocator_info;
             } else {
-              AllocPlan(index).location = exec_provider->GetAllocator(memory_type_iter->second)->Info();
+              AllocPlan(index).location = exec_provider->GetAllocator(0, memory_type_iter->second)->Info();
             }
           }
         }
@@ -421,9 +421,9 @@ class PlannerImpl {
             auto p_opkernelDef = utils::GetKernelDef(kernel_registry_, node);
             if (MemTypeOnCpuExplicitly(p_opkernelDef->InputMemoryType(), index))
               // weights are not output from any node, so it's OK to put its location on CPU provider
-              thisplan.location = execution_providers_.Get(onnxruntime::kCpuExecutionProvider)->GetAllocator(ONNXRuntimeMemTypeDefault)->Info();
+              thisplan.location = execution_providers_.Get(onnxruntime::kCpuExecutionProvider)->GetAllocator(0, ONNXRuntimeMemTypeDefault)->Info();
             else
-              thisplan.location = p_provider->GetAllocator(ONNXRuntimeMemTypeDefault)->Info();
+              thisplan.location = p_provider->GetAllocator(0, ONNXRuntimeMemTypeDefault)->Info();
 
             return Status::OK();
           });
