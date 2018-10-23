@@ -338,7 +338,7 @@ class PlannerImpl {
     for (const auto& pair : graph_.GetAllInitializedTensors()) {
       const auto& initializer_name = pair.first;
       MLValueIndex index = Index(initializer_name);
-      ProcessDef(index, graph_.FindNodeArg(pair.first));
+      ProcessDef(index, graph_.GetNodeArg(pair.first));
       UseCount(initializer_name)++;
     }
 

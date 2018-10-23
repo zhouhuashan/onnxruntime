@@ -1041,7 +1041,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   // Infer/check type and shape for all initializers from their values
   for (auto& initializer_pair : name_to_initial_tensor_) {
     const std::string& name = initializer_pair.first;
-    auto* node_arg = FindNodeArg(name);
+    auto* node_arg = GetNodeArg(name);
     // If node_arg is null, we ignore this as a potentially unused initializer here
     if (nullptr != node_arg) {
       const TensorProto* tensor_proto = initializer_pair.second;
@@ -1116,7 +1116,7 @@ Status Graph::VerifyNodeAndOpMatch(const std::unordered_set<std::string>& inputs
       node.op_ = schema_registry_->GetSchema(node.OpType(), maxInclusiveVersion, node.Domain());
       if (!node.op_) {
         ONNX_NAMESPACE::FunctionBuilderRegistry& function_registry =
-          FunctionBuilderRegistry::OnnxInstance();
+            FunctionBuilderRegistry::OnnxInstance();
         auto onnx_function_proto = function_registry.GetFunction(node.OpType(), maxInclusiveVersion, ONNX_DOMAIN);
         if (!onnx_function_proto) {
           return Status(ONNXRUNTIME, FAIL, "Fatal error: " + node.OpType() + " is not a registered function/op");
@@ -1312,32 +1312,8 @@ const std::vector<const NodeArg*>& Graph::GetValueInfo() const noexcept {
   return value_info_;
 }
 
-// Ensure the NodeArgs in the input are created and in this Graph's node arg map
-static void AddNodeArgs(const std::vector<NodeArg*>& input_args,
-                        std::unordered_map<std::string, NodeArg*>& node_arg_map) {
-  for (auto* input_arg : input_args) {
-    if (!input_arg->Exists())
-      continue;
-
-    auto& key = input_arg->Name();
-    auto existing_entry = node_arg_map.find(key);
-
-    NodeArg* node_arg = existing_entry == node_arg_map.end() ? nullptr : existing_entry->second;
-
-    if (node_arg == nullptr) {
-      node_arg_map[key] = input_arg;
-    } else {
-      // check that if an existing entry was found, it was for the same instance
-      ONNXRUNTIME_ENFORCE(node_arg == input_arg,
-                          "Existing entry in NodeArg map for ", key, " != input definition.");
-    }
-  }
-}
-
-static std::vector<NodeArg*> CreateNodeArgs(const google::protobuf::RepeatedPtrField<std::string>& names,
-                                            const ArgNameToTypeMap& name_to_type_map,
-                                            std::unordered_map<std::string, NodeArg*>& node_arg_map,
-                                            std::vector<std::unique_ptr<NodeArg>>& owned_node_args) {
+std::vector<NodeArg*> GraphBase::CreateNodeArgs(const google::protobuf::RepeatedPtrField<std::string>& names,
+                                                const ArgNameToTypeMap& name_to_type_map) {
   const auto name_to_type_map_end = name_to_type_map.end();
   std::vector<NodeArg*> results;
   results.reserve(names.size());
@@ -1352,16 +1328,7 @@ static std::vector<NodeArg*> CreateNodeArgs(const google::protobuf::RepeatedPtrF
       type = &(name_to_type_iter->second);
     }
 
-    auto existing_entry = node_arg_map.find(name);
-    NodeArg* node_arg = existing_entry == node_arg_map.end() ? nullptr : existing_entry->second;
-
-    if (node_arg == nullptr) {
-      auto new_node_arg = std::make_unique<NodeArg>(name, type);
-      node_arg = new_node_arg.get();
-      owned_node_args.push_back(std::move(new_node_arg));
-      node_arg_map[name] = node_arg;
-    }
-
+    auto node_arg = &GetOrCreateNodeArg(name, type);
     results.push_back(node_arg);
   }
 
@@ -1382,10 +1349,8 @@ Node* GraphBase::AddNode(const Node& other) {
 
 Node* GraphBase::AddNode(const NodeProto& node_proto,
                          const ArgNameToTypeMap& name_to_type_map) {
-  const gsl::not_null<Node*> node = AllocateNode();
-
-  auto input_defs = CreateNodeArgs(node_proto.input(), name_to_type_map, node_args_, owned_node_args_);
-  auto output_defs = CreateNodeArgs(node_proto.output(), name_to_type_map, node_args_, owned_node_args_);
+  auto input_defs = CreateNodeArgs(node_proto.input(), name_to_type_map);
+  auto output_defs = CreateNodeArgs(node_proto.output(), name_to_type_map);
 
   const int num_attributes = node_proto.attribute_size();
   NodeAttributes attributes;
@@ -1396,35 +1361,13 @@ Node* GraphBase::AddNode(const NodeProto& node_proto,
     attributes[attr.name()] = attr;
   }
 
-  node->Init(node_proto.name(),
-             node_proto.op_type(),
-             node_proto.doc_string(),
-             input_defs,
-             output_defs,
-             &attributes,
-             node_proto.domain());
-
-  return node;
-}
-
-const NodeArg* GraphBase::FindNodeArg(const std::string& name) const {
-  auto iter = node_args_.find(name);
-  if (iter != node_args_.end())
-    return iter->second;
-  else {
-    LOGS_DEFAULT(WARNING) << "Cannot find NodArg for " << name;
-    return nullptr;
-  }
-}
-
-NodeArg* GraphBase::FindNodeArg(const std::string& name) {
-  auto iter = node_args_.find(name);
-  if (iter != node_args_.end())
-    return iter->second;
-  else {
-    LOGS_DEFAULT(WARNING) << "Cannot find NodArg for " << name;
-    return nullptr;
-  }
+  return AddNode(node_proto.name(),
+                 node_proto.op_type(),
+                 node_proto.doc_string(),
+                 input_defs,
+                 output_defs,
+                 &attributes,
+                 node_proto.domain());
 }
 
 std::string GraphBase::GenerateNodeArgName(const std::string& base_name) {
@@ -1456,11 +1399,20 @@ Node* GraphBase::AddNode(const std::string& name,
                          const std::vector<NodeArg*>& output_args,
                          const NodeAttributes* attributes,
                          const std::string& domain) {
-  AddNodeArgs(input_args, node_args_);
-  AddNodeArgs(output_args, node_args_);
+  std::vector<NodeArg*> inputs, outputs;
+  inputs.resize(input_args.size());
+  outputs.resize(output_args.size());
+  int i = 0;
+  for (auto input_arg : input_args) {
+    inputs[i++] = &GetOrCreateNodeArg(input_arg->Name(), input_arg->TypeAsProto());
+  }
+  i = 0;
+  for (auto output_arg : output_args) {
+    outputs[i++] = &GetOrCreateNodeArg(output_arg->Name(), output_arg->TypeAsProto());
+  }
 
   const gsl::not_null<Node*> node = AllocateNode();
-  node->Init(name, op_type, description, input_args, output_args, attributes, domain);
+  node->Init(name, op_type, description, inputs, outputs, attributes, domain);
   if (0 != op_type.compare(kNoOp)) {
     graph_proto_sync_needed_ = true;
   }
@@ -1637,7 +1589,7 @@ Status Graph::SetGraphInputsOutputs() {
     for (auto& initializer : graph_proto_->initializer()) {
       auto& name = initializer.name();
       specified_initializers.insert(name);
-      auto* node_arg = FindNodeArg(name);
+      auto* node_arg = GetNodeArg(name);
       ONNXRUNTIME_ENFORCE(node_arg, "Graph ctor should have created NodeArg for initializer.");
       input_name_to_node_arg.insert({initializer.name(), node_arg});
     }
@@ -1660,7 +1612,7 @@ Status Graph::SetGraphInputsOutputs() {
     if (specified_graph_outputs.size() > 0) {
       for (const auto& name : specified_initializers) {
         ONNXRUNTIME_IGNORE_RETURN_VALUE(specified_graph_outputs.erase(name));
-        output_name_to_node_arg.insert({name, FindNodeArg(name)});
+        output_name_to_node_arg.insert({name, GetNodeArg(name)});
       }
     }
 

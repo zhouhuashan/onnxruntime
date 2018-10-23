@@ -152,7 +152,7 @@ class PlannerTest : public ::testing::Test {
   std::unique_ptr<::onnxruntime::KernelDef> std_kernel_;       // a unary kernel with no-aliasing and no-in-place
   std::unique_ptr<::onnxruntime::KernelDef> in_place_kernel_;  // a unary kernel with in-place
 
-  std::unordered_map<std::string, std::unique_ptr<onnxruntime::NodeArg>> name_to_arg_;
+  std::unordered_map<std::string, onnxruntime::NodeArg*> name_to_arg_;
   std::vector<std::unique_ptr<UnaryNode>> nodes_;
   std::vector<std::unique_ptr<OpKernelInfo>> op_kernel_infos_;
   std::vector<std::pair<onnxruntime::Node*, KernelDef&>> kernel_bindings_;
@@ -174,8 +174,8 @@ class PlannerTest : public ::testing::Test {
 
   onnxruntime::NodeArg* Arg(const std::string& name) {
     auto iter = name_to_arg_.find(name);
-    if (name_to_arg_.end() != iter) return iter->second.get();
-    return (name_to_arg_[name] = std::make_unique<onnxruntime::NodeArg>(name, &float_type_.value)).get();
+    if (name_to_arg_.end() != iter) return iter->second;	
+    return (name_to_arg_[name] = &graph_.GetOrCreateNodeArg(name, &float_type_.value));
   }
 
   onnxruntime::Node* AddNode(::onnxruntime::KernelDef& kernel_def, std::string& input, std::string& output) {

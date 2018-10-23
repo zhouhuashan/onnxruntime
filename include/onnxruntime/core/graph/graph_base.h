@@ -453,7 +453,7 @@ class GraphBase {
   NodeArg* GetNodeArg(const std::string& name) {
     auto iter = node_args_.find(name);
     if (iter != node_args_.end()) {
-      return iter->second;
+      return iter->second.get();
     }
     return nullptr;
   }
@@ -461,7 +461,7 @@ class GraphBase {
   const NodeArg* GetNodeArg(const std::string& name) const {
     auto iter = node_args_.find(name);
     if (iter != node_args_.end()) {
-      return iter->second;
+      return iter->second.get();
     }
     return nullptr;
   }
@@ -469,19 +469,13 @@ class GraphBase {
   // Get NodeArg by name, or create NodeArg owned by the graph if not found
   NodeArg& GetOrCreateNodeArg(const std::string& name, const ONNX_NAMESPACE::TypeProto* p_arg_type) {
     auto iter = node_args_.find(name);
-    if (iter != node_args_.end())
+    if (iter != node_args_.end()) {
       return *(iter->second);
+    }
 
-    owned_node_args_.push_back(std::make_unique<NodeArg>(name, p_arg_type));
-    NodeArg* new_arg = owned_node_args_.back().get();
-    GSL_SUPPRESS(es .84)
-    node_args_.insert(std::make_pair(name, new_arg));
-    return *new_arg;
+    auto result = node_args_.insert(std::make_pair(name, std::make_unique<NodeArg>(name, p_arg_type)));
+    return *(result.first->second);
   }
-
-  // find node arg by name
-  const NodeArg* FindNodeArg(const std::string& name) const;
-  NodeArg* FindNodeArg(const std::string& name);
 
   // create a unique name for NodeArg
   std::string GenerateNodeArgName(const std::string& base_name);
@@ -665,6 +659,9 @@ class GraphBase {
     return nodes_[node_index].get();
   }
 
+  std::vector<NodeArg*> CreateNodeArgs(const google::protobuf::RepeatedPtrField<std::string>& names,
+                                       const ArgNameToTypeMap& name_to_type_map);
+
   // Graph nodes.
   // Element in <nodes_> may be nullptr due to graph optimization.
   std::vector<std::unique_ptr<Node>> nodes_;
@@ -698,12 +695,8 @@ class GraphBase {
   // Graph outputs.
   std::vector<const NodeArg*> graph_outputs_;
 
-  // Store NodeArg in this graph
-  // QUESTION: what does the key represent here?
-  std::unordered_map<std::string, NodeArg*> node_args_;
-
-  // NodeArg instances that we own
-  std::vector<std::unique_ptr<NodeArg>> owned_node_args_;
+  // All node args owned by <*this> graph. Key is node arg name.
+  std::unordered_map<std::string, std::unique_ptr<NodeArg>> node_args_;
 
   // Node::EdgeEnd instances that we own
   std::vector<std::unique_ptr<Node::EdgeEnd>> owned_edges_;

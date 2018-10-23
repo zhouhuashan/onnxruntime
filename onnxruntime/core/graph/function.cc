@@ -163,7 +163,7 @@ namespace onnxruntime {
         if (input_name_idx_map.count(tensor_name)) {
           ONNX_NAMESPACE::NodeProto temp_node_proto;
           node_in_parent_graph->ToProto(temp_node_proto);
-          const onnxruntime::NodeArg* node_arg = parent_graph_->FindNodeArg(temp_node_proto.input().Get(input_name_idx_map[tensor_name]));
+          const onnxruntime::NodeArg* node_arg = parent_graph_->GetNodeArg(temp_node_proto.input().Get(input_name_idx_map[tensor_name]));
           auto& n_input = sub_graph.GetOrCreateNodeArg(
             tensor_name, node_arg->TypeAsProto());
           inputs.push_back(&n_input);
