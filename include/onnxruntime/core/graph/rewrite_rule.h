@@ -34,33 +34,6 @@ class GraphEditor {
     return graph_.RemoveNode(node_index);
   }
 
-  // Get Initialized Tensor
-  const ONNX_NAMESPACE::TensorProto* GetInitializedTensor(const std::string& tensor_name) const {
-    const ONNX_NAMESPACE::TensorProto* tensor_proto = nullptr;
-    graph_.GetInitializedTensor(tensor_name, tensor_proto);
-    return tensor_proto;
-  }
-
-  // Add Initialier
-  void AddInitializedTensor(const ONNX_NAMESPACE::TensorProto& tensor) {
-    graph_.AddInitializedTensor(tensor);
-  }
-
-  // Remove Initializer
-  void RemoveInitializedTensor(const std::string& tensor_name) {
-    graph_.RemoveInitializedTensor(tensor_name);
-  }
-
-  // Replace NodeArg of node
-  void ReplaceDef(const NodeIndex index, const NodeArg* src, const NodeArg* dst) {
-    auto& input_defs = graph_.GetNode(index)->MutableInputDefs();
-    for (auto& def : input_defs) {
-      if (def == src) {
-        def = const_cast<NodeArg*>(dst);
-      }
-    }
-  }
-
   // Add control edge into <graph_>.
   // The <dst> node does not consume any data output by
   // <src>, but it's designed to be executed behind.

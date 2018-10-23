@@ -1,16 +1,13 @@
 #pragma once
 
-#include "core/graph/rewrite_rule.h"
+#include "core/graph/graph_transformer.h"
 
 namespace onnxruntime {
-class UnsqueezeElimination : public RewriteRule {
+
+class UnsqueezeElimination : public onnxruntime::GraphTransformer {
  public:
-  UnsqueezeElimination() noexcept : RewriteRule("EliminateUnsqueeze", "Eliminate unsequeeze node") {
-  }
-
- private:
-  bool SatisfyCondition(const Node& node) override;
-
-  Status Apply(GraphEditor* graph_editor, Node* node, bool* modified) override;
+  UnsqueezeElimination() noexcept : onnxruntime::GraphTransformer("EliminateUnsqueeze", "Eliminate unsequeeze node") {}
+  Status Apply(onnxruntime::Graph& graph, bool& modified) const override;
 };
+
 }  // namespace onnxruntime

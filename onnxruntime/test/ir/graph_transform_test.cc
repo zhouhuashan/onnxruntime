@@ -58,14 +58,15 @@ TEST(GraphTransformationTests, FuseConvBNMulAddUnsqueeze) {
   std::shared_ptr<Model> p_model;
   ASSERT_TRUE(Model::Load(model_uri, p_model).IsOK());
 
-  std::unique_ptr<TopDownRuleBasedTransformer> rule_transformer =
-    std::make_unique<TopDownRuleBasedTransformer>("RuleTransformer", "Top-down rule transformer");
-  rule_transformer->Register("Unsqueeze", std::make_unique<UnsqueezeElimination>());
-  rule_transformer->Register("BatchNormalization", std::make_unique<ConvBNFusion>());
-  rule_transformer->Register("Mul", std::make_unique<ConvMulFusion>());
-  rule_transformer->Register("Add", std::make_unique<ConvAddFusion>());
+  std::unique_ptr<UnsqueezeElimination> Unsqueeze_transformer = std::make_unique<UnsqueezeElimination>();
+  std::unique_ptr<ConvBNFusion> ConvBNFusion_transformer = std::make_unique<ConvBNFusion>();
+  std::unique_ptr<ConvMulFusion> ConvMulFusion_transformer = std::make_unique<ConvMulFusion>();
+  std::unique_ptr<ConvAddFusion> ConvAddFusion_transformer = std::make_unique<ConvAddFusion>();
 
-  session_object.RegisterGraphTransformer(std::move(rule_transformer));
+  session_object.RegisterGraphTransformer(std::move(Unsqueeze_transformer));
+  session_object.RegisterGraphTransformer(std::move(ConvBNFusion_transformer));
+  session_object.RegisterGraphTransformer(std::move(ConvMulFusion_transformer));
+  session_object.RegisterGraphTransformer(std::move(ConvAddFusion_transformer));
 
   ASSERT_TRUE(session_object.Initialize().IsOK());
 }

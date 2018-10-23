@@ -1,16 +1,12 @@
 #pragma once
 
-#include "core/graph/rewrite_rule.h"
+#include "core/graph/graph_transformer.h"
 
 namespace onnxruntime {
-class ConvBNFusion : public RewriteRule {
+
+class ConvBNFusion : public onnxruntime::GraphTransformer {
  public:
-  ConvBNFusion() noexcept : RewriteRule("ConvBNFusion", "Fusing BN into Conv") {
-  }
-
- private:
-  bool SatisfyCondition(const Node& node) override;
-
-  Status Apply(GraphEditor* graph_editor, Node* node, bool* modified) override;
+  ConvBNFusion() noexcept : onnxruntime::GraphTransformer("ConvBNFusion", "Fusing BN into Conv") {}
+  Status Apply(onnxruntime::Graph& graph, bool& modified) const override;
 };
 }  // namespace onnxruntime

@@ -6,57 +6,82 @@ using namespace onnx;
 using namespace ::onnxruntime::common;
 namespace onnxruntime {
 
-bool ConvAddFusion::SatisfyCondition(const Node& node) {
-  if (node.OpType() != "Add" ||
-      node.GetInputEdgesCount() != 1 || (*node.InputEdgesBegin())->GetNode().OpType() != "Conv") {
-    return false;
+Status ConvAddFusion::Apply(onnxruntime::Graph& graph, bool& modified) const {
+  std::vector<onnxruntime::NodeIndex> removed_nodes;
+
+  for (auto& node : graph.Nodes()) {
+    if (graph.IsSinkNode(node) || graph.IsSourceNode(node))
+      continue;
+
+    if (node.OpType() != "Add" ||
+        node.GetInputEdgesCount() != 1 ||
+        (*node.InputEdgesBegin())->GetNode().OpType() != "Conv") {
+      continue;
+    }
+
+    const auto& conv_node = (*node.InputEdgesBegin())->GetNode();
+    const auto& conv_inputs = conv_node.InputDefs();
+    // For now, fusion is only done when conv has bias.
+    if (conv_inputs.size() != 3) {
+      continue;
+    }
+    const ONNX_NAMESPACE::TensorProto* conv_B_tensor_proto = nullptr;
+    graph.GetInitializedTensor(conv_inputs[2]->Name(), conv_B_tensor_proto);
+    auto conv_B = std::make_unique<Initializer>(conv_B_tensor_proto);
+
+    const auto& add_inputs = node.InputDefs();
+    const ONNX_NAMESPACE::TensorProto* add_B_tensor_proto = nullptr;
+    graph.GetInitializedTensor(add_inputs[1]->Name(), add_B_tensor_proto);
+    auto add_B = std::make_unique<Initializer>(add_B_tensor_proto);
+
+    // Don't fuse if size or data is different.
+    // Currently, fusion is only supported for float or double data type.
+    if (conv_B->size() != add_B->size() ||
+        conv_B->data_type() != add_B->data_type() ||
+        (conv_B->data_type() != ONNX_NAMESPACE::TensorProto_DataType_FLOAT &&
+        conv_B->data_type() != ONNX_NAMESPACE::TensorProto_DataType_DOUBLE)) {
+      continue;
+    }
+
+    // Caculate new value of initializers of conv node
+    conv_B->add(*add_B);
+
+    // Create new initializers of conv
+    ONNX_NAMESPACE::TensorProto new_conv_B_tensor_proto(*conv_B_tensor_proto);
+    conv_B->ToProto(&new_conv_B_tensor_proto);
+
+    // Replace initializers of conv node
+    graph.RemoveInitializedTensor(conv_inputs[2]->Name());
+    graph.AddInitializedTensor(new_conv_B_tensor_proto);
+
+    // Replace the input of the node following add node
+    const NodeArg* add_output_def = node.OutputDefs()[0];
+    const NodeArg* conv_output_def = conv_node.OutputDefs()[0];
+    for (auto it = node.OutputNodesBegin(); it != node.OutputNodesEnd(); ++it) {
+      auto output_node = graph.GetNode((*it)->Index());
+      if (!output_node) {
+        return Status(ONNXRUNTIME, INVALID_ARGUMENT);
+      }
+
+      auto& input_defs = output_node->MutableInputDefs();
+      for (auto& def : input_defs) {
+        if (def == add_output_def) {
+            def = const_cast<NodeArg*>(conv_output_def);
+        }
+      }
+    }
+
+    removed_nodes.push_back(node.Index());
   }
 
-  const auto& conv_node = (*node.InputEdgesBegin())->GetNode();
-  const auto& conv_inputs = conv_node.InputDefs();
-  // For now, fusion is only done when conv has bias.
-  if (conv_inputs.size() != 3) {
-    return false;
+  for (auto i : removed_nodes) {
+    graph.RemoveNode(i);
   }
 
-  return true;
-}
-
-Status ConvAddFusion::Apply(GraphEditor* graph_editor, Node* node, bool* modified) {
-  const auto& conv_node = (*node->InputEdgesBegin())->GetNode();
-  const auto& conv_inputs = conv_node.InputDefs();
-  auto conv_B_tensor_proto = graph_editor->GetInitializedTensor(conv_inputs[2]->Name());
-  auto conv_B = std::make_unique<Initializer>(conv_B_tensor_proto);
-
-  const auto& add_inputs = node->InputDefs();
-  auto add_B = std::make_unique<Initializer>(graph_editor->GetInitializedTensor(add_inputs[1]->Name()));
-
-  ONNXRUNTIME_RETURN_IF_NOT(conv_B->size() == add_B->size(), "size is not same");
-  ONNXRUNTIME_RETURN_IF_NOT(conv_B->data_type() == add_B->data_type(), "data type is not same");
-  ONNXRUNTIME_RETURN_IF_NOT(conv_B->data_type() == ONNX_NAMESPACE::TensorProto_DataType_FLOAT ||
-                            conv_B->data_type() == ONNX_NAMESPACE::TensorProto_DataType_DOUBLE,
-                            "data type is not float or double");
-  // Caculate new value of initializers of conv node
-  conv_B->add(*add_B);
-
-  // Create new initializers of conv
-  ONNX_NAMESPACE::TensorProto new_conv_B_tensor_proto(*conv_B_tensor_proto);
-  conv_B->ToProto(&new_conv_B_tensor_proto);
-
-  *modified = true;
-
-  // Replace initializers of conv node
-  graph_editor->RemoveInitializedTensor(conv_inputs[2]->Name());
-  graph_editor->AddInitializedTensor(new_conv_B_tensor_proto);
-
-  // Replace the input of the node following add node
-  const NodeArg* add_output_def = node->OutputDefs()[0];
-  const NodeArg* conv_output_def = conv_node.OutputDefs()[0];
-  for (auto it = node->OutputNodesBegin(); it != node->OutputNodesEnd(); ++it) {
-    graph_editor->ReplaceDef((*it)->Index(), add_output_def, conv_output_def);
+  if (!removed_nodes.empty()) {
+    modified = true;
+    ONNXRUNTIME_RETURN_IF_ERROR(graph.Resolve());
   }
-
-  graph_editor->RemoveNode(node->Index());
 
   return Status::OK();
 }
