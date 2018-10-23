@@ -224,7 +224,8 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
     return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Input dimension cannot be less than 3.");
   }
 
-  if (x_shape.NumDimensions() == 3) {
+  size_t num_outputs = OpKernel::Node().OutputDefs().size();
+  if (x_shape.NumDimensions() == 3 || num_outputs == 2) {
     // Fall Back to CPU implementation.
     return onnxruntime::Pool<T, PoolType>::Compute(context);
   }
