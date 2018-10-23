@@ -31,7 +31,7 @@ static void RunModel(InferenceSession& session_object,
   std::vector<int64_t> dims_mul_x = {2, 1, 2};
   std::vector<float> values_mul_x = {-0.455351f, -0.276391f, -0.185934f, -0.269585f};
   MLValue ml_value;
-  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(ONNXRuntimeMemTypeDefault), dims_mul_x, values_mul_x, &ml_value);
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(0, ONNXRuntimeMemTypeDefault), dims_mul_x, values_mul_x, &ml_value);
   NameMLValMap feeds;
   feeds.insert(std::make_pair("X", ml_value));
 
@@ -43,7 +43,7 @@ static void RunModel(InferenceSession& session_object,
   if (is_preallocate_output_vec) {
     fetches.resize(output_names.size());
     for (auto& elem : fetches) {
-      CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(ONNXRuntimeMemTypeDefault), dims_mul_x, values_mul_x, &elem);
+      CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(0, ONNXRuntimeMemTypeDefault), dims_mul_x, values_mul_x, &elem);
     }
   }
 

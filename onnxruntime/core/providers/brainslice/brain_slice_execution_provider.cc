@@ -45,8 +45,8 @@ BrainSliceExecutionProvider::BrainSliceExecutionProvider(const fpga::FPGAInfo& i
   // insert cpu memory allocator
   AllocatorPtr cpu_allocator(new BrainSlicePinnedAllocator());
   AllocatorPtr bs_allocator(new BrainSliceAllocator());
-  InsertAllocator(ONNXRuntimeMemTypeCPU, cpu_allocator);
-  InsertAllocator(ONNXRuntimeMemTypeDefault, bs_allocator);
+  InsertAllocator(cpu_allocator);
+  InsertAllocator(bs_allocator);
 }
 
 Status BrainSliceExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const {
