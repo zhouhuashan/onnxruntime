@@ -216,21 +216,23 @@ class WindowsEnv : public Env {
   }
 
   virtual Status LoadLibrary(const std::string& library_filename, void** handle) const override {
-    ONNXRUNTIME_UNUSED_PARAMETER(library_filename);
-    ONNXRUNTIME_UNUSED_PARAMETER(handle);
-    ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+    *handle = ::LoadLibraryA(library_filename.c_str());
+    if (!handle)
+      return common::Status(common::ONNXRUNTIME, common::FAIL, "Failed to load library");
+    return common::Status::OK();
   }
 
   virtual common::Status UnloadLibrary(void* handle) const override {
-    ONNXRUNTIME_UNUSED_PARAMETER(handle);
-    ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+    if (::FreeLibrary(reinterpret_cast<HMODULE>(handle)) == 0)
+      return common::Status(common::ONNXRUNTIME, common::FAIL, "Failed to unload library");
+    return common::Status::OK();
   }
 
   virtual Status GetSymbolFromLibrary(void* handle, const std::string& symbol_name, void** symbol) const override {
-    ONNXRUNTIME_UNUSED_PARAMETER(handle);
-    ONNXRUNTIME_UNUSED_PARAMETER(symbol_name);
-    ONNXRUNTIME_UNUSED_PARAMETER(symbol);
-    ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+    *symbol = ::GetProcAddress(reinterpret_cast<HMODULE>(handle), symbol_name.c_str());
+    if (!*symbol)
+      return common::Status(common::ONNXRUNTIME, common::FAIL, "Failed to find symbol in library");
+    return common::Status::OK();
   }
 
   virtual std::string FormatLibraryFileName(const std::string& name, const std::string& version) const override {
