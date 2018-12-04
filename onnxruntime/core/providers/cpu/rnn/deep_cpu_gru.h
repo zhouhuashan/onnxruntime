@@ -40,8 +40,7 @@ class DeepCpuGruOp final : public OpKernel {
 
   // Whether transposed weights have been updated or not.
   bool is_weight_transposed = false;
-  IAllocatorUniquePtr<T> input_weightsZRH_FW_ptr_, recurrent_weightsZR_FW_ptr_, recurrent_weightsH_FW_ptr_;
-  IAllocatorUniquePtr<T> input_weightsZRH_BW_ptr_, recurrent_weightsZR_BW_ptr_, recurrent_weightsH_BW_ptr_;
+  IAllocatorUniquePtr<T> weights_ptr_;
   gsl::span<T> input_weightsZRH_FW_, recurrent_weightsZR_FW_, recurrent_weightsH_FW_;
   gsl::span<T> input_weightsZRH_BW_, recurrent_weightsZR_BW_, recurrent_weightsH_BW_;
 

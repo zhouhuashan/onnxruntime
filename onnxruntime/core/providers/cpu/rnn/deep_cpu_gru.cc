@@ -328,17 +328,29 @@ Status DeepCpuGruOp<T>::TransposeWeight(const Tensor* W, const Tensor* R, Alloca
   int input_size = (int)W->Shape()[2];
 
   // Allocate memory for transpose.
-  input_weightsZRH_FW_ = Allocate(alloc, input_size * hidden_size_3x_, input_weightsZRH_FW_ptr_);
-  recurrent_weightsZR_FW_ = Allocate(alloc, 2 * hidden_size_ * hidden_size_, recurrent_weightsZR_FW_ptr_);
-  recurrent_weightsH_FW_ = Allocate(alloc, hidden_size_ * hidden_size_, recurrent_weightsH_FW_ptr_);
+  gsl::span<T> weights = Allocate(alloc, num_directions_ * (input_size + hidden_size_) * hidden_size_3x_, weights_ptr_);
+
+  size_t dest_offset = 0;
+  input_weightsZRH_FW_ = weights.subspan(0, input_size * hidden_size_3x_);
+  dest_offset += input_size * hidden_size_3x_;
+
+  recurrent_weightsZR_FW_ = weights.subspan(dest_offset, 2 * hidden_size_ * hidden_size_);
+  dest_offset += 2 * hidden_size_ * hidden_size_;
+
+  recurrent_weightsH_FW_ = weights.subspan(dest_offset, hidden_size_ * hidden_size_);
+  dest_offset += hidden_size_ * hidden_size_;
 
   detail::TransposeCopy(W->DataAsSpan<T>(), 0, hidden_size_3x_, input_size, input_weightsZRH_FW_);
   detail::TransposeCopy(R->DataAsSpan<T>(), 0, 2 * hidden_size_, hidden_size_, recurrent_weightsZR_FW_);
   detail::TransposeCopy(R->DataAsSpan<T>(), 2 * hidden_size_ * hidden_size_, hidden_size_, hidden_size_, recurrent_weightsH_FW_);
   if (num_directions_ == 2) {
-    input_weightsZRH_BW_ = Allocate(alloc, input_size * hidden_size_3x_, input_weightsZRH_BW_ptr_);
-    recurrent_weightsZR_BW_ = Allocate(alloc, 2 * hidden_size_ * hidden_size_, recurrent_weightsZR_BW_ptr_);
-    recurrent_weightsH_BW_ = Allocate(alloc, hidden_size_ * hidden_size_, recurrent_weightsH_BW_ptr_);
+    input_weightsZRH_BW_ = weights.subspan(dest_offset, input_size * hidden_size_3x_);
+    dest_offset += input_size * hidden_size_3x_;
+
+    recurrent_weightsZR_BW_ = weights.subspan(dest_offset, 2 * hidden_size_ * hidden_size_);
+    dest_offset += 2 * hidden_size_ * hidden_size_;
+
+    recurrent_weightsH_BW_ = weights.subspan(dest_offset, hidden_size_ * hidden_size_);
 
     detail::TransposeCopy(W->DataAsSpan<T>(), hidden_size_3x_ * input_size, hidden_size_3x_, input_size, input_weightsZRH_BW_);
     detail::TransposeCopy(R->DataAsSpan<T>(), 3 * hidden_size_ * hidden_size_, 2 * hidden_size_, hidden_size_, recurrent_weightsZR_BW_);
