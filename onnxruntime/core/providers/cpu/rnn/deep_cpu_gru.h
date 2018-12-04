@@ -14,6 +14,7 @@ namespace onnxruntime {
 
 /// The class represents GRU operator using DeepCPU implementation for
 /// fast inference computation on CPU machines.
+template <typename T>
 class DeepCpuGruOp final : public OpKernel {
  public:
   DeepCpuGruOp(const OpKernelInfo& info) : OpKernel(info) {
@@ -51,6 +52,10 @@ class DeepCpuGruOp final : public OpKernel {
     activation_funcs_ = rnn::detail::ActivationFuncs(activation_func_names,
                                                      activation_func_alphas,
                                                      activation_func_betas);
+
+    hidden_size_3x_ = 3 * hidden_size_;
+    recurrent_weights_size_per_direction_ = hidden_size_3x_ * hidden_size_;
+    bias_size_per_direction_ = 6 * hidden_size_;
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -64,6 +69,9 @@ class DeepCpuGruOp final : public OpKernel {
   int hidden_size_ = 0;
   float clip_;
   int linear_before_reset_ = 0;
+  size_t hidden_size_3x_;
+  size_t recurrent_weights_size_per_direction_;
+  size_t bias_size_per_direction_;
 
   rnn::detail::ActivationFuncs activation_funcs_;
 

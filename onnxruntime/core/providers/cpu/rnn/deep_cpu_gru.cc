@@ -149,15 +149,32 @@ namespace onnxruntime {
 ONNX_CPU_OPERATOR_KERNEL(
     GRU,
     7,
-    KernelDefBuilder().TypeConstraint("T", {DataTypeImpl::GetTensorType<float>(),
-                                            DataTypeImpl::GetTensorType<double>()})
-        .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
-    DeepCpuGruOp);
+    KernelDefBuilder().TypeConstraint("T", {DataTypeImpl::GetTensorType<float>()}).TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
+    DeepCpuGruOp<float>);
 
 using namespace rnn::detail;
 
 // internal helper code
 namespace detail {
+
+template <typename T>
+static void TransposeCopy(gsl::span<const T> src, size_t src_offset,
+                          const int src_nrow, const int src_ncol,
+                          gsl::span<T> dst) {
+  const int dst_nrow = src_ncol;
+  const int dst_ncol = src_nrow;
+  auto out_offset = 0;
+  for (int i = 0; i < dst_nrow; i++) {
+    auto in_offset = src_offset + i;
+    for (int j = 0; j < dst_ncol; j++) {
+      // dst[i * dst_ncol + j] = src[src_offset + j * src_ncol + i];
+      dst[out_offset + j] = src[in_offset];
+      in_offset += src_ncol;
+    }
+
+    out_offset += dst_ncol;
+  }
+}
 
 /// The class represents DeepCPU implementation of a gated recurrent unit (GRU) operator.
 /// For details, refer to http://aka.ms/dl-optimization/.
@@ -165,7 +182,6 @@ template <typename T>
 class UniDirectionalGru {
  public:
   UniDirectionalGru(AllocatorPtr allocator,
-                    const logging::Logger& logger,
                     const int seq_length,
                     const int batch_size,
                     const int input_size,
@@ -191,7 +207,6 @@ class UniDirectionalGru {
 
  private:
   AllocatorPtr allocator_;
-  const logging::Logger& logger_;
   TaskThreadPool& ttp_;
 
   int seq_length_;
@@ -204,9 +219,6 @@ class UniDirectionalGru {
 
   Direction direction_;
   bool use_bias_;
-  bool batch_parallel_;
-
-  int hidden_num_threads_ = -1;
 
   IAllocatorUniquePtr<T> outputZRH_ptr_;
   gsl::span<T> outputZRH_;
@@ -250,7 +262,6 @@ class UniDirectionalGru {
   deepcpu::GruOutputGateFuncPtr output_gate_ = nullptr;
 
   void AllocateBuffers();
-  void SetNumThreads();
 };
 }  // namespace detail
 
@@ -261,37 +272,16 @@ class UniDirectionalGru {
 #define DumpMatrix(...) ((void)0)
 #endif
 
-Status DeepCpuGruOp::Compute(OpKernelContext* context) const {
-  const Tensor& X = *context->Input<Tensor>(0);  // inputs. [seq_length, batch_size, input_size]
-
-  Status status;
-  // auto& logger = context->Logger();
-
-  auto data_type = X.DataType();
-  if (data_type == DataTypeImpl::GetType<float>())
-    status = ComputeImpl<float>(*context);
-  else if (data_type == DataTypeImpl::GetType<double>()) {
-    /* Need to update all the helpers to support double...
-    status = ComputeImpl<double>(*context); */
-    ONNXRUNTIME_NOT_IMPLEMENTED("GRU operator does not support double yet");
-  } else
-    ONNXRUNTIME_THROW("Invalid data type for GRU operator of ", data_type);
-
-  return status;
-}
-
 template <typename T>
-Status DeepCpuGruOp::ComputeImpl(OpKernelContext& context) const {
-  auto& logger = context.Logger();
-
-  const Tensor& X = *context.Input<Tensor>(0);  // inputs. [seq_length, batch_size, input_size]
-  const Tensor& W = *context.Input<Tensor>(1);  // weights. [num_directions, 3*hidden_size, input_size]
-  const Tensor& R = *context.Input<Tensor>(2);  // recurrence weights. [num_directions, 3*hidden_size, hidden_size]
+Status DeepCpuGruOp<T>::Compute(OpKernelContext* context) const {
+  const Tensor& X = *context->Input<Tensor>(0);  // inputs. [seq_length, batch_size, input_size
+  const Tensor& W = *context->Input<Tensor>(1);  // weights. [num_directions, 3*hidden_size, input_size]
+  const Tensor& R = *context->Input<Tensor>(2);  // recurrence weights. [num_directions, 3*hidden_size, hidden_size]
 
   // optional
-  const Tensor* B = context.Input<Tensor>(3);              // bias. [num_directions, 6*hidden_size]
-  const Tensor* sequence_lens = context.Input<Tensor>(4);  // [batch_size]
-  const Tensor* initial_h = context.Input<Tensor>(5);      // initial hidden. [num_directions, batch_size, hidden_size]
+  const Tensor* B = context->Input<Tensor>(3);              // bias. [num_directions, 6*hidden_size]
+  const Tensor* sequence_lens = context->Input<Tensor>(4);  // [batch_size]
+  const Tensor* initial_h = context->Input<Tensor>(5);      // initial hidden. [num_directions, batch_size, hidden_size]
 
   auto& X_shape = X.Shape();
 
@@ -299,86 +289,83 @@ Status DeepCpuGruOp::ComputeImpl(OpKernelContext& context) const {
   int batch_size = gsl::narrow<int>(X_shape[1]);
   int input_size = gsl::narrow<int>(X_shape[2]);
 
+#ifndef NDEBUG
   auto status = ValidateCommonRnnInputs(X, W, R, B, 3, sequence_lens, initial_h, num_directions_, hidden_size_);
   ONNXRUNTIME_RETURN_IF_ERROR(status);
+#endif
 
   // GRU outputs are optional but must be in the same order
   TensorShape Y_dims{seq_length, num_directions_, batch_size, hidden_size_};
-  Tensor* Y = context.Output(/*index*/ 0, Y_dims);  // TODO: Adjust for however optional outputs gets implemented
+  Tensor* Y = context->Output(/*index*/ 0, Y_dims);  // TODO: Adjust for however optional outputs gets implemented
 
   TensorShape Y_h_dims{num_directions_, batch_size, hidden_size_};
-  Tensor* Y_h = context.Output(/*index*/ 1, Y_h_dims);
+  Tensor* Y_h = context->Output(/*index*/ 1, Y_h_dims);
 
   AllocatorPtr alloc;
-  status = context.GetTempSpaceAllocator(&alloc);
-  ONNXRUNTIME_RETURN_IF_ERROR(status);
+  ONNXRUNTIME_RETURN_IF_ERROR(context->GetTempSpaceAllocator(&alloc));
   gsl::span<const T> input_weights = W.DataAsSpan<T>();
   gsl::span<const T> recurrent_weights = R.DataAsSpan<T>();
   gsl::span<const T> bias = B != nullptr ? B->DataAsSpan<T>() : gsl::span<const T>();
 
   // spans for first direction
-  const size_t input_weights_size_per_direction = 3 * hidden_size_ * input_size;
-  const size_t recurrent_weights_size_per_direction = 3 * hidden_size_ * hidden_size_;
-  const size_t bias_size_per_direction = 6 * hidden_size_;
+  const size_t input_weights_size_per_direction = hidden_size_3x_ * input_size;
 
   gsl::span<const T> input_weights_1 = input_weights.subspan(0, input_weights_size_per_direction);
-  gsl::span<const T> recurrent_weights_1 = recurrent_weights.subspan(0, recurrent_weights_size_per_direction);
-  gsl::span<const T> bias_1 = bias.empty() ? bias : bias.subspan(0, bias_size_per_direction);
+  gsl::span<const T> recurrent_weights_1 = recurrent_weights.subspan(0, recurrent_weights_size_per_direction_);
+  gsl::span<const T> bias_1 = bias.empty() ? bias : bias.subspan(0, bias_size_per_direction_);
 
   gsl::span<const T> input = X.DataAsSpan<T>();
   gsl::span<const int> sequence_lens_span = sequence_lens != nullptr ? sequence_lens->DataAsSpan<int>()
                                                                      : gsl::span<const int>();
 
-  const size_t initial_hidden_size_per_direction = batch_size * hidden_size_;
+  const size_t batch_size_by_hidden_size = batch_size * hidden_size_;
   gsl::span<const T> initial_hidden = initial_h != nullptr ? initial_h->DataAsSpan<T>() : gsl::span<const T>();
   gsl::span<const T> initial_hidden_1 = initial_hidden.empty()
                                             ? initial_hidden
-                                            : initial_hidden.subspan(0, initial_hidden_size_per_direction);
+                                            : initial_hidden.subspan(0, batch_size_by_hidden_size);
 
   // output shape is [seq_length, num_directions, batch_size, hidden_size]
   // so it's not a case of all the output for one direction being first.
   // due to that we can only easily check that the end of the output for each direction is valid.
   const size_t output_size = Y != nullptr ? Y->Shape().Size() : 0;
-  const size_t per_direction_offset = batch_size * hidden_size_;
   gsl::span<T> output = Y != nullptr ? Y->MutableDataAsSpan<T>() : gsl::span<T>();
   gsl::span<T> output_1 = output.empty()
                               ? output
-                              : output.subspan(0, output_size - (num_directions_ - 1) * per_direction_offset);
+                              : output.subspan(0, output_size - (num_directions_ - 1) * batch_size_by_hidden_size);
 
   // UniDirectionalGru needs somewhere to write output, so even if we aren't returning Y_h
   // we provide an appropriately sized buffer for that purpose.
-  const size_t hidden_output_size_per_direction = batch_size * hidden_size_;
   IAllocatorUniquePtr<T> local_hidden_output;
   gsl::span<T> hidden_output =
       Y_h ? Y_h->MutableDataAsSpan<T>()
-          : Allocate<T>(alloc, hidden_output_size_per_direction * num_directions_, local_hidden_output);
+          : Allocate<T>(alloc, batch_size_by_hidden_size * num_directions_, local_hidden_output);
 
-  gsl::span<T> hidden_output_1 = hidden_output.subspan(0, hidden_output_size_per_direction);
+  gsl::span<T> hidden_output_1 = hidden_output.subspan(0, batch_size_by_hidden_size);
 
   if (direction_ == Direction::kBidirectional) {
     // spans for second direction
     gsl::span<const T> input_weights_2 = input_weights.subspan(input_weights_size_per_direction,
                                                                input_weights_size_per_direction);
-    gsl::span<const T> recurrent_weights_2 = recurrent_weights.subspan(recurrent_weights_size_per_direction,
-                                                                       recurrent_weights_size_per_direction);
-    gsl::span<const T> bias_2 = bias.empty() ? bias : bias.subspan(bias_size_per_direction, bias_size_per_direction);
+    gsl::span<const T> recurrent_weights_2 = recurrent_weights.subspan(recurrent_weights_size_per_direction_,
+                                                                       recurrent_weights_size_per_direction_);
+    gsl::span<const T> bias_2 = bias.empty() ? bias : bias.subspan(bias_size_per_direction_, bias_size_per_direction_);
 
     gsl::span<const T> initial_hidden_2 = initial_hidden.empty()
                                               ? initial_hidden
-                                              : initial_hidden.subspan(initial_hidden_size_per_direction,
-                                                                       initial_hidden_size_per_direction);
+                                              : initial_hidden.subspan(batch_size_by_hidden_size,
+                                                                       batch_size_by_hidden_size);
     gsl::span<T> output_2 = output.empty()
                                 ? output
-                                : output.subspan(per_direction_offset, output_size - per_direction_offset);
+                                : output.subspan(batch_size_by_hidden_size, output_size - batch_size_by_hidden_size);
 
-    gsl::span<T> hidden_output_2 = hidden_output.subspan(hidden_output_size_per_direction,
-                                                         hidden_output_size_per_direction);
+    gsl::span<T> hidden_output_2 = hidden_output.subspan(batch_size_by_hidden_size,
+                                                         batch_size_by_hidden_size);
 
     // run backward first as it needs an extra reverse sequence operation
     std::packaged_task<void()> task_bw{
         [&]() {
           std::unique_ptr<detail::UniDirectionalGru<T>> bw = std::make_unique<detail::UniDirectionalGru<T>>(
-              alloc, logger,
+              alloc,
               seq_length, batch_size, input_size, hidden_size_, linear_before_reset_, Direction::kReverse,
               bias_2, initial_hidden_2,
               activation_funcs_.Entries()[2],
@@ -392,7 +379,7 @@ Status DeepCpuGruOp::ComputeImpl(OpKernelContext& context) const {
     std::packaged_task<void()> task_fw{
         [&]() {
           std::unique_ptr<detail::UniDirectionalGru<T>> fw = std::make_unique<detail::UniDirectionalGru<T>>(
-              alloc, logger,
+              alloc,
               seq_length, batch_size, input_size, hidden_size_, linear_before_reset_, Direction::kForward,
               bias_1, initial_hidden_1,
               activation_funcs_.Entries()[0],
@@ -407,7 +394,7 @@ Status DeepCpuGruOp::ComputeImpl(OpKernelContext& context) const {
     task_results_bw.get();
   } else {
     std::unique_ptr<detail::UniDirectionalGru<T>> gru_p = std::make_unique<detail::UniDirectionalGru<T>>(
-        alloc, logger,
+        alloc,
         seq_length, batch_size, input_size, hidden_size_, linear_before_reset_, direction_,
         bias_1, initial_hidden_1,
         activation_funcs_.Entries()[0],
@@ -431,7 +418,6 @@ namespace detail {
 
 template <typename T>
 UniDirectionalGru<T>::UniDirectionalGru(AllocatorPtr allocator,
-                                        const logging::Logger& logger,
                                         const int seq_length,
                                         const int batch_size,
                                         const int input_size,
@@ -445,7 +431,6 @@ UniDirectionalGru<T>::UniDirectionalGru(AllocatorPtr allocator,
                                         const float clip,
                                         TaskThreadPool& ttp)
     : allocator_(allocator),
-      logger_(logger),
       ttp_(ttp),
       seq_length_(seq_length),
       batch_size_(batch_size),
@@ -468,7 +453,6 @@ UniDirectionalGru<T>::UniDirectionalGru(AllocatorPtr allocator,
   h_alpha_ = activation_func_g.alpha;
   h_beta_ = activation_func_g.beta;
 
-  SetNumThreads();
   AllocateBuffers();
 
   if (use_bias_) {
@@ -599,430 +583,209 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
   span_T_const_iter batched_bias_Rh_local_end = batched_bias_Rh_.cend();
   span_T_const_iter batched_bias_WRh_local_end = batched_bias_WRh_.cend();
 
-  if (batch_parallel_) {
-    int fused_hidden_rows = batch_size_ / hidden_num_threads_;
-    if (batch_size_ % hidden_num_threads_ != 0)
-      fused_hidden_rows++;
+  size_t out_added_offset;
 
-    // lambda executed by TaskThreadPool
-    auto hidden_gemm_and_activations = [&](const int row) {
-      //handling boundaries
-      int local_fused_hidden_rows = fused_hidden_rows;
-      if ((row + fused_hidden_rows) > batch_size_)
-        local_fused_hidden_rows = batch_size_ - row;
+  span_T_const_iter prev_Ht = batched_hidden0_.cbegin();  // Ht-1
+  span_T_const_iter prev_Ht_end = batched_hidden0_.cend();
+  span_T_iter cur_h_local = cur_h_.begin();
+  span_T_iter cur_h_local_end = cur_h_.end();
 
-      size_t out_added_offset;
-      span_T_const_iter prev_Ht = batched_hidden0_.cbegin() + row * hidden_size_;  // Ht-1
-      span_T_const_iter prev_Ht_end = batched_hidden0_.cend();
-      span_T_iter cur_h_local = cur_h_.begin() + row * hidden_size_;
-      span_T_iter cur_h_local_end = cur_h_.end();
-      span_T_iter linear_output_local;
-      span_T_iter linear_output_local_end;
+  span_T_const_iter batched_bias_WRz_local;
+  span_T_const_iter batched_bias_WRr_local;
+  span_T_const_iter batched_bias_WRh_local;
+  span_T_const_iter batched_bias_Wh_local;
+  span_T_const_iter batched_bias_Rh_local;
 
-      span_T_const_iter batched_bias_WRz_local;
-      span_T_const_iter batched_bias_WRr_local;
-      span_T_const_iter batched_bias_WRh_local;
-      span_T_const_iter batched_bias_Wh_local;
-      span_T_const_iter batched_bias_Rh_local;
+  if (use_bias_) {
+    batched_bias_WRz_local = batched_bias_WRz_.cbegin();
+    batched_bias_WRr_local = batched_bias_WRr_.cbegin();
 
-      if (use_bias_) {
-        batched_bias_WRz_local = batched_bias_WRz_.cbegin() + row * hidden_size_;
-        batched_bias_WRr_local = batched_bias_WRr_.cbegin() + row * hidden_size_;
-
-        if (linear_before_reset_) {
-          batched_bias_Wh_local = batched_bias_Wh_.cbegin() + row * hidden_size_;
-          batched_bias_Rh_local = batched_bias_Rh_.cbegin() + row * hidden_size_;
-          linear_output_local = linear_output_.begin() + row * hidden_size_;
-          linear_output_local_end = linear_output_.end();
-        } else {
-          batched_bias_WRh_local = batched_bias_WRh_.cbegin() + row * hidden_size_;
-        }
-      }
-
-      for (int step = 0; step < max_sequence_length; step++) {
-        const std::string row_str = " [row=" + std::to_string(row) + ",seqno=" + std::to_string(step) + "]";
-
-        DumpMatrix("Ht-1" + row_str, &*prev_Ht, local_fused_hidden_rows, hidden_size_);
-
-        out_added_offset = (step * batch_size_ + row) * hidden_size_x3;
-
-        // calculate Ht-1*R[zr], and add to the weighted inputs that are in outputZRH_
-        ComputeGemm(local_fused_hidden_rows, hidden_size_x2, hidden_size_, alpha,
-                    prev_Ht, prev_Ht_end,
-                    hidden_size_,
-                    recurrent_weightsZR.cbegin(), recurrent_weightsZR.cend(),
-                    hidden_size_, beta,
-                    outputZRH_.begin() + out_added_offset, outputZRH_.end(),
-                    hidden_size_x3);
-
-        DumpMatrix("Xt*(W[zr]^T) + Ht-1 * R[zr]" + row_str,
-                   outputZRH_.data() + out_added_offset, local_fused_hidden_rows, hidden_size_x2, 0, hidden_size_x3);
-
-        if (linear_before_reset_) {
-          // copy Rbh to linear output
-          gsl::copy(batched_bias_Rh_.subspan(batched_bias_Rh_local - batched_bias_Rh_.begin(), local_fused_hidden_rows * hidden_size_),
-                    linear_output_.subspan(linear_output_local - linear_output_.begin(), linear_output_local_end - linear_output_local));
-
-          // compute Ht-1 * (Rh^T) + Rbh
-          ComputeGemm(local_fused_hidden_rows, hidden_size_, hidden_size_, alpha,
-                      prev_Ht, prev_Ht_end,  // Ht-1
-                      hidden_size_,
-                      recurrent_weightsH.cbegin(), recurrent_weightsH.cend(),  // Rh^T
-                      hidden_size_, beta,
-                      linear_output_local, linear_output_.end(),  // pre: Rbh, post:output
-                      hidden_size_);
-
-          DumpMatrix("Ht-1 * (Rh^T) + Rbh " + row_str, &*linear_output_local, batch_size_, hidden_size_);
-        }
-
-        // 1st Set Of Activations
-        for (int r = 0; r < local_fused_hidden_rows; r++) {
-          const T* p_bias_r = use_bias_ ? SafeRawConstPointer<T>(batched_bias_WRr_local + r * hidden_size_,
-                                                                 batched_bias_WRr_local_end, hidden_size_)
-                                        : nullptr;
-
-          // initialize p_rt with input to calculate rt. outputZRH_ has Xt*(Wr^T) + Ht-1*(Rr^T).
-          T* p_rt = SafeRawPointer(outputZRH_, out_added_offset + r * hidden_size_x3 + hidden_size_, hidden_size_);
-
-          // add the bias and clip. post: p_rt == Xt*(Wr^T) + Ht-1*(Rr^T) + Wbr + Rbr
-          clip_with_bias_ptr_(clip_, p_bias_r, p_rt, hidden_size_);
-
-          if (linear_before_reset_) {
-            // p_linear_output = Ht-1 * (Rh^T) + Rbh
-            T* p_linear_output = SafeRawPointer<T>(linear_output_local + r * hidden_size_,
-                                                   linear_output_local_end, hidden_size_);
-            T* p_cur_h = SafeRawPointer<T>(cur_h_local + r * hidden_size_, cur_h_local_end, hidden_size_);
-
-            // calculate rt in-place [p_rt = f(p_rt)]
-            // calculate rt (.) (Ht-1 * (Rh^T) + Rbh) using p_linear_output. write to p_cur_h
-            reset_gate_(p_linear_output, p_rt, p_cur_h, hidden_size_, zr_alpha_, zr_beta_);
-
-          } else {
-            const T* p_prev_Ht = SafeRawConstPointer<T>(prev_Ht + r * hidden_size_, prev_Ht_end, hidden_size_);
-            T* p_cur_h = SafeRawPointer<T>(cur_h_local + r * hidden_size_, cur_h_local_end, hidden_size_);
-
-            // calculate rt in-place [p_rt = f(p_rt)]
-            // calculate rt (.) Ht-1 using p_prev_Ht, and write to p_cur_h
-            reset_gate_(p_prev_Ht, p_rt, p_cur_h, hidden_size_, zr_alpha_, zr_beta_);
-          }
-        }
-
-        std::string label = linear_before_reset_ ? "rt (.) (Ht-1 * (Rh^T) + Rbh)" : "rt (.) Ht-1";
-        DumpMatrix(label + row_str, &*cur_h_local, local_fused_hidden_rows, hidden_size_);
-
-        if (linear_before_reset_) {
-          // input contains rt (.) (Ht-1*(Rh^T) + Rbh)
-          auto input = cur_h_local;
-          // out_H currently contains Xt*(W[zrh]^T).
-          auto out_H = outputZRH_.begin() + out_added_offset;
-
-          for (int r = 0; r < local_fused_hidden_rows; r++) {
-            // skip over the inputs with Z and R weights
-            out_H += hidden_size_x2;
-            for (int h = 0; h < hidden_size_; ++h) {
-              *out_H += *input;
-              ++out_H;
-              ++input;
-            }
-          }
-        } else {
-          label += " * Rh^T";
-          ComputeGemm(local_fused_hidden_rows, hidden_size_, hidden_size_, alpha,
-                      cur_h_local, cur_h_local_end,
-                      hidden_size_,
-                      recurrent_weightsH.cbegin(), recurrent_weightsH.cend(),
-                      hidden_size_, beta,
-                      outputZRH_.begin() + out_added_offset + hidden_size_x2, outputZRH_.end(),
-                      hidden_size_x3);
-        }
-
-        DumpMatrix("Xt*(Wh^T) + (" + label + ")" + row_str,
-                   outputZRH_.data() + out_added_offset, local_fused_hidden_rows, hidden_size_,
-                   hidden_size_x2, hidden_size_x3);
-
-        // 2nd Set of Activations
-        span_T_iter output;
-        span_T_iter output_end;
-        if (output_sequence) {
-          output = outputs.begin() + step * output_step_length + row * hidden_size_;
-          output_end = outputs.end();
-
-        } else {
-          output = final_hidden_state.begin() + row * hidden_size_;
-          output_end = final_hidden_state.end();
-        }
-
-        for (int r = 0; r < local_fused_hidden_rows; r++) {
-          if (step >= min_sequence_length && step >= sequence_lengths[row + r]) {
-            if (output_sequence) {
-              auto fill_output = output + r * hidden_size_;
-              std::fill_n(fill_output, hidden_size_, T{});
-            }
-
-            continue;
-          }
-
-          const T* p_bias_z = use_bias_ ? SafeRawConstPointer<T>(batched_bias_WRz_local, batched_bias_WRz_local_end,
-                                                                 hidden_size_)
-                                        : nullptr;
-
-          // initialize p_zt with Xt*(Wz^T) + Ht-1*(Rz^T), which is most of the input to calculate zt:
-          T* p_zt = SafeRawPointer<T>(outputZRH_, out_added_offset + r * hidden_size_x3, hidden_size_);
-
-          // using p_zt, add bias and clip in-place
-          clip_with_bias_ptr_(clip_, p_bias_z, p_zt, hidden_size_);
-
-          // calculate zt in-place. p_zt = f(p_zt)
-          update_gate_(p_zt, hidden_size_, zr_alpha_, zr_beta_);
-
-          DumpMatrix("zt[" + std::to_string(r) + "]" + row_str, p_zt, 1, hidden_size_);
-
-          const T* p_bias_h = nullptr;
-          if (use_bias_) {
-            if (linear_before_reset_) {
-              // Wbh
-              p_bias_h = SafeRawConstPointer<T>(batched_bias_Wh_local + r * hidden_size_,
-                                                batched_bias_Wh_local_end, hidden_size_);
-
-            } else {
-              // Wbh + Wrh
-              p_bias_h = SafeRawConstPointer<T>(batched_bias_WRh_local + r * hidden_size_,
-                                                batched_bias_WRh_local_end, hidden_size_);
-            }
-          }
-
-          // setup p_ht with input to calculate ht
-          // p_ht = Xt*(Wh^T) + (rt (.) Ht-1 * Rh^T)          #  linear_before_reset_ == false
-          //      = Xt*(Wh^T) + (rt (.) (Ht-1*(Rh^T) + Rbh))  #  linear_before_reset_ == true
-          T* p_ht = SafeRawPointer<T>(outputZRH_, out_added_offset + r * hidden_size_x3 + hidden_size_x2, hidden_size_);
-
-          // add Wbh [and Wrh] and clip
-          clip_with_bias_ptr_(clip_, p_bias_h, p_ht, hidden_size_);  // post: p_ht = input to g() for calculating ht
-
-          DumpMatrix("ht input [" + std::to_string(r) + "]" + row_str, p_ht, 1, hidden_size_);
-
-          const T* p_prev_Ht = SafeRawConstPointer<T>(prev_Ht + r * hidden_size_, prev_Ht_end, hidden_size_);
-          T* p_Ht = SafeRawPointer<T>(output + r * hidden_size_, output_end, hidden_size_);
-
-          // calculate ht = g(p_ht) and write in-place to p_ht
-          // calculate Ht = (1 - zt) (.) ht + zt (.) Ht-1 and write to p_Ht
-          output_gate_(p_ht, p_zt, p_prev_Ht, p_Ht, hidden_size_, h_alpha_, h_beta_);
-        }
-
-        DumpMatrix("output" + row_str, &*output, 1, hidden_size_);
-
-        prev_Ht = output;
-        prev_Ht_end = output_end;
-      }
-    };
-
-    ExecuteLambdaInParallel("Processing batch", hidden_gemm_and_activations, batch_size_, fused_hidden_rows,
-                            ttp_, logger_);
-  } else {
-    size_t out_added_offset;
-
-    span_T_const_iter prev_Ht = batched_hidden0_.cbegin();  // Ht-1
-    span_T_const_iter prev_Ht_end = batched_hidden0_.cend();
-    span_T_iter cur_h_local = cur_h_.begin();
-    span_T_iter cur_h_local_end = cur_h_.end();
-
-    span_T_const_iter batched_bias_WRz_local;
-    span_T_const_iter batched_bias_WRr_local;
-    span_T_const_iter batched_bias_WRh_local;
-    span_T_const_iter batched_bias_Wh_local;
-    span_T_const_iter batched_bias_Rh_local;
-
-    if (use_bias_) {
-      batched_bias_WRz_local = batched_bias_WRz_.cbegin();
-      batched_bias_WRr_local = batched_bias_WRr_.cbegin();
-
-      if (linear_before_reset_) {
-        batched_bias_Wh_local = batched_bias_Wh_.cbegin();
-        batched_bias_Rh_local = batched_bias_Rh_.cbegin();
-      } else {
-        batched_bias_WRh_local = batched_bias_WRh_.cbegin();
-      }
+    if (linear_before_reset_) {
+      batched_bias_Wh_local = batched_bias_Wh_.cbegin();
+      batched_bias_Rh_local = batched_bias_Rh_.cbegin();
+    } else {
+      batched_bias_WRh_local = batched_bias_WRh_.cbegin();
     }
+  }
 
-    // for each item in sequence run all calculations
-    for (int step = 0; step < max_sequence_length; step++) {
-      const std::string seqno_str = " [seqno=" + std::to_string(step) + "]";
+  // for each item in sequence run all calculations
+  for (int step = 0; step < max_sequence_length; step++) {
+    const std::string seqno_str = " [seqno=" + std::to_string(step) + "]";
 
-      DumpMatrix("Ht-1" + seqno_str, &*prev_Ht, batch_size_, hidden_size_);
+    DumpMatrix("Ht-1" + seqno_str, &*prev_Ht, batch_size_, hidden_size_);
 
-      out_added_offset = (step * batch_size_) * hidden_size_x3;
+    out_added_offset = (step * batch_size_) * hidden_size_x3;
 
-      // calculate Ht-1*R[zr], and add to the weighted inputs that are in outputZRH_
-      // Ht-1 * R[zr] + Xt*(W[zr]^T)
-      ComputeGemm(batch_size_, hidden_size_x2, hidden_size_, alpha,
-                  prev_Ht, prev_Ht_end,
+    // calculate Ht-1*R[zr], and add to the weighted inputs that are in outputZRH_
+    // Ht-1 * R[zr] + Xt*(W[zr]^T)
+    ComputeGemm(batch_size_, hidden_size_x2, hidden_size_, alpha,
+                prev_Ht, prev_Ht_end,
+                hidden_size_,
+                recurrent_weightsZR.cbegin(), recurrent_weightsZR.cend(),
+                hidden_size_, beta,
+                outputZRH_.begin() + out_added_offset, outputZRH_.end(),
+                hidden_size_x3);
+
+    DumpMatrix("Ht-1 * R[zr] + Xt*(W[zr]^T)" + seqno_str,
+               outputZRH_.data() + out_added_offset, batch_size_, hidden_size_x2, 0, hidden_size_x3);
+
+    if (linear_before_reset_) {
+      // copy Rbh to linear output
+      gsl::copy(batched_bias_Rh_.subspan(batched_bias_Rh_local - batched_bias_Rh_.begin(), batched_bias_Rh_local_end - batched_bias_Rh_local), linear_output_);
+
+      // compute Ht-1 * (Rh^T) + Rbh
+      ComputeGemm(batch_size_, hidden_size_, hidden_size_, alpha,
+                  prev_Ht, prev_Ht_end,  // Ht-1
                   hidden_size_,
-                  recurrent_weightsZR.cbegin(), recurrent_weightsZR.cend(),
+                  recurrent_weightsH.cbegin(), recurrent_weightsH.cend(),  // Rh^T
                   hidden_size_, beta,
-                  outputZRH_.begin() + out_added_offset, outputZRH_.end(),
-                  hidden_size_x3);
+                  linear_output_.begin(), linear_output_.end(),  // pre: Rbh, post:output
+                  hidden_size_);
 
-      DumpMatrix("Ht-1 * R[zr] + Xt*(W[zr]^T)" + seqno_str,
-                 outputZRH_.data() + out_added_offset, batch_size_, hidden_size_x2, 0, hidden_size_x3);
+      DumpMatrix("Ht-1 * (Rh^T) + Rbh " + seqno_str, linear_output_.data(), batch_size_, hidden_size_);
+    }
+
+    // 1st Set Of Activations
+    for (int r = 0; r < batch_size_; r++) {
+      const T* p_bias_r = use_bias_ ? SafeRawConstPointer<T>(batched_bias_WRr_local + r * hidden_size_,
+                                                             batched_bias_WRr_local_end, hidden_size_)
+                                    : nullptr;
+
+      // initialize p_rt with input to calculate rt. outputZRH_ has Xt*(Wr^T) + Ht-1*(Rr^T).
+      T* p_rt = SafeRawPointer(outputZRH_, out_added_offset + r * hidden_size_x3 + hidden_size_, hidden_size_);
+
+      // add the bias and clip. post: p_rt == Xt*(Wr^T) + Ht-1*(Rr^T) + Wbr + Rbr
+      clip_with_bias_ptr_(clip_, p_bias_r, p_rt, hidden_size_);
 
       if (linear_before_reset_) {
-        // copy Rbh to linear output
-        gsl::copy(batched_bias_Rh_.subspan(batched_bias_Rh_local - batched_bias_Rh_.begin(), batched_bias_Rh_local_end - batched_bias_Rh_local), linear_output_);
+        // p_linear_output = Ht-1 * (Rh^T) + Rbh
+        T* p_linear_output = SafeRawPointer<T>(linear_output_, r * hidden_size_, hidden_size_);
+        T* p_cur_h = SafeRawPointer<T>(cur_h_local + r * hidden_size_, cur_h_local_end, hidden_size_);
 
-        // compute Ht-1 * (Rh^T) + Rbh
-        ComputeGemm(batch_size_, hidden_size_, hidden_size_, alpha,
-                    prev_Ht, prev_Ht_end,  // Ht-1
-                    hidden_size_,
-                    recurrent_weightsH.cbegin(), recurrent_weightsH.cend(),  // Rh^T
-                    hidden_size_, beta,
-                    linear_output_.begin(), linear_output_.end(),  // pre: Rbh, post:output
-                    hidden_size_);
+        // calculate rt in-place [p_rt = f(p_rt)]
+        // calculate rt (.) (Ht-1 * (Rh^T) + Rbh) using p_linear_output. write to p_cur_h
+        reset_gate_(p_linear_output, p_rt, p_cur_h, hidden_size_, zr_alpha_, zr_beta_);
 
-        DumpMatrix("Ht-1 * (Rh^T) + Rbh " + seqno_str, linear_output_.data(), batch_size_, hidden_size_);
+      } else {
+        const T* p_prev_Ht = SafeRawConstPointer<T>(prev_Ht + r * hidden_size_, prev_Ht_end, hidden_size_);
+        T* p_cur_h = SafeRawPointer<T>(cur_h_local + r * hidden_size_, cur_h_local_end, hidden_size_);
+
+        // calculate rt in-place [p_rt = f(p_rt)]
+        // calculate rt (.) Ht-1 using p_prev_Ht, and write to p_cur_h
+        reset_gate_(p_prev_Ht, p_rt, p_cur_h, hidden_size_, zr_alpha_, zr_beta_);
+      }
+    }
+
+    std::string label = linear_before_reset_ ? "rt (.) (Ht-1 * (Rh^T) + Rbh)" : "rt (.) Ht-1";
+    DumpMatrix(label + seqno_str, &*cur_h_local, batch_size_, hidden_size_);
+
+    if (linear_before_reset_) {
+      // input contains rt (.) (Ht-1*(Rh^T) + Rbh)
+      auto input = cur_h_local;
+      // out_H currently contains Xt*(W[zrh]^T).
+      auto out_H = outputZRH_.begin() + out_added_offset;
+
+      for (int r = 0; r < batch_size_; r++) {
+        // skip over the inputs with Z and R weights
+        out_H += hidden_size_x2;
+        for (int h = 0; h < hidden_size_; ++h) {
+          *out_H += *input;
+          ++out_H;
+          ++input;
+        }
+      }
+    } else {
+      label += " * Rh^T";
+
+      // out_H currently contains Xt*(Wh^T).
+      auto out_H = outputZRH_.begin() + out_added_offset + hidden_size_x2;
+
+      // Calculate Xt*(Wh^T) + rt (.) Ht-1 * Rh
+      ComputeGemm(batch_size_, hidden_size_, hidden_size_, alpha,
+                  cur_h_local, cur_h_local_end,  // rt (.) Ht-1
+                  hidden_size_,
+                  recurrent_weightsH.cbegin(), recurrent_weightsH.cend(),  // Rh^T
+                  hidden_size_, beta,
+                  out_H, outputZRH_.end(),
+                  hidden_size_x3);
+    }
+
+    DumpMatrix("Xt*(Wh^T) + (" + label + ")" + seqno_str, outputZRH_.data() + out_added_offset,
+               batch_size_, hidden_size_, hidden_size_x2, hidden_size_x3);
+
+    //2nd Set of Activations
+    span_T_iter output;
+    span_T_iter output_end;
+    if (output_sequence) {
+      output = outputs.begin() + step * output_step_length;
+      output_end = outputs.end();
+
+    } else {
+      output = final_hidden_state.begin();
+      output_end = final_hidden_state.end();
+    }
+
+    for (int r = 0; r < batch_size_; r++) {
+      if (step >= min_sequence_length && step >= sequence_lengths[r]) {
+        if (output_sequence) {
+          auto fill_output = output + r * hidden_size_;
+          std::fill_n(fill_output, hidden_size_, T{});
+        }
+
+        continue;
       }
 
-      // 1st Set Of Activations
-      for (int r = 0; r < batch_size_; r++) {
-        const T* p_bias_r = use_bias_ ? SafeRawConstPointer<T>(batched_bias_WRr_local + r * hidden_size_,
-                                                               batched_bias_WRr_local_end, hidden_size_)
-                                      : nullptr;
+      const T* p_bias_z = use_bias_ ? SafeRawConstPointer<T>(batched_bias_WRz_local,
+                                                             batched_bias_WRz_local_end, hidden_size_)
+                                    : nullptr;
 
-        // initialize p_rt with input to calculate rt. outputZRH_ has Xt*(Wr^T) + Ht-1*(Rr^T).
-        T* p_rt = SafeRawPointer(outputZRH_, out_added_offset + r * hidden_size_x3 + hidden_size_, hidden_size_);
+      // initialize p_zt with Xt*(Wz^T) + Ht-1*(Rz^T), which is most of the input to calculate zt:
+      T* p_zt = SafeRawPointer<T>(outputZRH_, out_added_offset + r * hidden_size_x3, hidden_size_);
 
-        // add the bias and clip. post: p_rt == Xt*(Wr^T) + Ht-1*(Rr^T) + Wbr + Rbr
-        clip_with_bias_ptr_(clip_, p_bias_r, p_rt, hidden_size_);
+      // using p_zt, add bias and clip in-place
+      clip_with_bias_ptr_(clip_, p_bias_z, p_zt, hidden_size_);
 
+      // calculate zt in-place. p_zt = f(p_zt)
+      update_gate_(p_zt, hidden_size_, zr_alpha_, zr_beta_);
+
+      DumpMatrix("zt[" + std::to_string(r) + "]" + seqno_str, p_zt, 1, hidden_size_);
+
+      const T* p_bias_h = nullptr;
+      if (use_bias_) {
         if (linear_before_reset_) {
-          // p_linear_output = Ht-1 * (Rh^T) + Rbh
-          T* p_linear_output = SafeRawPointer<T>(linear_output_, r * hidden_size_, hidden_size_);
-          T* p_cur_h = SafeRawPointer<T>(cur_h_local + r * hidden_size_, cur_h_local_end, hidden_size_);
-
-          // calculate rt in-place [p_rt = f(p_rt)]
-          // calculate rt (.) (Ht-1 * (Rh^T) + Rbh) using p_linear_output. write to p_cur_h
-          reset_gate_(p_linear_output, p_rt, p_cur_h, hidden_size_, zr_alpha_, zr_beta_);
+          // Wbh
+          p_bias_h = SafeRawConstPointer<T>(batched_bias_Wh_local + r * hidden_size_,
+                                            batched_bias_Wh_local_end, hidden_size_);
 
         } else {
-          const T* p_prev_Ht = SafeRawConstPointer<T>(prev_Ht + r * hidden_size_, prev_Ht_end, hidden_size_);
-          T* p_cur_h = SafeRawPointer<T>(cur_h_local + r * hidden_size_, cur_h_local_end, hidden_size_);
-
-          // calculate rt in-place [p_rt = f(p_rt)]
-          // calculate rt (.) Ht-1 using p_prev_Ht, and write to p_cur_h
-          reset_gate_(p_prev_Ht, p_rt, p_cur_h, hidden_size_, zr_alpha_, zr_beta_);
+          // Wbh + Wrh
+          p_bias_h = SafeRawConstPointer<T>(batched_bias_WRh_local + r * hidden_size_,
+                                            batched_bias_WRh_local_end, hidden_size_);
         }
       }
 
-      std::string label = linear_before_reset_ ? "rt (.) (Ht-1 * (Rh^T) + Rbh)" : "rt (.) Ht-1";
-      DumpMatrix(label + seqno_str, &*cur_h_local, batch_size_, hidden_size_);
+      // setup p_ht with input to calculate ht
+      // p_ht = Xt*(Wh^T) + (rt (.) Ht-1 * Rh^T)          #  linear_before_reset_ == false
+      //      = Xt*(Wh^T) + (rt (.) (Ht-1*(Rh^T) + Rbh))  #  linear_before_reset_ == true
+      T* p_ht = SafeRawPointer<T>(outputZRH_, out_added_offset + r * hidden_size_x3 + hidden_size_x2, hidden_size_);
 
-      if (linear_before_reset_) {
-        // input contains rt (.) (Ht-1*(Rh^T) + Rbh)
-        auto input = cur_h_local;
-        // out_H currently contains Xt*(W[zrh]^T).
-        auto out_H = outputZRH_.begin() + out_added_offset;
+      // add Wbh [and Wrh] and clip
+      clip_with_bias_ptr_(clip_, p_bias_h, p_ht, hidden_size_);  // post: p_ht == input to g() for calculating ht
 
-        for (int r = 0; r < batch_size_; r++) {
-          // skip over the inputs with Z and R weights
-          out_H += hidden_size_x2;
-          for (int h = 0; h < hidden_size_; ++h) {
-            *out_H += *input;
-            ++out_H;
-            ++input;
-          }
-        }
-      } else {
-        label += " * Rh^T";
+      DumpMatrix("ht input [" + std::to_string(r) + "]" + seqno_str, p_ht, 1, hidden_size_);
 
-        // out_H currently contains Xt*(Wh^T).
-        auto out_H = outputZRH_.begin() + out_added_offset + hidden_size_x2;
+      const T* p_prev_Ht = SafeRawConstPointer<T>(prev_Ht + r * hidden_size_, prev_Ht_end, hidden_size_);
+      T* p_Ht = SafeRawPointer<T>(output + r * hidden_size_, output_end, hidden_size_);
 
-        // Calculate Xt*(Wh^T) + rt (.) Ht-1 * Rh
-        ComputeGemm(batch_size_, hidden_size_, hidden_size_, alpha,
-                    cur_h_local, cur_h_local_end,  // rt (.) Ht-1
-                    hidden_size_,
-                    recurrent_weightsH.cbegin(), recurrent_weightsH.cend(),  // Rh^T
-                    hidden_size_, beta,
-                    out_H, outputZRH_.end(),
-                    hidden_size_x3);
-      }
-
-      DumpMatrix("Xt*(Wh^T) + (" + label + ")" + seqno_str, outputZRH_.data() + out_added_offset,
-                 batch_size_, hidden_size_, hidden_size_x2, hidden_size_x3);
-
-      //2nd Set of Activations
-      span_T_iter output;
-      span_T_iter output_end;
-      if (output_sequence) {
-        output = outputs.begin() + step * output_step_length;
-        output_end = outputs.end();
-
-      } else {
-        output = final_hidden_state.begin();
-        output_end = final_hidden_state.end();
-      }
-
-      for (int r = 0; r < batch_size_; r++) {
-        if (step >= min_sequence_length && step >= sequence_lengths[r]) {
-          if (output_sequence) {
-            auto fill_output = output + r * hidden_size_;
-            std::fill_n(fill_output, hidden_size_, T{});
-          }
-
-          continue;
-        }
-
-        const T* p_bias_z = use_bias_ ? SafeRawConstPointer<T>(batched_bias_WRz_local,
-                                                               batched_bias_WRz_local_end, hidden_size_)
-                                      : nullptr;
-
-        // initialize p_zt with Xt*(Wz^T) + Ht-1*(Rz^T), which is most of the input to calculate zt:
-        T* p_zt = SafeRawPointer<T>(outputZRH_, out_added_offset + r * hidden_size_x3, hidden_size_);
-
-        // using p_zt, add bias and clip in-place
-        clip_with_bias_ptr_(clip_, p_bias_z, p_zt, hidden_size_);
-
-        // calculate zt in-place. p_zt = f(p_zt)
-        update_gate_(p_zt, hidden_size_, zr_alpha_, zr_beta_);
-
-        DumpMatrix("zt[" + std::to_string(r) + "]" + seqno_str, p_zt, 1, hidden_size_);
-
-        const T* p_bias_h = nullptr;
-        if (use_bias_) {
-          if (linear_before_reset_) {
-            // Wbh
-            p_bias_h = SafeRawConstPointer<T>(batched_bias_Wh_local + r * hidden_size_,
-                                              batched_bias_Wh_local_end, hidden_size_);
-
-          } else {
-            // Wbh + Wrh
-            p_bias_h = SafeRawConstPointer<T>(batched_bias_WRh_local + r * hidden_size_,
-                                              batched_bias_WRh_local_end, hidden_size_);
-          }
-        }
-
-        // setup p_ht with input to calculate ht
-        // p_ht = Xt*(Wh^T) + (rt (.) Ht-1 * Rh^T)          #  linear_before_reset_ == false
-        //      = Xt*(Wh^T) + (rt (.) (Ht-1*(Rh^T) + Rbh))  #  linear_before_reset_ == true
-        T* p_ht = SafeRawPointer<T>(outputZRH_, out_added_offset + r * hidden_size_x3 + hidden_size_x2, hidden_size_);
-
-        // add Wbh [and Wrh] and clip
-        clip_with_bias_ptr_(clip_, p_bias_h, p_ht, hidden_size_);  // post: p_ht == input to g() for calculating ht
-
-        DumpMatrix("ht input [" + std::to_string(r) + "]" + seqno_str, p_ht, 1, hidden_size_);
-
-        const T* p_prev_Ht = SafeRawConstPointer<T>(prev_Ht + r * hidden_size_, prev_Ht_end, hidden_size_);
-        T* p_Ht = SafeRawPointer<T>(output + r * hidden_size_, output_end, hidden_size_);
-
-        // calculate ht = g(p_ht) and write in-place to p_ht
-        // calculate Ht = (1 - zt) (.) ht + zt (.) Ht-1 and write to p_Ht
-        output_gate_(p_ht, p_zt, p_prev_Ht, p_Ht, hidden_size_, h_alpha_, h_beta_);  // calculate ht and Ht
-      }
-
-      DumpMatrix("output" + seqno_str, &*output, batch_size_, hidden_size_);
-
-      prev_Ht = output;
-      prev_Ht_end = output_end;
+      // calculate ht = g(p_ht) and write in-place to p_ht
+      // calculate Ht = (1 - zt) (.) ht + zt (.) Ht-1 and write to p_Ht
+      output_gate_(p_ht, p_zt, p_prev_Ht, p_Ht, hidden_size_, h_alpha_, h_beta_);  // calculate ht and Ht
     }
+
+    DumpMatrix("output" + seqno_str, &*output, batch_size_, hidden_size_);
+
+    prev_Ht = output;
+    prev_Ht_end = output_end;
   }
 
   if (output_sequence) {
@@ -1070,29 +833,5 @@ void UniDirectionalGru<T>::AllocateBuffers() {
   }
 }
 
-template <typename T>
-void UniDirectionalGru<T>::SetNumThreads() {
-  int threads = std::thread::hardware_concurrency() - 1;
-
-  if (threads < 1)
-    threads = 1;
-
-  hidden_num_threads_ = threads;
-  batch_parallel_ = false;
-
-  // for readability of the below logic
-  const auto num_rows = batch_size_;
-  const auto num_columns = hidden_size_;
-
-  // parallelize by partitioning the batch rows
-  if (num_rows > 4 ||
-      (num_rows >= 2 && num_columns <= 256) ||
-      (num_rows >= 3 && num_columns <= 512)) {
-    batch_parallel_ = true;
-    VLOGS(logger_, 1) << "Hidden Threads : " << hidden_num_threads_;
-  }
-
-  ONNXRUNTIME_ENFORCE(hidden_num_threads_ >= 1);
-}
 }  // namespace detail
 }  // namespace onnxruntime
