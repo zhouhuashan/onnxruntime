@@ -159,14 +159,14 @@ namespace detail {
 
 template <typename T>
 static void TransposeCopy(gsl::span<const T> src, size_t src_offset,
-                          const int src_nrow, const int src_ncol,
+                          size_t src_nrow, size_t src_ncol,
                           gsl::span<T> dst) {
-  const int dst_nrow = src_ncol;
-  const int dst_ncol = src_nrow;
-  auto out_offset = 0;
-  for (int i = 0; i < dst_nrow; i++) {
+  size_t dst_nrow = src_ncol;
+  size_t dst_ncol = src_nrow;
+  size_t out_offset = 0;
+  for (size_t i = 0; i < dst_nrow; i++) {
     auto in_offset = src_offset + i;
-    for (int j = 0; j < dst_ncol; j++) {
+    for (size_t j = 0; j < dst_ncol; j++) {
       // dst[i * dst_ncol + j] = src[src_offset + j * src_ncol + i];
       dst[out_offset + j] = src[in_offset];
       in_offset += src_ncol;
@@ -199,9 +199,11 @@ class UniDirectionalGru {
                const gsl::span<const int>& sequence_lengths,
                const int num_directions,
                const gsl::span<const T>& input_weights,
-               const gsl::span<const T>& recurrent_weights,
+               const gsl::span<const T>& recurrent_weightsZR,
+               const gsl::span<const T>& recurrent_weightH,
                gsl::span<T>& outputs,
-               gsl::span<T>& final_hidden_state);
+               gsl::span<T>& final_hidden_state,
+               CBLAS_TRANSPOSE trans_b);
 
   ~UniDirectionalGru() = default;
 
@@ -273,6 +275,81 @@ class UniDirectionalGru {
 #endif
 
 template <typename T>
+DeepCpuGruOp<T>::DeepCpuGruOp(const OpKernelInfo& info) : OpKernel(info) {
+  // required attributes
+  std::string direction;
+  ONNXRUNTIME_ENFORCE(info.GetAttr("direction", &direction).IsOK());
+
+  int64_t int64_value;
+  ONNXRUNTIME_ENFORCE(info.GetAttr("linear_before_reset", &int64_value).IsOK());
+  linear_before_reset_ = gsl::narrow<int>(int64_value);
+
+  ONNXRUNTIME_ENFORCE(info.GetAttr("hidden_size", &int64_value).IsOK() && int64_value > 0);
+  hidden_size_ = gsl::narrow<int>(int64_value);
+
+  // optional attributes
+  std::vector<std::string> activation_func_names = info.GetAttrsOrDefault<std::string>("activations");
+  std::vector<float> activation_func_alphas = info.GetAttrsOrDefault<float>("activation_alpha");
+  std::vector<float> activation_func_betas = info.GetAttrsOrDefault<float>("activation_beta");
+
+  clip_ = info.GetAttrOrDefault<float>("clip", std::numeric_limits<float>::max());
+  ONNXRUNTIME_ENFORCE(clip_ > 0.f);
+
+  direction_ = rnn::detail::MakeDirection(direction);
+  num_directions_ = direction_ == rnn::detail::Direction::kBidirectional ? 2 : 1;
+
+  if (activation_func_names.empty()) {
+    for (int i = 0; i < num_directions_; ++i) {
+      activation_func_names.emplace_back("sigmoid");
+      activation_func_names.emplace_back("tanh");
+    }
+  }
+
+  ONNXRUNTIME_ENFORCE(activation_func_names.size() == num_directions_ * 2);
+
+  activation_funcs_ = rnn::detail::ActivationFuncs(activation_func_names,
+                                                   activation_func_alphas,
+                                                   activation_func_betas);
+
+  hidden_size_3x_ = 3 * hidden_size_;
+  recurrent_weights_size_per_direction_ = hidden_size_3x_ * hidden_size_;
+  bias_size_per_direction_ = 6 * hidden_size_;
+
+  // If weight is initializer, do a weight transpose and save it for compute use.
+  const Tensor *W, *R;
+  if (info.TryGetConstantInput(1, &W) && info.TryGetConstantInput(2, &R)) {
+    AllocatorPtr alloc = info.GetExecutionProvider()->GetAllocator(0, ONNXRuntimeMemType::ONNXRuntimeMemTypeDefault);
+    TransposeWeight(W, R, alloc);
+  }
+}
+
+template <typename T>
+Status DeepCpuGruOp<T>::TransposeWeight(const Tensor* W, const Tensor* R, AllocatorPtr& alloc) {
+  int input_size = (int)W->Shape()[2];
+
+  // Allocate memory for transpose.
+  input_weightsZRH_FW_ = Allocate(alloc, input_size * hidden_size_3x_, input_weightsZRH_FW_ptr_);
+  recurrent_weightsZR_FW_ = Allocate(alloc, 2 * hidden_size_ * hidden_size_, recurrent_weightsZR_FW_ptr_);
+  recurrent_weightsH_FW_ = Allocate(alloc, hidden_size_ * hidden_size_, recurrent_weightsH_FW_ptr_);
+
+  detail::TransposeCopy(W->DataAsSpan<T>(), 0, hidden_size_3x_, input_size, input_weightsZRH_FW_);
+  detail::TransposeCopy(R->DataAsSpan<T>(), 0, 2 * hidden_size_, hidden_size_, recurrent_weightsZR_FW_);
+  detail::TransposeCopy(R->DataAsSpan<T>(), 2 * hidden_size_ * hidden_size_, hidden_size_, hidden_size_, recurrent_weightsH_FW_);
+  if (num_directions_ == 2) {
+    input_weightsZRH_BW_ = Allocate(alloc, input_size * hidden_size_3x_, input_weightsZRH_BW_ptr_);
+    recurrent_weightsZR_BW_ = Allocate(alloc, 2 * hidden_size_ * hidden_size_, recurrent_weightsZR_BW_ptr_);
+    recurrent_weightsH_BW_ = Allocate(alloc, hidden_size_ * hidden_size_, recurrent_weightsH_BW_ptr_);
+
+    detail::TransposeCopy(W->DataAsSpan<T>(), hidden_size_3x_ * input_size, hidden_size_3x_, input_size, input_weightsZRH_BW_);
+    detail::TransposeCopy(R->DataAsSpan<T>(), 3 * hidden_size_ * hidden_size_, 2 * hidden_size_, hidden_size_, recurrent_weightsZR_BW_);
+    detail::TransposeCopy(R->DataAsSpan<T>(), 5 * hidden_size_ * hidden_size_, hidden_size_, hidden_size_, recurrent_weightsH_BW_);
+  }
+  is_weight_transposed = true;
+
+  return Status::OK();
+}
+
+template <typename T>
 Status DeepCpuGruOp<T>::Compute(OpKernelContext* context) const {
   const Tensor& X = *context->Input<Tensor>(0);  // inputs. [seq_length, batch_size, input_size
   const Tensor& W = *context->Input<Tensor>(1);  // weights. [num_directions, 3*hidden_size, input_size]
@@ -310,8 +387,17 @@ Status DeepCpuGruOp<T>::Compute(OpKernelContext* context) const {
   // spans for first direction
   const size_t input_weights_size_per_direction = hidden_size_3x_ * input_size;
 
-  gsl::span<const T> input_weights_1 = input_weights.subspan(0, input_weights_size_per_direction);
-  gsl::span<const T> recurrent_weights_1 = recurrent_weights.subspan(0, recurrent_weights_size_per_direction_);
+  CBLAS_TRANSPOSE trans_b = CblasNoTrans;
+  gsl::span<const T> input_weights_FW = input_weightsZRH_FW_;
+  gsl::span<const T> recurrent_weightsZR_FW = recurrent_weightsZR_FW_;
+  gsl::span<const T> recurrent_weightsH_FW = recurrent_weightsH_FW_;
+  if (!is_weight_transposed) {
+    trans_b = CblasTrans;
+    input_weights_FW = input_weights.subspan(0, input_weights_size_per_direction);
+    recurrent_weightsZR_FW = recurrent_weights.subspan(0, 2 * hidden_size_ * hidden_size_);
+    recurrent_weightsH_FW = recurrent_weights.subspan(2 * hidden_size_ * hidden_size_, hidden_size_ * hidden_size_);
+  }
+
   gsl::span<const T> bias_1 = bias.empty() ? bias : bias.subspan(0, bias_size_per_direction_);
 
   gsl::span<const T> input = X.DataAsSpan<T>();
@@ -344,10 +430,16 @@ Status DeepCpuGruOp<T>::Compute(OpKernelContext* context) const {
 
   if (direction_ == Direction::kBidirectional) {
     // spans for second direction
-    gsl::span<const T> input_weights_2 = input_weights.subspan(input_weights_size_per_direction,
-                                                               input_weights_size_per_direction);
-    gsl::span<const T> recurrent_weights_2 = recurrent_weights.subspan(recurrent_weights_size_per_direction_,
-                                                                       recurrent_weights_size_per_direction_);
+    gsl::span<const T> input_weights_BW = input_weightsZRH_BW_;
+    gsl::span<const T> recurrent_weightsZR_BW = recurrent_weightsZR_BW_;
+    gsl::span<const T> recurrent_weightsH_BW = recurrent_weightsH_BW_;
+    if (!is_weight_transposed) {
+      trans_b = CblasTrans;
+      input_weights_BW = input_weights.subspan(input_weights_size_per_direction, input_weights_size_per_direction);
+      recurrent_weightsZR_BW = recurrent_weights.subspan(3 * hidden_size_ * hidden_size_, 2 * hidden_size_ * hidden_size_);
+      recurrent_weightsH_BW = recurrent_weights.subspan(5 * hidden_size_ * hidden_size_, hidden_size_ * hidden_size_);
+    }
+
     gsl::span<const T> bias_2 = bias.empty() ? bias : bias.subspan(bias_size_per_direction_, bias_size_per_direction_);
 
     gsl::span<const T> initial_hidden_2 = initial_hidden.empty()
@@ -371,7 +463,7 @@ Status DeepCpuGruOp<T>::Compute(OpKernelContext* context) const {
               activation_funcs_.Entries()[2],
               activation_funcs_.Entries()[3],
               clip_, ttp_);
-          bw->Compute(input, sequence_lens_span, num_directions_, input_weights_2, recurrent_weights_2, output_2, hidden_output_2);
+          bw->Compute(input, sequence_lens_span, num_directions_, input_weights_BW, recurrent_weightsZR_BW, recurrent_weightsH_BW, output_2, hidden_output_2, trans_b);
         }};
     auto task_results_bw = task_bw.get_future();
     ttp_.RunTask(std::move(task_bw));
@@ -385,7 +477,7 @@ Status DeepCpuGruOp<T>::Compute(OpKernelContext* context) const {
               activation_funcs_.Entries()[0],
               activation_funcs_.Entries()[1],
               clip_, ttp_);
-          fw->Compute(input, sequence_lens_span, num_directions_, input_weights_1, recurrent_weights_1, output_1, hidden_output_1);
+          fw->Compute(input, sequence_lens_span, num_directions_, input_weights_FW, recurrent_weightsZR_FW, recurrent_weightsH_FW, output_1, hidden_output_1, trans_b);
         }};
     auto task_results_fw = task_fw.get_future();
     ttp_.RunTask(std::move(task_fw));
@@ -401,7 +493,7 @@ Status DeepCpuGruOp<T>::Compute(OpKernelContext* context) const {
         activation_funcs_.Entries()[1],
         clip_, ttp_);
 
-    gru_p->Compute(input, sequence_lens_span, num_directions_, input_weights_1, recurrent_weights_1, output_1, hidden_output_1);
+    gru_p->Compute(input, sequence_lens_span, num_directions_, input_weights_FW, recurrent_weightsZR_FW, recurrent_weightsH_FW, output_1, hidden_output_1, trans_b);
   }
 
   if (!output.empty())
@@ -503,9 +595,11 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
                                    const gsl::span<const int>& sequence_lengths_arg,
                                    const int num_directions,
                                    const gsl::span<const T>& input_weights,
-                                   const gsl::span<const T>& recurrent_weights,
+                                   const gsl::span<const T>& recurrent_weightsZR,
+                                   const gsl::span<const T>& recurrent_weightH,
                                    gsl::span<T>& outputs,
-                                   gsl::span<T>& final_hidden_state) {
+                                   gsl::span<T>& final_hidden_state,
+                                   CBLAS_TRANSPOSE trans_b) {
   using span_T_const_iter = typename gsl::span<T>::const_iterator;
   using span_T_iter = typename gsl::span<T>::iterator;
 
@@ -522,9 +616,6 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
   DumpMatrix("Inputs", inputs.data(), seq_length_ * batch_size_, input_size_);
   DumpMatrix("input_weights", input_weights.data(), 3 * hidden_size_, input_size_);
   DumpMatrix("recurrent_weights", recurrent_weights.data(), 3 * hidden_size_, hidden_size_);
-
-  gsl::span<const T> recurrent_weightsZR = recurrent_weights.subspan(0, 2 * hidden_size_ * hidden_size_);
-  gsl::span<const T> recurrent_weightsH = recurrent_weights.subspan(2 * hidden_size_ * hidden_size_, hidden_size_ * hidden_size_);
 
   gsl::span<T> original_outputs = outputs;
   const bool output_sequence = !outputs.empty();
@@ -557,9 +648,9 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
               inputs.cbegin(), inputs.cend(),
               input_size_,
               input_weights.cbegin(), input_weights.cend(),
-              input_size_, beta,
+              trans_b == CblasNoTrans ? hidden_size_x3 : input_size_, beta,
               outputZRH_.begin(), outputZRH_.end(),
-              hidden_size_x3);
+              hidden_size_x3, trans_b);
 
   DumpMatrix("inputs with weights applied", outputZRH_.data(), seq_length_ * batch_size_ * 3, hidden_size_);
 
@@ -622,9 +713,9 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
                 prev_Ht, prev_Ht_end,
                 hidden_size_,
                 recurrent_weightsZR.cbegin(), recurrent_weightsZR.cend(),
-                hidden_size_, beta,
+                trans_b == CblasNoTrans ? hidden_size_x2 : hidden_size_, beta,
                 outputZRH_.begin() + out_added_offset, outputZRH_.end(),
-                hidden_size_x3);
+                hidden_size_x3, trans_b);
 
     DumpMatrix("Ht-1 * R[zr] + Xt*(W[zr]^T)" + seqno_str,
                outputZRH_.data() + out_added_offset, batch_size_, hidden_size_x2, 0, hidden_size_x3);
@@ -637,10 +728,10 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
       ComputeGemm(batch_size_, hidden_size_, hidden_size_, alpha,
                   prev_Ht, prev_Ht_end,  // Ht-1
                   hidden_size_,
-                  recurrent_weightsH.cbegin(), recurrent_weightsH.cend(),  // Rh^T
+                  recurrent_weightH.cbegin(), recurrent_weightH.cend(),  // Rh^T
                   hidden_size_, beta,
                   linear_output_.begin(), linear_output_.end(),  // pre: Rbh, post:output
-                  hidden_size_);
+                  hidden_size_, trans_b);
 
       DumpMatrix("Ht-1 * (Rh^T) + Rbh " + seqno_str, linear_output_.data(), batch_size_, hidden_size_);
     }
@@ -704,10 +795,10 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
       ComputeGemm(batch_size_, hidden_size_, hidden_size_, alpha,
                   cur_h_local, cur_h_local_end,  // rt (.) Ht-1
                   hidden_size_,
-                  recurrent_weightsH.cbegin(), recurrent_weightsH.cend(),  // Rh^T
+                  recurrent_weightH.cbegin(), recurrent_weightH.cend(),  // Rh^T
                   hidden_size_, beta,
                   out_H, outputZRH_.end(),
-                  hidden_size_x3);
+                  hidden_size_x3, trans_b);
     }
 
     DumpMatrix("Xt*(Wh^T) + (" + label + ")" + seqno_str, outputZRH_.data() + out_added_offset,
