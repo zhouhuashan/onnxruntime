@@ -44,6 +44,12 @@ if (WIN32 AND onnxruntime_USE_OPENMP)
   endif()
 endif()
 
+if(onnxruntime_USE_MKLML)
+  target_include_directories(onnxruntime_providers PRIVATE "C:\\Program Files (x86)\\IntelSWTools\\compilers_and_libraries_2019\\windows\\mkl\\include")
+  link_directories("C:\\Program Files (x86)\\IntelSWTools\\compilers_and_libraries_2019.1.144\\windows\\mkl\\lib\\intel64_win" "C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64_win\\compiler")
+  target_link_libraries(onnxruntime_providers mkl_intel_lp64_dll.lib mkl_intel_thread_dll.lib mkl_core_dll.lib)
+endif()
+
 if (onnxruntime_USE_CUDA)
   file(GLOB_RECURSE onnxruntime_providers_cuda_cc_srcs
     "${ONNXRUNTIME_ROOT}/core/providers/cuda/*.h"

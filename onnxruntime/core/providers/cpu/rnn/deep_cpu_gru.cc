@@ -9,6 +9,8 @@
 #pragma warning(disable : 4996)
 #endif
 
+#define CBLAS_H
+#include <mkl.h>
 #include "core/providers/cpu/rnn/deep_cpu_gru.h"
 
 #include <algorithm>
@@ -655,14 +657,22 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
   float alpha = 1.0f;
   float beta = 0.0f;  // zero out outputZRH_ when calling ComputeGemm.
 
-  // apply weights to all the inputs
-  ComputeGemm(total_rows, hidden_size_x3, input_size_, alpha,
-              inputs.cbegin(), inputs.cend(),
-              input_size_,
-              input_weights.cbegin(), input_weights.cend(),
-              trans_b == CblasNoTrans ? hidden_size_x3 : input_size_, beta,
-              outputZRH_.begin(), outputZRH_.end(),
-              hidden_size_x3, trans_b);
+  cblas_sgemm(CblasRowMajor,
+              CblasNoTrans,
+              CblasNoTrans,
+              total_rows, hidden_size_x3, input_size_, alpha,
+              &(*inputs.begin()), input_size_,
+              &(*input_weights.cbegin()), hidden_size_x3, beta,
+              &(*outputZRH_.begin()), hidden_size_x3);
+
+  //// apply weights to all the inputs
+  //ComputeGemm(total_rows, hidden_size_x3, input_size_, alpha,
+  //            inputs.cbegin(), inputs.cend(),
+  //            input_size_,
+  //            input_weights.cbegin(), input_weights.cend(),
+  //            trans_b == CblasNoTrans ? hidden_size_x3 : input_size_, beta,
+  //            outputZRH_.begin(), outputZRH_.end(),
+  //            hidden_size_x3, trans_b);
 
   DumpMatrix("inputs with weights applied", outputZRH_.data(), seq_length_ * batch_size_ * 3, hidden_size_);
 
@@ -721,13 +731,21 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
 
     // calculate Ht-1*R[zr], and add to the weighted inputs that are in outputZRH_
     // Ht-1 * R[zr] + Xt*(W[zr]^T)
-    ComputeGemm(batch_size_, hidden_size_x2, hidden_size_, alpha,
-                prev_Ht, prev_Ht_end,
-                hidden_size_,
-                recurrent_weightsZR.cbegin(), recurrent_weightsZR.cend(),
-                trans_b == CblasNoTrans ? hidden_size_x2 : hidden_size_, beta,
-                outputZRH_.begin() + out_added_offset, outputZRH_.end(),
-                hidden_size_x3, trans_b);
+    //ComputeGemm(batch_size_, hidden_size_x2, hidden_size_, alpha,
+    //            prev_Ht, prev_Ht_end,
+    //            hidden_size_,
+    //            recurrent_weightsZR.cbegin(), recurrent_weightsZR.cend(),
+    //            trans_b == CblasNoTrans ? hidden_size_x2 : hidden_size_, beta,
+    //            outputZRH_.begin() + out_added_offset, outputZRH_.end(),
+    //            hidden_size_x3, trans_b);
+
+    cblas_sgemm(CblasRowMajor,
+                CblasNoTrans,
+                CblasNoTrans,
+                batch_size_, hidden_size_x2, hidden_size_, alpha,
+                &(*prev_Ht), hidden_size_,
+                &(*recurrent_weightsZR.cbegin()), hidden_size_x2, beta,
+                &(*(outputZRH_.begin() + out_added_offset)), hidden_size_x3);
 
     DumpMatrix("Ht-1 * R[zr] + Xt*(W[zr]^T)" + seqno_str,
                outputZRH_.data() + out_added_offset, batch_size_, hidden_size_x2, 0, hidden_size_x3);
@@ -737,13 +755,21 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
       gsl::copy(batched_bias_Rh_.subspan(batched_bias_Rh_local - batched_bias_Rh_.begin(), batched_bias_Rh_local_end - batched_bias_Rh_local), linear_output_);
 
       // compute Ht-1 * (Rh^T) + Rbh
-      ComputeGemm(batch_size_, hidden_size_, hidden_size_, alpha,
-                  prev_Ht, prev_Ht_end,  // Ht-1
-                  hidden_size_,
-                  recurrent_weightH.cbegin(), recurrent_weightH.cend(),  // Rh^T
-                  hidden_size_, beta,
-                  linear_output_.begin(), linear_output_.end(),  // pre: Rbh, post:output
-                  hidden_size_, trans_b);
+      //ComputeGemm(batch_size_, hidden_size_, hidden_size_, alpha,
+      //            prev_Ht, prev_Ht_end,  // Ht-1
+      //            hidden_size_,
+      //            recurrent_weightH.cbegin(), recurrent_weightH.cend(),  // Rh^T
+      //            hidden_size_, beta,
+      //            linear_output_.begin(), linear_output_.end(),  // pre: Rbh, post:output
+      //            hidden_size_, trans_b);
+
+      cblas_sgemm(CblasRowMajor,
+                  CblasNoTrans,
+                  CblasNoTrans,
+                  batch_size_, hidden_size_, hidden_size_, alpha,
+                  &(*prev_Ht), hidden_size_,
+                  &(*recurrent_weightH.cbegin()), hidden_size_, beta,
+                  &(*linear_output_.begin()), hidden_size_);
 
       DumpMatrix("Ht-1 * (Rh^T) + Rbh " + seqno_str, linear_output_.data(), batch_size_, hidden_size_);
     }
@@ -804,13 +830,21 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
       auto out_H = outputZRH_.begin() + out_added_offset + hidden_size_x2;
 
       // Calculate Xt*(Wh^T) + rt (.) Ht-1 * Rh
-      ComputeGemm(batch_size_, hidden_size_, hidden_size_, alpha,
-                  cur_h_local, cur_h_local_end,  // rt (.) Ht-1
-                  hidden_size_,
-                  recurrent_weightH.cbegin(), recurrent_weightH.cend(),  // Rh^T
-                  hidden_size_, beta,
-                  out_H, outputZRH_.end(),
-                  hidden_size_x3, trans_b);
+      //ComputeGemm(batch_size_, hidden_size_, hidden_size_, alpha,
+      //            cur_h_local, cur_h_local_end,  // rt (.) Ht-1
+      //            hidden_size_,
+      //            recurrent_weightH.cbegin(), recurrent_weightH.cend(),  // Rh^T
+      //            hidden_size_, beta,
+      //            out_H, outputZRH_.end(),
+      //            hidden_size_x3, trans_b);
+
+      cblas_sgemm(CblasRowMajor,
+                  CblasNoTrans,
+                  CblasNoTrans,
+                  batch_size_, hidden_size_, hidden_size_, alpha,
+                  &(*cur_h_local), hidden_size_,
+                  &(*recurrent_weightH.cbegin()), hidden_size_, beta,
+                  &(*out_H), hidden_size_x3);
     }
 
     DumpMatrix("Xt*(Wh^T) + (" + label + ")" + seqno_str, outputZRH_.data() + out_added_offset,
