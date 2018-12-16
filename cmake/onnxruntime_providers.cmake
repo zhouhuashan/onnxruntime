@@ -45,6 +45,7 @@ if (WIN32 AND onnxruntime_USE_OPENMP)
 endif()
 
 if(onnxruntime_USE_MKLML)
+  add_definitions(-DUSE_MKLML=1)
   target_include_directories(onnxruntime_providers PRIVATE "C:\\Program Files (x86)\\IntelSWTools\\compilers_and_libraries_2019\\windows\\mkl\\include")
   link_directories("C:\\Program Files (x86)\\IntelSWTools\\compilers_and_libraries_2019.1.144\\windows\\mkl\\lib\\intel64_win" "C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64_win\\compiler")
   target_link_libraries(onnxruntime_providers mkl_intel_lp64_dll.lib mkl_intel_thread_dll.lib mkl_core_dll.lib)
