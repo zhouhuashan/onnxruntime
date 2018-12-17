@@ -507,11 +507,11 @@ class InferenceSession::Impl {
       std::for_each(std::begin(model_output_names_),
                     std::end(model_output_names_),
                     [&ostr](const std::string& elem) {
-                      ostr << elem << " ";
+                      ostr << "'" << elem << "', ";
                     });
       return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT,
                             "Invalid Output Names:" + invalid_names.str() +
-                                " Valid output names are: " + ostr.str());
+                                " valid output names are: " + ostr.str());
     }
 
     // TODO add more validation here like checking shape of the allocated buffers

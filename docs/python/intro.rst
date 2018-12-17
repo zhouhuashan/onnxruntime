@@ -30,6 +30,7 @@ as Deep Learning algorithms in the
         tutorial
         api_summary
         examples_md
+        onnxml
 
 The core library is implemented in C++.
 *ONNX Runtime* is available on
