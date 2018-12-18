@@ -134,7 +134,7 @@ common::Status SessionStateInitializer::InitializeAndSave(bool enable_memory_pat
                                              execution_providers_, mlvalue_name_idx_map, weights_buffers,
                                              add_initialized_tensor, logger_));
 
-  graph_.CleanAllInitializedTensors();  // remove weights from the graph now to save memory
+  // graph_.CleanAllInitializedTensors();  // remove weights from the graph now to save memory
 
   ORT_RETURN_IF_ERROR(SaveKernels(execution_providers_, session_state_, kernel_registry_manager_, logger_));
   ORT_RETURN_IF_ERROR(SaveInputOutputNamesToNodeMapping(graph_, kernel_registry_manager_, session_state_));

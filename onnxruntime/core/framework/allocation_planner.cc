@@ -143,7 +143,11 @@ class PlannerImpl {
     // deallocate_point is an index into the execution-plan; thus, ml_value becomes free after
     // this step in the execution-plan is completed.
     size_t deallocate_point;
-    FreeBufferInfo(MLValueIndex mlvalue, size_t dealloc_point) : ml_value(mlvalue), deallocate_point(dealloc_point) {}
+    FreeBufferInfo(MLValueIndex mlvalue, size_t dealloc_point) : ml_value(mlvalue), deallocate_point(dealloc_point) {
+      if (mlvalue == 599) {
+        (void)mlvalue;
+      }
+    }
   };
   // freelist_ : a list of ml-values whose buffers are free to be reused, sorted by when
   // they became free (more recently freed earlier in the list).
@@ -504,11 +508,19 @@ class PlannerImpl {
         }
         output_arg_num++;
       }
+
+      auto print_info = [](MLValueIndex index, const Node& node, const std::string& type, const std::string& name, int usecount) {
+        if (index == 599) {
+          std::cout << node.OpType() << ":" << node.Name() << " " << type << " " << name << " usecount=" << usecount << std::endl;
+        }
+      };
+
       // determine if inputs of *pnode can be freed:
       for (auto node_input : pnode->InputDefs()) {
         if (node_input->Exists()) {
           auto& sym = node_input->Name();
           auto original = Buffer(Index(sym));
+          print_info(original, *pnode, "input", sym, UseCount(original));
           if (0 == --UseCount(original))
             freelist_.push_front(FreeBufferInfo(original, program_counter));
         }
@@ -518,6 +530,7 @@ class PlannerImpl {
         if (node_input->Exists()) {
           auto& sym = node_input->Name();
           auto original = Buffer(Index(sym));
+          print_info(original, *pnode, "implicit input", sym, UseCount(original));
           if (0 == --UseCount(original))
             freelist_.push_front(FreeBufferInfo(original, program_counter));
         }
@@ -528,6 +541,7 @@ class PlannerImpl {
         if (node_output->Exists()) {
           auto& sym = node_output->Name();
           auto original = Buffer(Index(sym));
+          print_info(original, *pnode, "output", sym, UseCount(original));
           if (0 == UseCount(original))
             freelist_.push_front(FreeBufferInfo(original, program_counter));
         }

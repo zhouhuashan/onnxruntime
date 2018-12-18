@@ -1,0 +1,95 @@
+mlvalue_index is 568
+Re-use index is 599 ??? Why is that larger
+
+Node that output is being created for.
+Output is int32 tensor {1,1}
+
+-		p_op_kernel->Node()	{index_=194 name_="PtrNetwork_Marco/PtrNetwork_Marco/unstack__1977" op_type_="Cast" ...}	const onnxruntime::Node &
+		index_	194	unsigned __int64
++		name_	"PtrNetwork_Marco/PtrNetwork_Marco/unstack__1977"	std::basic_string<char,std::char_traits<char>,std::allocator<char> >
++		op_type_	"Cast"	std::basic_string<char,std::char_traits<char>,std::allocator<char> >
++		domain_	""	std::basic_string<char,std::char_traits<char>,std::allocator<char> >
++		op_	0x0000027cadb3d968 {name_="Cast" file_="d:\\src\\github\\onnxruntime\\cmake\\external\\onnx\\onnx\\defs\\tensor\\defs.cc" ...}	const onnx::OpSchema *
+		node_type_	Primitive (0)	onnxruntime::Node::Type
++		func_body_	0x0000000000000000 <NULL>	const onnxruntime::Function *
++		description_	""	std::basic_string<char,std::char_traits<char>,std::allocator<char> >
++		definitions_	{input_defs={ size=1 } input_arg_count={ size=1 } output_defs={ size=1 } ...}	onnxruntime::Node::Definitions
++		relationships_	{input_edges={ size=1 } output_edges={ size=1 } control_inputs={ size=0 } }	onnxruntime::Node::Relationships
++		execution_provider_type_	"CPUExecutionProvider"	std::basic_string<char,std::char_traits<char>,std::allocator<char> >
++		attributes_	{ size=1 }	std::unordered_map<std::basic_string<char,std::char_traits<char>,std::allocator<char> >,onnx::AttributeProto,std::hash<std::basic_string<char,std::char_traits<char>,std::allocator<char> > >,std::equal_to<std::basic_string<char,std::char_traits<char>,std::allocator<char> > >,std::allocator<std::pair<std::basic_string<char,std::char_traits<char>,std::allocator<char> > const ,onnx::AttributeProto> > >
++		graph_	0x0000027ca0b1e6c0 {graph_proto_=0x0000027ca08c86e0 {_internal_metadata_={...} _has_bits_={has_bits_=...} ...} ...}	onnxruntime::Graph *
++		attr_to_subgraph_map_	{ size=0 }	std::unordered_map<std::basic_string<char,std::char_traits<char>,std::allocator<char> >,onnxruntime::Graph *,std::hash<std::basic_string<char,std::char_traits<char>,std::allocator<char> > >,std::equal_to<std::basic_string<char,std::char_traits<char>,std::allocator<char> > >,std::allocator<std::pair<std::basic_string<char,std::char_traits<char>,std::allocator<char> > const ,onnxruntime::Graph *> > >
++		subgraphs_	{ size=0 }	std::vector<std::unique_ptr<onnxruntime::Graph,std::default_delete<onnxruntime::Graph> >,std::allocator<std::unique_ptr<onnxruntime::Graph,std::default_delete<onnxruntime::Graph> > > >
+
+GetOrCreateNodeOutputMLValue
+  p_mlvalue = &all_values_.at(node_values_[index]); == at(568)
+
+AllocateAsPerAllocationPlan
+  const auto& per_alloc_plan = alloc_plan[mlvalue_index];
+
+-		per_alloc_plan	{alloc_kind=kReuse (1) value_type=0x00007ff7c6124790 {onnx_test_runner.exe!onnxruntime::TensorType<int> tensor_type} {...} ...}	const onnxruntime::SequentialExecutionPlan::AllocPlanPerValue &
+		alloc_kind	kReuse (1)	onnxruntime::AllocKind
++		value_type	0x00007ff7c6124790 {onnx_test_runner.exe!onnxruntime::TensorType<int> tensor_type} {...}	const onnxruntime::DataTypeImpl * {onnxruntime::TensorType<int>}
++		location	{name=0x00007ff7c5c8d1d8 "Cpu" id=0 mem_type=OrtMemTypeDefault (0) ...}	OrtAllocatorInfo
+		reused_buffer	599	int
+		create_fence_if_async	false	bool
+
+
+-		[568]	{alloc_kind=kReuse (1) value_type=0x00007ff7c6124790 {onnx_test_runner.exe!onnxruntime::TensorType<int> tensor_type} {...} ...}	onnxruntime::SequentialExecutionPlan::AllocPlanPerValue
+		alloc_kind	kReuse (1)	onnxruntime::AllocKind
++		value_type	0x00007ff7c6124790 {onnx_test_runner.exe!onnxruntime::TensorType<int> tensor_type} {...}	const onnxruntime::DataTypeImpl * {onnxruntime::TensorType<int>}
++		location	{name=0x00007ff7c5c8d1d8 "Cpu" id=0 mem_type=OrtMemTypeDefault (0) ...}	OrtAllocatorInfo
+		reused_buffer	599	int
+		create_fence_if_async	false	bool
+-		[569]	{alloc_kind=kReuse (1) value_type=0x00007ff7c6124790 {onnx_test_runner.exe!onnxruntime::TensorType<int> tensor_type} {...} ...}	onnxruntime::SequentialExecutionPlan::AllocPlanPerValue
+		alloc_kind	kReuse (1)	onnxruntime::AllocKind
++		value_type	0x00007ff7c6124790 {onnx_test_runner.exe!onnxruntime::TensorType<int> tensor_type} {...}	const onnxruntime::DataTypeImpl * {onnxruntime::TensorType<int>}
++		location	{name=0x00007ff7c5c8d1d8 "Cpu" id=0 mem_type=OrtMemTypeDefault (0) ...}	OrtAllocatorInfo
+		reused_buffer	599	int
+		create_fence_if_async	false	bool
+
+
+Split: PtrNetwork_Marco/PtrNetwork_Marco/unstack
+Outputs: id: PtrNetwork_Marco/PtrNetwork_Marco/unstack:0
+         id: PtrNetwork_Marco/PtrNetwork_Marco/unstack:1
+
+Cast: PtrNetwork_Marco/PtrNetwork_Marco/unstack__1977
+Inputs: id: PtrNetwork_Marco/PtrNetwork_Marco/unstack:1
+Outputs: id: PtrNetwork_Marco/PtrNetwork_Marco/unstack__1977:0
+
+Tail of execution plan:
+    [Step] Op   (Node name)
+    [1254] Cast (PtrNetwork_Squad/PtrNetwork_Squad/unstack__1974)
+    Free ml-values: (728) Scan__22:0
+    [1255] Squeeze (PtrNetwork_Squad/PtrNetwork_Squad/unstack__481)
+    Free ml-values: (599) PtrNetwork_Squad/PtrNetwork_Squad/unstack__1973:0
+    [1256] Cast (PtrNetwork_Marco/PtrNetwork_Marco/unstack__1977)
+    Free ml-values: (426) match/BahdanauAttention/SequenceMask/Less__962:0
+    [1257] Squeeze (PtrNetwork_Marco/PtrNetwork_Marco/unstack__468)
+    Free ml-values: (599) PtrNetwork_Squad/PtrNetwork_Squad/unstack__1973:0, (599) PtrNetwork_Squad/PtrNetwork_Squad/unstack__1973:0
+
+
+Tail of topo order
+    222:PtrNetwork_Squad/PtrNetwork_Squad/unstack__1974
+    223:PtrNetwork_Squad/PtrNetwork_Squad/unstack__481
+    194:PtrNetwork_Marco/PtrNetwork_Marco/unstack__1977
+    195:PtrNetwork_Marco/PtrNetwork_Marco/unstack__468
+
+
+-		seq_exec_plan	{allocation_plan={ size=1698 } execution_plan={ size=1258 } to_be_freed={ size=661 } }	const onnxruntime::SequentialExecutionPlan &
++		allocation_plan	{ size=1698 }	std::vector<onnxruntime::SequentialExecutionPlan::AllocPlanPerValue,std::allocator<onnxruntime::SequentialExecutionPlan::AllocPlanPerValue> >
++		execution_plan	{ size=1258 }	std::vector<onnxruntime::SequentialExecutionPlan::NodeExecutionPlan,std::allocator<onnxruntime::SequentialExecutionPlan::NodeExecutionPlan> >
+-		to_be_freed	{ size=661 }	std::vector<int,std::allocator<int> >
+            [657]	599	int
+            [658]	426	int
+            [659]	599	int
+            [660]	599	int
+
+===
+
+Freelist checks and additions
+
+Output def of Cast: PtrNetwork_Squad/PtrNetwork_Squad/unstack__1973. UseCount = 1
+Input def of Squeeze: PtrNetwork_Squad/PtrNetwork_Squad/unstack__480. 
+Output def of ". UseCount still 1 ???
+Output def of Shape: PtrNetwork_Squad/PtrNetwork_Squad/rnn/Shapex

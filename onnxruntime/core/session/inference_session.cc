@@ -356,6 +356,8 @@ class InferenceSession::Impl {
       // handle any subgraphs
       ORT_RETURN_IF_ERROR(InitializeSubgraphSessions(graph, session_state_));
 
+      // std::cout << std::make_pair(session_state_.GetExecutionPlan(), &session_state_);
+
       is_inited_ = true;
 
       LOGS(*session_logger_, INFO) << "Session successfully initialized.";

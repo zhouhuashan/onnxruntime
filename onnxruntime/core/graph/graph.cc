@@ -931,18 +931,9 @@ Status Graph::BuildConnections(std::vector<std::string>& outer_scope_node_args_c
             input_slot_index += static_cast<int>(iter - implicit_inputs.cbegin());
           }
 
-          if (node_arg_in_parent_graph ||
-              resolve_context_.inputs_and_initializers.find(node_arg_name) !=
-                  resolve_context_.inputs_and_initializers.cend()) {
-            // no connection required if it's an input or initializer.
-            // if the node arg is from a parent graph we link the nodes in the parent graph by passing the
-            // node_arg_name back up in outer_scope_node_args_consumed
-
-          } else {
-            // if it's an output nodearg in this graph we need to create a link to the node the output is coming from
-            auto entry = resolve_context_.output_args.find(node_arg_name);
-            ORT_ENFORCE(entry != resolve_context_.output_args.end());
-
+          // if it's an output nodearg in this graph we need to create a link to the node the output is coming from
+          auto entry = resolve_context_.output_args.find(node_arg_name);
+          if (entry != resolve_context_.output_args.end()) {
             // Create relationship between this node (node), and the node providing the output (output_node).
             Node& output_node = *entry->second.first;
             AddEdge(output_node.Index(), node->Index(), entry->second.second, input_slot_index);
@@ -1148,6 +1139,18 @@ Status Graph::PerformTopologicalSortAndCheckIsAcyclic() {
   }
 
   if (num_of_nodes_ >= 0 && static_cast<size_t>(num_of_nodes_) == nodes_in_topological_order_.size()) {
+    //if (parent_graph_)
+    //  std::cout << "Subgraph: " << Name() << "\n";
+    //else
+    //  std::cout << "Main graph: " << Name() << "\n";
+
+    //for (auto idx : nodes_in_topological_order_) {
+    //  std::cout << idx << ":" << GetNode(idx)->Name() << " ";
+    //}
+
+    //std::cout << "\n"
+    //          << std::endl;
+
     return Status::OK();
   } else {
     return Status(ONNXRUNTIME, FAIL, "Error: the graph is not acyclic.");

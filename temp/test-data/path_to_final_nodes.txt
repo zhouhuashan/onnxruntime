@@ -1,0 +1,35 @@
+Nodes
+
+Indices:0 - graph input
+
+Cast PtrNetwork_Marco/PtrNetwork_Marco/unstack__1975
+ in:  indices:0
+ out: PtrNetwork_Marco/PtrNetwork_Marco/unstack__1975:0
+
+Split: PtrNetwork_Marco/PtrNetwork_Marco/unstack
+ in:  PtrNetwork_Marco/PtrNetwork_Marco/unstack__1975:0
+ out: PtrNetwork_Marco/PtrNetwork_Marco/unstack:0
+      PtrNetwork_Marco/PtrNetwork_Marco/unstack:1
+
+Cast: PtrNetwork_Marco/PtrNetwork_Marco/unstack__1977
+ in:  PtrNetwork_Marco/PtrNetwork_Marco/unstack:1
+ out: PtrNetwork_Marco/PtrNetwork_Marco/unstack__1977:0      
+
+Squeeze
+
+----
+
+Cast: PtrNetwork_Squad/PtrNetwork_Squad/unstack__1972
+ in:  indices:0
+ out: PtrNetwork_Squad/PtrNetwork_Squad/unstack__1972:0
+
+Split: PtrNetwork_Squad/PtrNetwork_Squad/unstack
+ in:  PtrNetwork_Squad/PtrNetwork_Squad/unstack__1972:0
+ out: PtrNetwork_Squad/PtrNetwork_Squad/unstack:0
+      PtrNetwork_Squad/PtrNetwork_Squad/unstack:1
+
+Cast: PtrNetwork_Squad/PtrNetwork_Squad/unstack__1974
+ in:  PtrNetwork_Squad/PtrNetwork_Squad/unstack:1
+ out: PtrNetwork_Squad/PtrNetwork_Squad/unstack__1974:0
+
+Squeeze
