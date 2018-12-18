@@ -3,14 +3,13 @@
 
 #include "core/providers/cpu/tensor/dynamic_slice.h"
 #include <stack>
+#include <iostream>
 
 namespace onnxruntime {
 
-ONNX_OPERATOR_KERNEL_EX(
+ONNX_CPU_OPERATOR_KERNEL(
     DynamicSlice,
-    kMSDomain,
-    1,
-    kCpuExecutionProvider,
+    9,
     KernelDefBuilder()
         .TypeConstraint("T",    DataTypeImpl::AllTensorTypes())
         .TypeConstraint("Tind", {DataTypeImpl::GetTensorType<int32_t>(),DataTypeImpl::GetTensorType<int64_t>()}),
@@ -49,7 +48,7 @@ Status DynamicSliceBase::PrepareForCompute(OpKernelContext* context, Prepare& p)
   auto start_indices = static_cast<const Tind*>(starts_tensor->DataRaw());
   auto end_indices   = static_cast<const Tind*>(ends_tensor->DataRaw());
 
-  std::vector< typename std::pair<int64_t, int64_t> > boundaries;
+  std::vector< typename std::pair<int32_t, int32_t> > boundaries;
 #pragma omp parallel for
   for (uint64_t i = 0; i < data_shape.NumDimensions(); ++i) {
     boundaries.push_back(std::make_pair(0, data_shape[i]));
@@ -107,7 +106,7 @@ Status DynamicSliceBase::PrepareForCompute(OpKernelContext* context, Prepare& p)
   for (auto& boundary: boundaries) {
     output_shape.push_back(boundary.second - boundary.first);
   }
-  auto output_tensor = context->Output(0, TensorShape(output_shape));
+  auto output_tensor  = context->Output(0, TensorShape(output_shape));
   if (data_tensor->DataType() == DataTypeImpl::GetType<std::string>()) {
     p.input_str_base  = static_cast<const std::string*>(data_tensor->DataRaw());
     p.output_str_base = static_cast<std::string*>(output_tensor->MutableDataRaw());
@@ -117,11 +116,10 @@ Status DynamicSliceBase::PrepareForCompute(OpKernelContext* context, Prepare& p)
   }
 
   p.element_bytes     = data_tensor->DataType()->Size();
-  p.element_to_copy   = boundaries.back().second - boundaries.back().first;
-  p.bytes_to_copy     = p.element_to_copy * p.element_bytes;
+  p.bytes_to_copy     = p.element_bytes;
 
   std::stack< typename std::pair<int64_t,int64_t> > stk;
-  for (int64_t i = boundaries[0].first; i < boundaries[0].second; ++i) {
+  for (int64_t i = boundaries[0].second - 1; i >= boundaries[0].first; --i) {
     stk.push(std::make_pair(i * data_shape.SizeFromDimension(1), 1));
   }
   while (!stk.empty()) {
@@ -130,7 +128,7 @@ Status DynamicSliceBase::PrepareForCompute(OpKernelContext* context, Prepare& p)
     if (top.second == static_cast<int64_t>(boundaries.size())) {
       p.element_offsets.push_back(top.first);
     } else {
-      for (int64_t i = boundaries[top.second].first; i < boundaries[top.second].second; ++i) {
+      for (int64_t i = boundaries[top.second].second - 1; i >= boundaries[top.second].first; --i) {
         stk.push(std::make_pair(top.first + i * data_shape.SizeFromDimension(top.second + 1), top.second + 1));
       }
     }
@@ -168,6 +166,6 @@ Status DynamicSlice::SliceString(const Prepare& p) const {
   return Status::OK();
 }
 
-}
+}//namespace onnxruntime
 
 

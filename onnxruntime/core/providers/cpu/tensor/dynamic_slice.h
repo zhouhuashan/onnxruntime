@@ -27,7 +27,7 @@ protected:
                output_str_base (nullptr),
                bytes_to_copy   (0),
                element_bytes   (0),
-               element_to_copy (0),
+               element_to_copy (1),
                element_offsets (0) {}
   }; // struct Prepare
 
