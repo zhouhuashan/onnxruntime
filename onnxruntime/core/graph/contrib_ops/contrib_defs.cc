@@ -653,6 +653,24 @@ Example 4:
   output  = [[[2,3]],[[4,5]]]
 )DOC");
 
+    ONNX_CONTRIB_OPERATOR_SCHEMA( WordConvEmbedding )
+       .SetDomain( kMSDomain )
+       .SinceVersion( 1 )
+       .Input( 0, "Sequence", "Specify batchs of sequence words to embedding", "T" )
+       .Input( 1, "W", "Specify weights of conv", "T1" )
+       .Input( 2, "B", "Specify bias of conv", "T1" )
+       .Input( 3, "C", "Specify embedding vector of char", "T1" )
+       .Output( 0, "Y", "output", "T1" )
+       .TypeConstraint(
+          "T",
+          { "tensor(int32)" },
+          "Constrain to tensor(int32)." )
+       .TypeConstraint(
+          "T1",
+          { "tensor(float)" },
+          "Constrain to tensor(float).")
+       .SetDoc( R"DOC(The WordConvEmbedding takes in a batch of sequence words and embed each word to a vector.)DOC" );
+
 }
 }  // namespace contrib
 }  // namespace onnxruntime
