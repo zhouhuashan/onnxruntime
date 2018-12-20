@@ -4,6 +4,10 @@
 #include "core/providers/cpu/tensor/dynamic_slice.h"
 #include <stack>
 #include <iostream>
+#define INPUTS_TENSOR_SHAPE_INVALID "data tensor needs to be an array" 
+#define STARTS_TENSOR_SHAPE_INVALID "starts needs to be a 1-D array."
+#define INDICE_TENSOR_SHAPE_NOTSAME "starts tensor and ends tensor need to have same shape."
+using DIMS = std::vector<int64_t>;
 
 namespace onnxruntime {
 
@@ -15,124 +19,132 @@ ONNX_CPU_OPERATOR_KERNEL(
         .TypeConstraint("Tind", {DataTypeImpl::GetTensorType<int32_t>(),DataTypeImpl::GetTensorType<int64_t>()}),
     DynamicSlice);
 
+void AssignDimension(int64_t& output, int64_t start, int64_t end) {
+  start = start < 0 ? output + start : start;
+  end   = end   < 0 ? output + end   : end;
+  auto diff = end - start;
+  if (diff < 0 || diff > output) output = 0;
+  else output = diff;
+}
+
+template<typename Tind>
+int64_t AdjustOutputShape (DIMS& outputs, const DIMS& starts, const DIMS& ends, const Tensor* tensor, std::string& err) {
+  int64_t slice_stop_at = starts.size();
+  std::stringstream err_stream;
+  if (nullptr == tensor) {
+#pragma omp parallel for
+    for (size_t i = 0; i < starts.size(); ++i) {
+      AssignDimension(outputs[i], starts[i], ends[i]);
+      if (0 == outputs[i]) {
+        err_stream << "Found err start and end: [" << starts[i] << "," << ends[i] << "].";
+      }
+    }
+  } else {
+    DIMS axes(tensor->Data<Tind>(), tensor->Data<Tind>() + tensor->Shape().Size());
+    if (axes.size() <= outputs.size() && axes.size() == starts.size()) {
+      slice_stop_at = axes.back() + 1;
+#pragma omp parallel for
+      for (size_t i = 0; i < axes.size(); ++i) {
+        auto axis = axes[i];
+        if (axis < static_cast<int64_t>(outputs.size())) {
+          AssignDimension(outputs[axis], starts[i], ends[i]);
+          if (outputs[axis] == 0) {
+            err_stream << "Found err start and end: [" << starts[i] << "," << ends[i] << "].";
+          }
+        } 
+      }
+    } else err_stream << "Number of axes is invalid";
+  }
+  err = std::move(err_stream.str());
+  return slice_stop_at;
+}
+
+template<typename Tind>
+void FindAllOffset(std::vector<uint64_t>& offsets,
+		   const DIMS& data_shape,
+		   const DIMS& output_shape,
+		   const DIMS& starts,
+		   const Tensor* tensor,
+		   int64_t slice_stop_at)
+{
+  DIMS merged_starts;
+  if (nullptr == tensor) {
+    merged_starts = starts;
+  } else {
+    merged_starts.assign(output_shape.size(),0);
+    DIMS axes(tensor->Data<Tind>(), tensor->Data<Tind>() + tensor->Shape().Size());
+#pragma omp parallel for
+    for (size_t i = 0; i < axes.size(); ++i) {
+      merged_starts[axes[i]] = starts[i];
+    }
+  }
+  std::vector<int64_t> sizeFromDim(data_shape);
+  sizeFromDim.push_back(1);
+  for (int64_t i = static_cast<int64_t>(sizeFromDim.size()) - 2; i >= 0; --i) {
+    sizeFromDim[i] *= sizeFromDim[i+1];
+  }
+  std::stack< typename std::pair<int32_t, int32_t> > stk;
+  for (int64_t i = merged_starts[0] + output_shape[0] - 1; i >= merged_starts[0]; --i) {
+    stk.push(std::make_pair(i*sizeFromDim[1], 1));
+  }
+  while (!stk.empty()) {
+     std::pair<int32_t, int32_t> top = std::move(stk.top());
+     stk.pop();
+     if (top.second == slice_stop_at) {
+       offsets.push_back(top.first);
+     } else {
+       for (int64_t i = merged_starts[top.second] + output_shape[top.second] - 1; i >= merged_starts[top.second]; --i) {
+         stk.push(std::make_pair(top.first + i * sizeFromDim[top.second + 1], top.second + 1));
+       }
+     }//else
+  }//while
+}
+
 template<typename Tind>
 Status DynamicSliceBase::PrepareForCompute(OpKernelContext* context, Prepare& p) const {
 
-  auto data_tensor   = context->Input<Tensor>(0);
-  auto starts_tensor = context->Input<Tensor>(1);
-  auto ends_tensor   = context->Input<Tensor>(2);
-  auto axes_tensor   = context->Input<Tensor>(3);
-  ORT_ENFORCE(data_tensor   != nullptr);
-  ORT_ENFORCE(starts_tensor != nullptr);
-  ORT_ENFORCE(ends_tensor   != nullptr);
+  ORT_ENFORCE(nullptr != context->Input<Tensor>(0));
+  ORT_ENFORCE(nullptr != context->Input<Tensor>(1));
+  ORT_ENFORCE(nullptr != context->Input<Tensor>(2));
+  auto data_tensor     = context->Input<Tensor>(0);
+  auto starts_tensor   = context->Input<Tensor>(1);
+  auto ends_tensor     = context->Input<Tensor>(2);
+  auto data_shape      = data_tensor->Shape();
+  auto starts_shape    = starts_tensor->Shape();
+  auto ends_shape      = ends_tensor->Shape();
+  auto data_rank       = data_shape.NumDimensions();
+  auto starts_rank     = starts_shape.NumDimensions();
+  if (data_rank == 0)             return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, INPUTS_TENSOR_SHAPE_INVALID);
+  if (starts_rank != 1)           return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, STARTS_TENSOR_SHAPE_INVALID);
+  if (starts_shape != ends_shape) return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, INDICE_TENSOR_SHAPE_NOTSAME);
+  DIMS starts (starts_tensor->Data<Tind>(), starts_tensor->Data<Tind>() + starts_shape.Size());
+  DIMS ends   (ends_tensor->Data<Tind>(),   ends_tensor->Data<Tind>()   + ends_shape.Size());
 
-  auto data_shape    = data_tensor->Shape();
-  auto starts_shape  = starts_tensor->Shape();
-  auto ends_shape    = ends_tensor->Shape();
-  if (data_shape.NumDimensions() == 0) {
-    return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "data tensor needs to be an array.");
-  } else if (starts_shape.NumDimensions() * ends_shape.NumDimensions() != 1) {
-    return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-      "starts tensor and ends tensor both need to be 1-D array.");
-  } else if (starts_shape[0] > static_cast<int64_t>(data_shape.NumDimensions())) {
-    return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-      "starts tensor has more indices than dimension of data tensor");
-  } else if (ends_shape[0] > static_cast<int64_t>(data_shape.NumDimensions())) {
-    return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-      "ends tensor has more indices than dimension of data tensor");
-  } else if (starts_shape != ends_shape) {
-    return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-      "starts tensor and ends tensor need to have same shape.");
+  std::string err;
+  DIMS output_shape(data_shape.GetDims());
+  auto slice_stop_at   = AdjustOutputShape<Tind>(output_shape, starts, ends,
+                                                 context->Input<Tensor>(3), err);
+  if (err.size() > 0) {
+    return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, err.c_str());
   }
 
-  auto start_indices = static_cast<const Tind*>(starts_tensor->DataRaw());
-  auto end_indices   = static_cast<const Tind*>(ends_tensor->DataRaw());
-
-  std::vector< typename std::pair<int32_t, int32_t> > boundaries;
-#pragma omp parallel for
-  for (uint64_t i = 0; i < data_shape.NumDimensions(); ++i) {
-    boundaries.push_back(std::make_pair(0, data_shape[i]));
-  }
-  if (axes_tensor == nullptr) {  
-    for (int64_t i = 0; i < starts_shape.Size(); ++i) {
-      auto lowerBound = start_indices[i] < 0 ? data_shape[i] + start_indices[i] : start_indices[i];
-      auto upperBound = end_indices[i]   < 0 ? data_shape[i] + end_indices[i]   : end_indices[i];
-      if (lowerBound > boundaries[i].first) {
-        boundaries[i].first = lowerBound;
-      }
-      if (upperBound < boundaries[i].second) {
-        boundaries[i].second = upperBound;
-      }
-      if (boundaries[i].first >= boundaries[i].second) {
-        return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-          "found wrong start and end indice, start = ", start_indices[i], "end = ", end_indices[i]);
-      } 
-    }
-  } else {
-    auto axes_shape = axes_tensor->Shape();
-    if (axes_shape.NumDimensions() != 1) {
-      return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-        "axes tensor and ends tensor both need to be 1-D array.");
-    } else if (axes_shape != starts_shape) {
-      return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-        "axes tensor and indices tensor must have same shape.");
-    } else if (axes_shape.Size() > static_cast<int64_t>(data_shape.NumDimensions())) {
-      return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-        "axes tensor has more indice than dimension of data tensor.");
-    }
-    auto axes = static_cast<const Tind*>(axes_tensor->DataRaw());
-    for (int64_t i; i < axes_shape.Size(); ++i) {
-      auto axis = axes[i];
-      if (axis >= static_cast<int64_t>(boundaries.size())) {
-        return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-          "found wrong axis ", axis);
-      }
-      auto lowerBound = start_indices[i] < 0 ? data_shape[axis] + start_indices[i] : start_indices[i];
-      auto upperBound = end_indices[i]   < 0 ? data_shape[axis] + end_indices[i]   : end_indices[i];
-      if (lowerBound > boundaries[axis].first) {
-        boundaries[axis].first = lowerBound;
-      }
-      if (upperBound < boundaries[axis].second) {
-        boundaries[axis].second = upperBound;
-      }
-      if (boundaries[axis].first >= boundaries[axis].second) {
-        return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-          "found wrong start and end indice, start = ", start_indices[i], "end = ", end_indices[i]);
-      } 
-    }
-  }
-  std::vector<int64_t> output_shape;
-  output_shape.reserve(boundaries.size());
-  for (auto& boundary: boundaries) {
-    output_shape.push_back(boundary.second - boundary.first);
-  }
-  auto output_tensor  = context->Output(0, TensorShape(output_shape));
+  p.element_bytes      = data_tensor->DataType()->Size();
+  p.element_to_copy    = data_shape.SizeFromDimension(slice_stop_at);
+  p.bytes_to_copy      = p.element_to_copy * p.element_bytes;
+  auto output_tensor   = context->Output(0, TensorShape(output_shape));
   if (data_tensor->DataType() == DataTypeImpl::GetType<std::string>()) {
-    p.input_str_base  = static_cast<const std::string*>(data_tensor->DataRaw());
-    p.output_str_base = static_cast<std::string*>(output_tensor->MutableDataRaw());
+    p.input_str_base   = static_cast<const std::string*>(data_tensor->DataRaw());
+    p.output_str_base  = static_cast<std::string*>(output_tensor->MutableDataRaw());
   } else {
-    p.input_base      = static_cast<const uint8_t*>(data_tensor->DataRaw());
-    p.output_base     = static_cast<uint8_t*>(output_tensor->MutableDataRaw());
+    p.input_base       = static_cast<const uint8_t*>(data_tensor->DataRaw());
+    p.output_base      = static_cast<uint8_t*>(output_tensor->MutableDataRaw());
   }
 
-  p.element_bytes     = data_tensor->DataType()->Size();
-  p.bytes_to_copy     = p.element_bytes;
-
-  std::stack< typename std::pair<int64_t,int64_t> > stk;
-  for (int64_t i = boundaries[0].second - 1; i >= boundaries[0].first; --i) {
-    stk.push(std::make_pair(i * data_shape.SizeFromDimension(1), 1));
-  }
-  while (!stk.empty()) {
-    std::pair<int64_t, int64_t> top = std::move(stk.top());
-    stk.pop();
-    if (top.second == static_cast<int64_t>(boundaries.size())) {
-      p.element_offsets.push_back(top.first);
-    } else {
-      for (int64_t i = boundaries[top.second].second - 1; i >= boundaries[top.second].first; --i) {
-        stk.push(std::make_pair(top.first + i * data_shape.SizeFromDimension(top.second + 1), top.second + 1));
-      }
-    }
-  }
+  FindAllOffset<Tind>(p.element_offsets,
+		      data_shape.GetDims(),
+		      output_shape, starts,
+	       	      context->Input<Tensor>(3),
+		      slice_stop_at);
   return Status::OK();
 }
 
