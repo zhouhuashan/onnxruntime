@@ -325,7 +325,8 @@ Status LoopImpl::Execute() {
     ++iter_num_value;
   }
 
-  // TODO: Task 1913: Improve handling of If and Loop outputs to avoid copy
+  // As the loop carried variables may change shape across iterations there's no way to avoid a copy
+  // as we need the final shape.
   auto copy_tensor_from_mlvalue_to_output = [this](const MLValue& input, int output_idx) {
     auto& data = input.Get<Tensor>();
     Tensor* output = context_.Output(output_idx, data.Shape());
