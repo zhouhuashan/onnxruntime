@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include "core/framework/error_code.h"
+#include "core/session/onnxruntime_c_api.h"
 #include "core/common/status.h"
 #include "core/framework/error_code_helper.h"
 #include <cassert>
 using onnxruntime::common::Status;
 
-ONNXRUNTIME_API(ONNXStatusPtr, CreateONNXStatus, ONNXRuntimeErrorCode code, const char* msg) {
+ORT_API(OrtStatus*, OrtCreateStatus, OrtErrorCode code, const char* msg) {
   assert(!(code == 0 && msg != nullptr));
   size_t clen = strlen(msg);
   size_t len = clen + 1 + sizeof(int);
@@ -21,7 +21,7 @@ ONNXRUNTIME_API(ONNXStatusPtr, CreateONNXStatus, ONNXRuntimeErrorCode code, cons
   return ret;
 }
 namespace onnxruntime {
-ONNXStatusPtr ToONNXStatus(const Status& st) {
+OrtStatus* ToOrtStatus(const Status& st) {
   if (st.IsOK())
     return nullptr;
   size_t clen = st.ErrorMessage().length();
@@ -36,10 +36,10 @@ ONNXStatusPtr ToONNXStatus(const Status& st) {
   return ret;
 }
 }  // namespace onnxruntime
-ONNXRUNTIME_API(ONNXRuntimeErrorCode, ONNXRuntimeGetErrorCode, _In_ const ONNXStatusPtr status) {
-  return *reinterpret_cast<ONNXRuntimeErrorCode*>(status);
+ORT_API(OrtErrorCode, OrtGetErrorCode, _In_ const OrtStatus* status) {
+  return *reinterpret_cast<OrtErrorCode*>(const_cast<OrtStatus*>(status));
 }
 
-ONNXRUNTIME_API(const char*, ONNXRuntimeGetErrorMessage, _In_ const ONNXStatusPtr status) {
+ORT_API(const char*, OrtGetErrorMessage, _In_ const OrtStatus* status) {
   return reinterpret_cast<const char*>(status) + sizeof(int);
 }

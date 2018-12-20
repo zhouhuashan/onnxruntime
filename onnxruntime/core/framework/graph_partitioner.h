@@ -4,7 +4,7 @@
 #pragma once
 
 #include "core/common/common.h"
-#include "core/graph/graph.h"
+#include "core/graph/graph_viewer.h"
 #include "core/framework/op_kernel.h"
 
 namespace onnxruntime {
@@ -23,7 +23,7 @@ class GraphPartitioner {
   Status Partition(onnxruntime::Graph& graph) const;
 
  private:
-  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(GraphPartitioner);
+  ORT_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(GraphPartitioner);
 
   KernelRegistryManager& kernel_registry_mgr_;
   const ExecutionProviders& providers_;

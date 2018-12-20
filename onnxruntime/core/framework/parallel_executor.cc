@@ -48,11 +48,11 @@ Status ParallelExecutor::Execute(const SessionState& session_state,
   // Wait for finish.
   {
     std::unique_lock<std::mutex> lock(complete_mutex_);
-    while (out_standings_.load() > 0) complete_cv_.wait(lock);
+    while (out_standings_ > 0) complete_cv_.wait(lock);
   }
 
   VLOGS(logger, 1) << "Fetching output.";
-  ONNXRUNTIME_RETURN_IF_ERROR(
+  ORT_RETURN_IF_ERROR(
       FetchOutput(session_state.GetMLValueNameIdxMap(), *root_frame_, output_names, fetches, logger));
 
   if (root_frame_->HasPlan()) {
@@ -69,8 +69,8 @@ Status ParallelExecutor::Execute(const SessionState& session_state,
 
     if (all_tensors) {
       auto mem_patterns = std::make_unique<MemoryPatternGroup>();
-      ONNXRUNTIME_RETURN_IF_ERROR(root_frame_->GeneratePatterns(mem_patterns.get()));
-      ONNXRUNTIME_RETURN_IF_ERROR(session_state.UpdateMemoryPatternGroupCache(input_shapes, std::move(mem_patterns)));
+      ORT_RETURN_IF_ERROR(root_frame_->GeneratePatterns(mem_patterns.get()));
+      ORT_RETURN_IF_ERROR(session_state.UpdateMemoryPatternGroupCache(input_shapes, std::move(mem_patterns)));
     }
   }
 
@@ -103,15 +103,15 @@ void ParallelExecutor::RunNodeAsyncInternal(size_t p_node_index,
     // to also handle exception propagation
     if (terminate_flag_) {
       LOGS(logger, WARNING) << "Exiting due to terminate flag being set to true.";
-      ONNXRUNTIME_THROW("Exiting due to terminate flag being set to true.");
+      ORT_THROW("Exiting due to terminate flag being set to true.");
     }
 
     auto p_op_kernel = session_state.GetKernel(node_index);
 
     // if a kernel has been added in the session state, it better be NON-null.
     if (p_op_kernel == nullptr) {
-      ONNXRUNTIME_THROW("Got nullptr from GetKernel for node: ",
-                        graph_viewer->GetNode(node_index)->Name());
+      ORT_THROW("Got nullptr from GetKernel for node: ",
+                graph_viewer->GetNode(node_index)->Name());
     }
 
     OpKernelContextInternal op_kernel_context(*root_frame_, *p_op_kernel, logger,
@@ -149,8 +149,7 @@ void ParallelExecutor::RunNodeAsyncInternal(size_t p_node_index,
     session_state.Profiler().EndTimeAndRecordEvent(profiling::NODE_EVENT,
                                                    node_name + "_fence_before",
                                                    sync_time_begin,
-                                                   std::unordered_map<std::string,
-                                                                      std::string>{{"op_name", op_name}});
+                                                   {{"op_name", op_name}});
 
     // call compute on the kernel
     VLOGS(logger, 1) << "Computing kernel: " << p_op_kernel->Node().Name();
@@ -160,13 +159,13 @@ void ParallelExecutor::RunNodeAsyncInternal(size_t p_node_index,
     // Execute the kernel.
     auto status = p_op_kernel->Compute(&op_kernel_context);
     if (!status.IsOK()) {
-      ONNXRUNTIME_THROW("Compute failed for node: ", graph_viewer->GetNode(node_index)->Name());
+      ORT_THROW("Compute failed for node: ", graph_viewer->GetNode(node_index)->Name());
     }
 
     session_state.Profiler().EndTimeAndRecordEvent(profiling::NODE_EVENT,
                                                    node_name + "_kernel_time",
                                                    kernel_begin_time,
-                                                   std::unordered_map<std::string, std::string>{{"op_name", op_name}});
+                                                   {{"op_name", op_name}});
 
     sync_time_begin = session_state.Profiler().StartTime();
     // sync after compute for outputs
@@ -193,7 +192,7 @@ void ParallelExecutor::RunNodeAsyncInternal(size_t p_node_index,
     session_state.Profiler().EndTimeAndRecordEvent(profiling::NODE_EVENT,
                                                    node_name + "_fence_after",
                                                    sync_time_begin,
-                                                   std::unordered_map<std::string, std::string>{{"op_name", op_name}});
+                                                   {{"op_name", op_name}});
 
     //std::cout << "Run async node finish: " << p_node_index << std::endl;
 
@@ -228,7 +227,10 @@ void ParallelExecutor::RunNodeAsyncInternal(size_t p_node_index,
 
 void ParallelExecutor::EnqueueNode(size_t p_node_index, const SessionState& session_state,
                                    const logging::Logger& logger) {
-  out_standings_++;
+  {
+    std::unique_lock<std::mutex> lock(complete_mutex_);
+    out_standings_++;
+  }
   //std::cout << "Enqueue async node: " << p_node_index << ", out_standings: " << out_standings_ << std::endl;
   std::packaged_task<void()> task{
       std::bind(&ParallelExecutor::RunNodeAsync, this, p_node_index, std::cref(session_state), std::cref(logger))};
@@ -244,9 +246,9 @@ Status ParallelExecutor::FetchOutput(const MLValueNameIdxMap& name_idx_map,
     fetches.resize(output_names.size());
   } else {
     // this should've been checked before already
-    ONNXRUNTIME_ENFORCE(output_names.size() == fetches.size(),
-                        "output_names vector size: " + std::to_string(output_names.size()) +
-                            " does not match that of fetches vector: " + std::to_string(fetches.size()));
+    ORT_ENFORCE(output_names.size() == fetches.size(),
+                "output_names vector size: " + std::to_string(output_names.size()) +
+                    " does not match that of fetches vector: " + std::to_string(fetches.size()));
   }
 
   auto idx = 0;
@@ -254,7 +256,7 @@ Status ParallelExecutor::FetchOutput(const MLValueNameIdxMap& name_idx_map,
   for (const auto& oname : output_names) {
     VLOGS(logger, 1) << "Attempting to fetch output with name: " << oname;
     int mlvalue_index;
-    ONNXRUNTIME_RETURN_IF_ERROR(name_idx_map.GetIdx(oname, mlvalue_index));
+    ORT_RETURN_IF_ERROR(name_idx_map.GetIdx(oname, mlvalue_index));
     const MLValue& output_mlvalue = frame.GetMLValue(mlvalue_index);
     VLOGS(logger, 1) << "Copying fetched MLValue to output vector";
     fetches[idx++] = output_mlvalue;

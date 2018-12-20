@@ -11,7 +11,7 @@
 #include "core/framework/run_options.h"
 #include "core/framework/session_state.h"
 #include "core/framework/tensor.h"
-#include "core/graph/graph.h"
+#include "core/graph/graph_viewer.h"
 #include "core/graph/model.h"
 #include "core/framework/data_types.h"
 #include "test/test_environment.h"
@@ -31,7 +31,7 @@ class optional {
   optional() : has_value_(false) {}
   bool has_value() const { return has_value_; }
   const T& value() const {
-    ONNXRUNTIME_ENFORCE(has_value_);
+    ORT_ENFORCE(has_value_);
     return value_;
   }
 
@@ -270,7 +270,7 @@ class OpTester {
                int64_t values_count, bool is_initializer = false) {
     try {
       TensorShape shape{dims};
-      ONNXRUNTIME_ENFORCE(shape.Size() == values_count, values_count,
+      ORT_ENFORCE(shape.Size() == values_count, values_count,
                           " input values doesn't match tensor size of ", shape.Size());
 
       auto allocator = test::AllocatorManager::Instance().GetAllocator(CPU);
