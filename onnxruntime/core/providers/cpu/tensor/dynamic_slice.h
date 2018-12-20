@@ -11,6 +11,8 @@ namespace onnxruntime {
 class DynamicSliceBase
 {
 protected:
+  using DIMS = std::vector<int64_t>;
+
   struct Prepare {
     const uint8_t*        input_base;
     const std::string*    input_str_base;
@@ -19,7 +21,7 @@ protected:
     uint64_t              bytes_to_copy;
     uint64_t              element_bytes;
     uint64_t              element_to_copy;
-    std::vector<uint64_t> element_offsets;
+    DIMS                  element_offsets;
 
     Prepare(): input_base      (nullptr),
                input_str_base  (nullptr),
@@ -27,12 +29,19 @@ protected:
                output_str_base (nullptr),
                bytes_to_copy   (0),
                element_bytes   (0),
-               element_to_copy (0),
-               element_offsets (0) {}
+               element_to_copy (0) {}
   }; // struct Prepare
 
   template<typename Tind>
   Status PrepareForCompute(OpKernelContext* context, Prepare& p) const;
+
+private:
+
+  template<typename Tind>
+  void FindAllOffset(DIMS&, const DIMS&, const DIMS&, int64_t) const;
+  template<typename Tind>
+  int64_t AdjustOutputShape(DIMS&, const DIMS&, const DIMS&, const Tensor*, std::string&) const;
+  mutable DIMS merged_starts;
 }; // class DynamicSliceBase 
 
 class DynamicSlice final : public OpKernel, protected DynamicSliceBase {

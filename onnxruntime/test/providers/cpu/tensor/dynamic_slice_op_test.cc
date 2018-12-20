@@ -47,14 +47,14 @@ TEST(DynamicSliceTest, dynamic_full_slice_varied_types) {
 TEST(DynamicSliceTest, dynamic_half_slice_varied_types) {
   OpTester test1 ("DynamicSlice", 9);
   test1.AddInput  <int32_t> ("data",   {3,3}, {1,2,3,4,5,6,7,8,9});
-  test1.AddInput  <int32_t> ("starts", {1},   {1});
+  test1.AddInput  <int32_t> ("starts", {1},   {-2});
   test1.AddInput  <int32_t> ("ends",   {1},   {3});
   test1.AddOutput <int32_t> ("output", {2,3}, {4,5,6,7,8,9});
   test1.Run();
 
   OpTester test2("DynamicSlice", 9);
   test2.AddInput  <int64_t> ("data",   {2,3,2}, {1LL,2LL,3LL,4LL,5LL,6LL,7LL,8LL,9LL,10LL,11LL,12LL});
-  test2.AddInput  <int32_t> ("starts", {2},     {1,2});
+  test2.AddInput  <int32_t> ("starts", {2},     {1,-1});
   test2.AddInput  <int32_t> ("ends",   {2},     {2,3});
   test2.AddOutput <int64_t> ("output", {1,1,2}, {11LL,12LL});
   test2.Run();
@@ -95,7 +95,7 @@ TEST(DynamicSliceTest, dynamic_half_slice_varied_types) {
   test5.Run();
 }
 
-TEST(DynamicSliceTest, dynamic_slice_with_axes) {
+TEST(DynamicSliceTest, dynamic_slice_with_axes_1) {
   OpTester test1 ("DynamicSlice", 9);
   test1.AddInput  <int32_t> ("data",   {3,3}, {1,2,3,4,5,6,7,8,9});
   test1.AddInput  <int32_t> ("starts", {1},   {1});
@@ -103,17 +103,21 @@ TEST(DynamicSliceTest, dynamic_slice_with_axes) {
   test1.AddInput  <int32_t> ("axes",   {1},   {1});
   test1.AddOutput <int32_t> ("output", {3,2}, {2,3,5,6,8,9});
   test1.Run();
+}
 
+TEST(DynamicSliceTest, dynamic_slice_with_axes_2) {
   OpTester test2 ("DynamicSlice", 9);
   test2.AddInput  <int32_t> ("data",   {3,3,3}, {1, 2, 3, 4, 5, 6, 7, 8, 9,
                                                  10,11,12,13,14,15,16,17,18,
                                                  19,20,21,22,23,24,25,26,27});
   test2.AddInput  <int32_t> ("starts", {1},     {1});
-  test2.AddInput  <int32_t> ("ends",   {1},     {2});
+  test2.AddInput  <int32_t> ("ends",   {1},     {-1});
   test2.AddInput  <int32_t> ("axes",   {1},     {1});
   test2.AddOutput <int32_t> ("output", {3,1,3}, {4,5,6,13,14,15,22,23,24});
   test2.Run();
+}
 
+TEST(DynamicSliceTest, dynamic_slice_with_axes_3) {
   OpTester test3 ("DynamicSlice", 9);
   test3.AddInput  <int32_t> ("data",   {3,3,3}, {1, 2, 3, 4, 5, 6, 7, 8, 9,
                                                  10,11,12,13,14,15,16,17,18,
@@ -123,27 +127,33 @@ TEST(DynamicSliceTest, dynamic_slice_with_axes) {
   test3.AddInput  <int32_t> ("axes",   {1},     {2});
   test3.AddOutput <int32_t> ("output", {3,3,1}, {2,5,8,11,14,17,20,23,26});
   test3.Run();
+}
 
+TEST(DynamicSliceTest, dynamic_slice_with_axes_4) {
   OpTester test4 ("DynamicSlice", 9);
   test4.AddInput  <int32_t> ("data",   {3,3,3}, {1, 2, 3, 4, 5, 6, 7, 8, 9,
                                                  10,11,12,13,14,15,16,17,18,
                                                  19,20,21,22,23,24,25,26,27});
-  test4.AddInput  <int32_t> ("starts", {2},     {0,1});
-  test4.AddInput  <int32_t> ("ends",   {2},     {2,3});
+  test4.AddInput  <int32_t> ("starts", {2},     {0,-2});
+  test4.AddInput  <int32_t> ("ends",   {2},     {2,1000});
   test4.AddInput  <int32_t> ("axes",   {2},     {1,2});
   test4.AddOutput <int32_t> ("output", {3,2,2}, {2,3,5,6,11,12,14,15,20,21,23,24});
   test4.Run();
+}
 
+TEST(DynamicSliceTest, dynamic_slice_with_axes_5) {
   OpTester test5 ("DynamicSlice", 9);
   test5.AddInput  <int32_t> ("data",   {3,3,3}, {1, 2, 3, 4, 5, 6, 7, 8, 9,
                                                  10,11,12,13,14,15,16,17,18,
                                                  19,20,21,22,23,24,25,26,27});
-  test5.AddInput  <int32_t> ("starts", {2},     {0,0});
-  test5.AddInput  <int32_t> ("ends",   {2},     {2,2});
+  test5.AddInput  <int32_t> ("starts", {2},     {-3,0});
+  test5.AddInput  <int32_t> ("ends",   {2},     {-1,2});
   test5.AddInput  <int32_t> ("axes",   {2},     {0,2});
   test5.AddOutput <int32_t> ("output", {2,3,2}, {1,2,4,5,7,8,10,11,13,14,16,17});
   test5.Run();
+}
 
+TEST(DynamicSliceTest, dynamic_slice_with_axes_6) {
   OpTester test6 ("DynamicSlice", 9);
   test6.AddInput  <int32_t> ("data",   {3,3,3}, {1, 2, 3, 4, 5, 6, 7, 8, 9,
                                                  10,11,12,13,14,15,16,17,18,
@@ -153,7 +163,18 @@ TEST(DynamicSliceTest, dynamic_slice_with_axes) {
   test6.AddInput  <int32_t> ("axes",   {3},     {0,1,2});
   test6.AddOutput <int32_t> ("output", {1,2,1}, {5,8});
   test6.Run();
+}
 
+TEST(DynamicSliceTest, dynamic_slice_with_axes_7) {
+  OpTester test7 ("DynamicSlice", 9);
+  test7.AddInput  <int32_t> ("data",   {3,3,3}, {1, 2, 3, 4, 5, 6, 7, 8, 9,
+                                                 10,11,12,13,14,15,16,17,18,
+                                                 19,20,21,22,23,24,25,26,27});
+  test7.AddInput  <int32_t> ("starts", {3},     {1,0,1});
+  test7.AddInput  <int32_t> ("ends",   {3},     {2,1,3});
+  test7.AddInput  <int32_t> ("axes",   {3},     {2,0,1});
+  test7.AddOutput <int32_t> ("output", {1,2,1}, {5,8});
+  test7.Run();
 }
 
 }  // namespace Test
