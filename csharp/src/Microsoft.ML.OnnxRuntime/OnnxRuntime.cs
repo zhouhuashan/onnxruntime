@@ -15,15 +15,6 @@ namespace Microsoft.ML.OnnxRuntime
         public LogLevel LogLevel { get; set; }
     }
 
-    internal enum LogLevel
-    {
-        Verbose = 0,
-        Info = 1,
-        Warning = 2,
-        Error = 3,
-        Fatal = 4
-    }
-
     /// <summary>
     /// This class intializes the process-global ONNX runtime
     /// C# API users do not need to access this, thus kept as internal

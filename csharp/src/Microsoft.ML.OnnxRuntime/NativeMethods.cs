@@ -6,13 +6,10 @@ using System.Runtime.InteropServices;
 
 namespace Microsoft.ML.OnnxRuntime
 {
-    /// <summary>
-    /// NamedOnnxValue type, must match the native enum
-    /// </summary>
 
     internal static class NativeMethods
     {
-        private const string nativeLib = "onnxruntime.dll";
+        private const string nativeLib = "onnxruntime";
         internal const CharSet charSet = CharSet.Ansi;
 
         #region Runtime/Environment API

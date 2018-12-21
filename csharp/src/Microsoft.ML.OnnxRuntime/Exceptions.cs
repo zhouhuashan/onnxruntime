@@ -9,26 +9,6 @@ namespace Microsoft.ML.OnnxRuntime
 {
 
     /// <summary>
-    /// Enum conresponding to native onnxruntime error codes. Must be in sync with the native API
-    /// </summary>
-    internal enum ErrorCode
-    {
-        Ok = 0,
-        Fail = 1,
-        InvalidArgument = 2,
-        NoSuchFile = 3,
-        NoModel = 4,
-        EngineError = 5,
-        RuntimeException = 6,
-        InvalidProtobuf = 7,
-        ModelLoaded = 8,
-        NotImplemented = 9,
-        InvalidGraph = 10,
-        ShapeInferenceNotRegistered = 11,
-        RequirementNotRegistered = 12
-    }
-
-    /// <summary>
     /// The Exception that is thrown for errors related ton OnnxRuntime
     /// </summary>
     public class OnnxRuntimeException: Exception
