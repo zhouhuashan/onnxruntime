@@ -177,5 +177,33 @@ TEST(DynamicSliceTest, dynamic_slice_with_axes_7) {
   test7.Run();
 }
 
+TEST(DynamicSliceTest, dynamic_slice_perf) {
+  OpTester test("DynamicSlice", 9);
+  std::vector<int64_t> data (1000000000, 123456789LL);
+  std::vector<int64_t> starts = {0};
+  std::vector<int64_t> ends   = {99}; 
+  std::vector<int64_t> output (990000000,  123456789LL); 
+  test.AddInput<int64_t>("data",    {100,1000,10000},  data);
+  test.AddInput<int64_t>("starts",  {1},            starts);
+  test.AddInput<int64_t>("ends",    {1},            ends);
+  test.AddOutput<int64_t>("output", {99,1000,10000},  output);
+  test.Run();
+}
+
+TEST(DynamicSliceTest, constant_slice_perf) {
+  OpTester test("Slice");
+  std::vector<int64_t> data (1000000000, 123456789LL);
+  std::vector<int64_t> axes   = {0};
+  std::vector<int64_t> starts = {0};
+  std::vector<int64_t> ends   = {99}; 
+  std::vector<int64_t> output (990000000,  123456789LL); 
+  test.AddInput<int64_t>     ("data",    {100,1000,10000},  data);
+  test.AddAttribute ("axes",    axes);
+  test.AddAttribute ("starts",  starts);
+  test.AddAttribute ("ends",    ends);
+  test.AddOutput<int64_t>    ("output",  {99,1000,10000},     output);
+  test.Run();
+}
+
 }  // namespace Test
 }  // namespace onnxruntime

@@ -80,7 +80,6 @@ void DynamicSliceBase::FindAllOffset(DIMS& offsets,
   for (int64_t i = merged_starts[0] + output_shape[0] - 1; i >= merged_starts[0]; --i) {
     stk.push(std::make_pair(i * sizeFromDim[1], 1));
   }
-  std::cout << "slice stop at:" << slice_stop_at << std::endl;
   while (!stk.empty()) {
      std::pair<int64_t, int64_t> top = stk.top();
      stk.pop();
@@ -125,8 +124,8 @@ Status DynamicSliceBase::PrepareForCompute(OpKernelContext* context, Prepare& p)
   DIMS output_shape(data_shape.GetDims());
   auto slice_stop_at   = AdjustOutputShape<Tind>(output_shape, starts, ends,
                                                  context->Input<Tensor>(3), err);
-  Print(output_shape,"output shape");
-  Print(merged_starts, "merged starts");
+  //Print(output_shape,"output shape");
+  //Print(merged_starts, "merged starts");
 
   if (err.size() > 0) {
     return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, err.c_str());
@@ -145,7 +144,7 @@ Status DynamicSliceBase::PrepareForCompute(OpKernelContext* context, Prepare& p)
   }
 
   FindAllOffset<Tind>(p.element_offsets, data_shape.GetDims(), output_shape, slice_stop_at);
-  Print(p.element_offsets, "element offsets");
+  //Print(p.element_offsets, "element offsets");
   return Status::OK();
 }
 
