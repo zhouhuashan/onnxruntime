@@ -172,7 +172,7 @@ namespace Microsoft.ML.OnnxRuntime
             {
                 // cleanup managed resources
             }
-            _nativeOption.Dispose();
+            //_nativeOption.Dispose();
         }
 
         #endregion
