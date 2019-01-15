@@ -105,6 +105,30 @@ std::vector<std::string> GetStackTrace();
   throw ::onnxruntime::OnnxRuntimeException(ORT_WHERE_WITH_STACK, #condition, \
                                             ::onnxruntime::MakeString(__VA_ARGS__))
 
+// Check condition.
+// NOTE: The arguments get streamed into a string via ostringstream::operator<<
+// DO NOT use a printf format string, as that will not work as you expect.
+#define ORT_ENFORCE_EQ(x, y, ...)                                               \
+  if (!((x) == (y)))                                                            \
+  throw ::onnxruntime::OnnxRuntimeException(ORT_WHERE_WITH_STACK, #x " == " #y, \
+                                            ::onnxruntime::MakeString(__VA_ARGS__))
+
+// Check condition.
+// NOTE: The arguments get streamed into a string via ostringstream::operator<<
+// DO NOT use a printf format string, as that will not work as you expect.
+#define ORT_ENFORCE_LE(x, y, ...)                                               \
+  if (!((x) <= (y)))                                                            \
+  throw ::onnxruntime::OnnxRuntimeException(ORT_WHERE_WITH_STACK, #x " <= " #y, \
+                                            ::onnxruntime::MakeString(__VA_ARGS__))
+
+// Check condition.
+// NOTE: The arguments get streamed into a string via ostringstream::operator<<
+// DO NOT use a printf format string, as that will not work as you expect.
+#define ORT_ENFORCE_LT(x, y, ...)                                               \
+  if (!((x) < (y)))                                                             \
+  throw ::onnxruntime::OnnxRuntimeException(ORT_WHERE_WITH_STACK, #x " <= " #y, \
+                                            ::onnxruntime::MakeString(__VA_ARGS__))
+
 #define ORT_MAKE_STATUS(category, code, ...)                     \
   ::onnxruntime::common::Status(::onnxruntime::common::category, \
                                 ::onnxruntime::common::code,     \

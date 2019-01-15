@@ -948,6 +948,44 @@ Example 4:
   the value of the sampled locations are computed directly
   through bilinear interpolation.)DOC");
 
+  ONNX_CONTRIB_OPERATOR_SCHEMA(GenerateProposals)
+      .SetDomain(kMSDomain)
+      .SinceVersion(1)
+      .Attr(
+          "spatial_scale",
+          "",
+          AttributeProto::FLOAT)
+      .Attr(
+          "min_size",
+          "",
+          AttributeProto::FLOAT)
+      .Attr(
+          "nms_thresh",
+          "",
+          AttributeProto::FLOAT)
+      .Attr(
+          "post_nms_topN",
+          "",
+          AttributeProto::INT)
+      .Attr(
+          "pre_nms_topN",
+          "",
+          AttributeProto::INT)
+      .Input(0, "scores", "Scores from conv layer, size (img_count, A, H, W)", "T")
+      .Input(1, "bbox_deltas", "Bounding box deltas from conv layer, size (img_count, 4 * A, H, W)", "T")
+      .Input(2, "im_info", "Image info, size (img_count, 3), format (height, width, scale)", "T")
+      .Input(3, "anchors", "Bounding box anchors, size (A, 4)", "T")
+      .Output(0, "rois", "Proposals, size (n x 5), format (image_index, x1, y1, x2, y2)", "T")
+      .Output(0, "rois_probs", "scores of proposals, size (n)", "T")
+      .TypeConstraint(
+          "T",
+          {"tensor(float)", "tensor(double)"},
+          "Constrain to float, float16 and double tensors.")
+      .SetDoc(R"DOC(Generate bounding box proposals for Faster RCNN. The propoasls are generated for
+  a list of images based on image score 'score', bounding box regression result
+  'deltas' as well as predefined bounding box shapes 'anchors'. Greedy
+  non-maximum suppression is applied to generate the final bounding boxes.)DOC");
+
 #ifdef MICROSOFT_INTERNAL
   // register internal ops
   RegisterInternalSchemas();
