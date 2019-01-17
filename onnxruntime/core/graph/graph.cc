@@ -151,7 +151,7 @@ common::Status NodeArg::UpdateTypeAndShape(const ONNX_NAMESPACE::TypeProto& inpu
       const auto& current_tensor_elem_type = current_type.tensor_type().elem_type();
 
       if (input_tensor_elem_type != current_tensor_elem_type)
-        return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "Tensor element type mismatch. ",
+        return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "Tensor element type mismatch for node: " + node_arg_info_.name(),
                                TensorProto_DataType_Name(static_cast<TensorProto_DataType>(input_tensor_elem_type)), " != ",
                                TensorProto_DataType_Name(static_cast<TensorProto_DataType>(current_tensor_elem_type)));
 

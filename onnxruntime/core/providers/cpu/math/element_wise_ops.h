@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 #pragma once
@@ -332,6 +332,8 @@ template <typename T>
 auto MakeEigenArrayMap(const Tensor& t) { return ConstEigenVectorArrayMap<T>(t.template Data<T>(), t.Shape().Size()); }
 
 struct BroadcastIterator {
+  BroadcastIterator(const std::string& node_name) : node_name_(node_name) {}
+
   size_t AdvanceBy(size_t delta) {
     size_t index = index_;
 
@@ -350,7 +352,7 @@ struct BroadcastIterator {
   }
 
   void Init(int64_t axis, int64_t largest) {
-    ORT_ENFORCE(axis == 1 || axis == largest, "Attempting to broadcast an axis by a dimension other than 1. ", axis, " by ", largest);
+    ORT_ENFORCE(axis == 1 || axis == largest, "Attempting to broadcast an axis by a dimension other than 1. " + node_name_, axis, " by ", largest);
 
     deltas_.push_back(axis > 1);
     counts_.push_back(largest);
@@ -358,7 +360,7 @@ struct BroadcastIterator {
   }
 
   void Append(int64_t axis, int64_t largest) {
-    ORT_ENFORCE(axis == 1 || axis == largest, "Attempting to broadcast an axis by a dimension other than 1. ", axis, " by ", largest);
+    ORT_ENFORCE(axis == 1 || axis == largest, "Attempting to broadcast an axis by a dimension other than 1. " + node_name_, axis, " by ", largest);
 
     // If we're greater than 1, it doesn't matter what the other tensor does
     if (axis > 1) {
@@ -387,17 +389,19 @@ struct BroadcastIterator {
   std::vector<ptrdiff_t> deltas_;
   std::vector<int64_t> counts_;
   size_t count_{1};  // Running total count of entries in tensor, used while building up the entries
+  const std::string& node_name_;
 
  private:
   size_t index_{};
 };
 
 struct Broadcaster {
-  Broadcaster(const std::vector<int64_t>& shape1, const std::vector<int64_t>& shape2) {
+  Broadcaster(const std::vector<int64_t>& shape1, const std::vector<int64_t>& shape2, const std::string & node_name):
+      node_name_(node_name){
     size_t dimension_count_max = std::max(shape1.size(), shape2.size());
     size_t dimension_count_min = std::min(shape1.size(), shape2.size());
     output_shape_.resize(dimension_count_max);
-
+    
     auto iter1 = shape1.end();
     auto iter2 = shape2.end();
     auto output_shape = output_shape_.end();
@@ -477,16 +481,17 @@ struct Broadcaster {
   }
 
   size_t GetSpanSize() const { return std::min(iterator1_.counts_.front(), iterator2_.counts_.front()); }
-
-  BroadcastIterator iterator1_, iterator2_;
+  const std::string& node_name_;
+  BroadcastIterator iterator1_{node_name_}, iterator2_{node_name_};
   std::vector<int64_t> output_shape_;
 };
 
 template <typename T>
 struct TBroadcaster {
-  TBroadcaster(const Tensor& input0, const Tensor& input1)
+  TBroadcaster(const Tensor& input0, const Tensor& input1, const std::string& node_name)
       : input_tensor0_(input0),
-        input_tensor1_(input1) {
+        input_tensor1_(input1),
+        node_name_(node_name) {
   }
 
   TensorShape GetOutputShape() const { return TensorShape(broadcaster_.output_shape_); }
@@ -510,7 +515,8 @@ struct TBroadcaster {
 
   const Tensor& input_tensor0_;
   const Tensor& input_tensor1_;
-  Broadcaster broadcaster_{input_tensor0_.Shape().GetDims(), input_tensor1_.Shape().GetDims()};
+  const std::string& node_name_;
+  Broadcaster broadcaster_{input_tensor0_.Shape().GetDims(), input_tensor1_.Shape().GetDims(), node_name_};
   size_t span_size_{broadcaster_.GetSpanSize()};
 
   const T* input0_{input_tensor0_.template Data<T>()};
@@ -587,7 +593,8 @@ void BroadcastLoop(TBroadcaster& bc, Output& output, Input0Scalar input0scalar, 
 
 template <typename TInput, typename TOutput, typename Input0Scalar, typename Input1Scalar, typename General>
 Status BroadcastTwo(OpKernelContext& context, Input0Scalar input0scalar, Input1Scalar input1scalar, General general) {
-  TBroadcaster<TInput> bc(*context.Input<Tensor>(0), *context.Input<Tensor>(1));
+  auto& node_name = context.Name();
+  TBroadcaster<TInput> bc(*context.Input<Tensor>(0), *context.Input<Tensor>(1), node_name);
   TBroadcastOutput<TOutput> output(bc.GetSpanSize(), *context.Output(0, bc.GetOutputShape()));
   BroadcastLoop(bc, output, input0scalar, input1scalar, general);
 
@@ -615,7 +622,8 @@ Status BroadcastVariadic(const Node& node, OpKernelContext& context, Input0Scala
     auto& tensor0 = tempInput ? *tempInput : *context.Input<Tensor>(0);
     auto& tensor1 = *context.Input<Tensor>(i + 1);
 
-    TBroadcaster<TInput> bc(tensor0, tensor1);
+    auto& node_name = context.Name();
+    TBroadcaster<TInput> bc(tensor0, tensor1, node_name);
 
     // Create a temporary output for all but the last iteration, which goes to the real output
     Tensor* p_output{};
@@ -634,6 +642,5 @@ Status BroadcastVariadic(const Node& node, OpKernelContext& context, Input0Scala
   }
   return Status::OK();
 }
-
 
 }  // namespace onnxruntime

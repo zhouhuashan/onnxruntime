@@ -19,7 +19,7 @@ Status UnsqueezeBase::PrepareCompute(OpKernelContext* ctx, Prepare& p) const {
   const Tensor* X = ctx->Input<Tensor>(0);
   ORT_ENFORCE(X != nullptr);
   auto& input_tensor = *X;
-
+ 
   // New dimension count is the current dimensions + the number of entries in axes_
   // Initialize output_dims to 0 in each axis initially
   std::vector<int64_t> output_dims(axes_.size() + input_tensor.Shape().GetDims().size(), 0);
@@ -27,9 +27,9 @@ Status UnsqueezeBase::PrepareCompute(OpKernelContext* ctx, Prepare& p) const {
   // Set all axes_ indices to 1 in output_dims and check for duplicates
   for (size_t axis : axes_) {
     if (axis >= output_dims.size())
-      return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'axes' has an out of range axis");
+      return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'axes' has an out of range axis" + ctx->Name());
     if (output_dims[axis] != 0)
-      return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'axes' has a duplicate axis");
+      return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'axes' has a duplicate axis" + ctx->Name());
     output_dims[axis] = 1;
   }
 

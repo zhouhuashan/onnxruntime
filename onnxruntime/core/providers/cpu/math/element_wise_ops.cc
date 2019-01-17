@@ -952,9 +952,9 @@ ONNX_CPU_OPERATOR_VERSIONED_KERNEL(
 // This is a special case version of TBroadcaster just for Expand that only has a shape as the second parameter
 template <typename T>
 struct TBroadcasterExpand {
-  TBroadcasterExpand(const Tensor& input, const std::vector<int64_t>& shape)
+  TBroadcasterExpand(const Tensor& input, const std::vector<int64_t>& shape, const std::string& node_name)
       : input_tensor_(input),
-        broadcaster_(input.Shape().GetDims(), shape) {
+        broadcaster_(input.Shape().GetDims(), shape, node_name) {
   }
 
   TensorShape GetOutputShape() const { return TensorShape(broadcaster_.output_shape_); }
@@ -985,7 +985,8 @@ Status Expand_8<T>::Compute(OpKernelContext* context) const {
   const int64_t* p_shape = tensor_shape.template Data<int64_t>();
   std::vector<int64_t> shape{p_shape, p_shape + tensor_shape.Shape().Size()};
 
-  TBroadcasterExpand<T> bc(*context->Input<Tensor>(0), shape);
+  auto& node_name = context->Name();
+  TBroadcasterExpand<T> bc(*context->Input<Tensor>(0), shape, node_name);
   TBroadcastOutput<T> output(bc.GetSpanSize(), *context->Output(0, bc.GetOutputShape()));
 
   // This doesn't use BroadcastLoop since there is no second tensor, just duplicating the first

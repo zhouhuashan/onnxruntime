@@ -54,7 +54,7 @@ bool PrepareForReduce(OpKernelContext* ctx,
 
   size_t ndim = input.Shape().GetDims().size();
   for (int64_t axe : axes_) {
-    ORT_ENFORCE(axe >= 0 && axe < (int64_t)ndim, "Axis attribute out of range");
+    ORT_ENFORCE(axe >= 0 && axe < (int64_t)ndim, "Axis attribute out of range for node " + ctx->Name());
   }
 
   std::vector<int64_t> axes = axes_;
