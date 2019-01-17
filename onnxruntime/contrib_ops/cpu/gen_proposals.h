@@ -106,7 +106,7 @@ class GenerateProposals final : public OpKernel {
   // Correct bounding box transform coordates, see bbox_transform() in boxes.py
   // Set to true to match the detectron code, set to false for backward
   // compatibility
-  bool correct_transform_coords_{false};
+  bool correct_transform_coords_{true}; // TODO add this as an attribute
   // If set, for rotated boxes in RRPN, output angles are normalized to be
   // within [angle_bound_lo, angle_bound_hi].
   bool angle_bound_on_{true};

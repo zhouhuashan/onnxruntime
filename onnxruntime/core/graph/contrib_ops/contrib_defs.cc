@@ -976,7 +976,7 @@ Example 4:
       .Input(2, "im_info", "Image info, size (img_count, 3), format (height, width, scale)", "T")
       .Input(3, "anchors", "Bounding box anchors, size (A, 4)", "T")
       .Output(0, "rois", "Proposals, size (n x 5), format (image_index, x1, y1, x2, y2)", "T")
-      .Output(0, "rois_probs", "scores of proposals, size (n)", "T")
+      .Output(1, "rois_probs", "scores of proposals, size (n)", "T")
       .TypeConstraint(
           "T",
           {"tensor(float)", "tensor(double)"},
