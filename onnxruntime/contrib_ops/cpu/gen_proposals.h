@@ -16,29 +16,32 @@ namespace utils {
 template <class T>
 class ConstTensorView {
  public:
-  ConstTensorView(const T* data, const std::vector<int>& dims)
+  ConstTensorView(const T* data, const std::vector<int64_t>& dims)
       : data_(data), dims_(dims) {}
 
   size_t ndim() const {
     return dims_.size();
   }
-  const std::vector<int>& dims() const {
+  const std::vector<int64_t>& dims() const {
     return dims_;
   }
-  int dim(int i) const {
+  int64_t dim(int i) const {
     return dims_.at(i);
   }
   const T* data() const {
     return data_;
   }
   size_t size() const {
-    return std::accumulate(
-        dims_.begin(), dims_.end(), 1, std::multiplies<size_t>());
+    size_t size_ret = 1;
+    for (auto& elem : dims_) {
+      size_ret *= elem;
+    }
+    return size_ret;
   }
 
  private:
   const T* data_ = nullptr;
-  std::vector<int> dims_;
+  std::vector<int64_t> dims_;
 };
 }  // namespace utils
 

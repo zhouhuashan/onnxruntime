@@ -105,10 +105,10 @@ ERMatXf ComputeAllAnchors(
 // `order` is a raveled array of sorted indices in (A, H, W) format.
 ERArrXXf ComputeSortedAnchors(
     const Eigen::Map<const ERArrXXf>& anchors,
-    int height,
-    int width,
+    int64_t height,
+    int64_t width,
     float feat_stride,
-    const std::vector<int>& order) {
+    const std::vector<int64_t>& order) {
   const auto box_dim = anchors.cols();
   ORT_ENFORCE(box_dim == 4 || box_dim == 5);
 
@@ -148,7 +148,7 @@ ERArrXXf ComputeSortedAnchors(
 //     a given n-dimensional index 'index'
 size_t ComputeStartIndex(
     const Tensor& tensor,
-    const std::vector<int>& index) {
+    const std::vector<int64_t>& index) {
   ORT_ENFORCE_EQ(index.size(), tensor.Shape().NumDimensions());
 
   size_t ret = 0;
@@ -163,20 +163,20 @@ size_t ComputeStartIndex(
 template <class T>
 utils::ConstTensorView<T> GetSubTensorView(
     const Tensor& tensor,
-    int dim0_start_index) {
+    int64_t dim0_start_index) {
   //ORT_ENFORCE_EQ(tensor.dtype().itemsize(), sizeof(T)); // TODO
 
   if (tensor.Shape().Size() == 0) {
     return utils::ConstTensorView<T>(nullptr, {});
   }
 
-  std::vector<int> start_dims(tensor.Shape().NumDimensions(), 0);
+  std::vector<int64_t> start_dims(tensor.Shape().NumDimensions(), 0);
   start_dims.at(0) = dim0_start_index;
   auto st_idx = ComputeStartIndex(tensor, start_dims);
   auto ptr = tensor.Data<T>() + st_idx;
 
   auto input_dims = tensor.Shape().GetDims();
-  std::vector<int> ret_dims(input_dims.begin() + 1, input_dims.end());
+  std::vector<int64_t> ret_dims(input_dims.begin() + 1, input_dims.end());
 
   utils::ConstTensorView<T> ret(ptr, ret_dims);
   return ret;
@@ -208,15 +208,15 @@ void GenerateProposals<T>::ProposalsForOneImage(
   // Maintain the same order without transposing (which is slow)
   // and compute anchors accordingly.
   ORT_ENFORCE_EQ(scores_tensor.ndim(), 3);
-  ORT_ENFORCE_EQ(scores_tensor.dims(), (std::vector<int>{A, H, W}));
+  ORT_ENFORCE_EQ(scores_tensor.dims(), (std::vector<int64_t>{A, H, W}));
   Eigen::Map<const EArrXf> scores(scores_tensor.data(), scores_tensor.size());
 
-  std::vector<int> order(scores.size());
+  std::vector<int64_t> order(scores.size());
   std::iota(order.begin(), order.end(), 0);
   if (pre_nms_topN_ <= 0 || pre_nms_topN_ >= scores.size()) {
     // 4. sort all (proposal, score) pairs by score from highest to lowest
     // 5. take top pre_nms_topN (e.g. 6000)
-    std::sort(order.begin(), order.end(), [&scores](int lhs, int rhs) {
+    std::sort(order.begin(), order.end(), [&scores](auto lhs, auto rhs) {
       return scores[lhs] > scores[rhs];
     });
   } else {
@@ -226,7 +226,7 @@ void GenerateProposals<T>::ProposalsForOneImage(
         order.begin(),
         order.begin() + pre_nms_topN_,
         order.end(),
-        [&scores](int lhs, int rhs) { return scores[lhs] > scores[rhs]; });
+        [&scores](auto lhs, auto rhs) { return scores[lhs] > scores[rhs]; });
     order.resize(pre_nms_topN_);
   }
 
