@@ -46,6 +46,7 @@ if (onnxruntime_USE_MKLML)
   set(MKLML_INCLUDE_DIR "${MKML_DIR}/include")
   set(MKLML_LIB_DIR "${MKML_DIR}/lib")
   link_directories(${MKLML_LIB_DIR})
+  include_directories(${MKLML_INCLUDE_DIR})
 endif()
 
 if (onnxruntime_USE_MKLDNN)
@@ -64,8 +65,9 @@ if (onnxruntime_USE_MKLDNN)
     GIT_TAG ${MKLDNN_TAG}
     PATCH_COMMAND ${MKLDNN_PATCH_DISCARD_COMMAND} COMMAND ${MKLDNN_PATCH_COMMAND1}
     SOURCE_DIR ${MKLDNN_SOURCE}
-    CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${MKLDNN_INSTALL} -DMKLROOT=${MKML_DIR}
+    CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${MKLDNN_INSTALL} -DMKLROOT=${MKML_DIR} -discard="skklwefss"
   )
+  message(STATUS "MKML_DIR:${MKML_DIR}")
   link_directories(${MKLDNN_LIB_DIR})
   if (onnxruntime_USE_MKLML)
     add_dependencies(project_mkldnn project_mklml)

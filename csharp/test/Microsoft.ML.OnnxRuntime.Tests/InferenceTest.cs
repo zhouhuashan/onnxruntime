@@ -205,59 +205,59 @@ namespace Microsoft.ML.OnnxRuntime.Tests
             session.Dispose();
         }
 
-        [Fact]
-        private void TestPreTrainedModelsOpset7And8()
-        {
-            var opsets = new[] { "opset7", "opset8" };
-            foreach (var opset in opsets)
-            {
-                var modelRoot = new DirectoryInfo(opset);
-                foreach (var modelDir in modelRoot.EnumerateDirectories())
-                {
-                    // TODO: dims contains 'None'. Session throws error.
-                    if (modelDir.Name== "test_tiny_yolov2")
-                        continue;
+        //[Fact]
+        //private void TestPreTrainedModelsOpset7And8()
+        //{
+        //    var opsets = new[] { "opset7", "opset8" };
+        //    foreach (var opset in opsets)
+        //    {
+        //        var modelRoot = new DirectoryInfo(opset);
+        //        foreach (var modelDir in modelRoot.EnumerateDirectories())
+        //        {
+        //            // TODO: dims contains 'None'. Session throws error.
+        //            if (modelDir.Name== "test_tiny_yolov2")
+        //                continue;
 
-                    String onnxModelFileName = null;
-                    try
-                    {
-                        var onnxModelNames = modelDir.GetFiles("*.onnx");
-                        if (onnxModelNames.Count() != 1)
-                        {
-                            // TODO remove file "._resnet34v2.onnx" from test set
-                            if (onnxModelNames[0].Name == "._resnet34v2.onnx")
-                                onnxModelNames[0] = onnxModelNames[1];
-                            else
-                            {
-                                var modelNamesList = string.Join(",", onnxModelNames.Select(x => x.ToString()));
-                                throw new Exception($"Opset {opset}: Model {modelDir}. Can't determine model file name. Found these :{modelNamesList}");
-                            }
-                        }
+        //            String onnxModelFileName = null;
+        //            try
+        //            {
+        //                var onnxModelNames = modelDir.GetFiles("*.onnx");
+        //                if (onnxModelNames.Count() != 1)
+        //                {
+        //                    // TODO remove file "._resnet34v2.onnx" from test set
+        //                    if (onnxModelNames[0].Name == "._resnet34v2.onnx")
+        //                        onnxModelNames[0] = onnxModelNames[1];
+        //                    else
+        //                    {
+        //                        var modelNamesList = string.Join(",", onnxModelNames.Select(x => x.ToString()));
+        //                        throw new Exception($"Opset {opset}: Model {modelDir}. Can't determine model file name. Found these :{modelNamesList}");
+        //                    }
+        //                }
 
-                        onnxModelFileName = $"{opset}\\{modelDir.Name}\\{onnxModelNames[0].Name}";
-                        var session = new InferenceSession(onnxModelFileName);
-                        var inMeta = session.InputMetadata;
-                        var innodepair = inMeta.First();
-                        var innodename = innodepair.Key;
-                        var innodedims = innodepair.Value.Dimensions;
-                        var dataIn = LoadTensorFromFilePb($"{opset}\\{modelDir.Name}\\test_data_set_0\\input_0.pb");
-                        var dataOut = LoadTensorFromFilePb($"{opset}\\{modelDir.Name}\\test_data_set_0\\output_0.pb");
-                        var tensorIn = new DenseTensor<float>(dataIn, innodedims);
-                        var nov = new List<NamedOnnxValue>();
-                        nov.Add(NamedOnnxValue.CreateFromTensor<float>(innodename, tensorIn));
-                        var resnov = session.Run(nov);
-                        var res = resnov.ToArray()[0].AsTensor<float>().ToArray<float>();
-                        Assert.Equal(res, dataOut, new floatComparer());
-                        session.Dispose();
-                    }
-                    catch (Exception ex)
-                    {
-                        var msg = $"Opset {opset}: Model {modelDir}: ModelFile = {onnxModelFileName} error = {ex.Message}";
-                        throw new Exception(msg);
-                    }
-                } //model
-            } //opset
-        }
+        //                onnxModelFileName = $"{opset}\\{modelDir.Name}\\{onnxModelNames[0].Name}";
+        //                var session = new InferenceSession(onnxModelFileName);
+        //                var inMeta = session.InputMetadata;
+        //                var innodepair = inMeta.First();
+        //                var innodename = innodepair.Key;
+        //                var innodedims = innodepair.Value.Dimensions;
+        //                var dataIn = LoadTensorFromFilePb($"{opset}\\{modelDir.Name}\\test_data_set_0\\input_0.pb");
+        //                var dataOut = LoadTensorFromFilePb($"{opset}\\{modelDir.Name}\\test_data_set_0\\output_0.pb");
+        //                var tensorIn = new DenseTensor<float>(dataIn, innodedims);
+        //                var nov = new List<NamedOnnxValue>();
+        //                nov.Add(NamedOnnxValue.CreateFromTensor<float>(innodename, tensorIn));
+        //                var resnov = session.Run(nov);
+        //                var res = resnov.ToArray()[0].AsTensor<float>().ToArray<float>();
+        //                Assert.Equal(res, dataOut, new floatComparer());
+        //                session.Dispose();
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                var msg = $"Opset {opset}: Model {modelDir}: ModelFile = {onnxModelFileName} error = {ex.Message}";
+        //                throw new Exception(msg);
+        //            }
+        //        } //model
+        //    } //opset
+        //}
 
         [Fact]
         private void TestModelInputFloat()

@@ -94,9 +94,26 @@ void WordConvEmbedding::ComputeConvMaxPoolWithActivation(
     for (int64_t unfolded_inx = 0; unfolded_inx < unfolded_width; unfolded_inx++) {
       if (unfolded_inx > 0 && unfolded_inx > (words_len_ptr[word_inx] - filter_width)) break;
       float* pcur = pactivationbuf + unfolded_inx * num_filters;
-      for (int64_t filter_inx = 0; filter_inx < num_filters; filter_inx++) {
-        pres[filter_inx] = std::max(pcur[filter_inx], pres[filter_inx]);
+
+      int64_t k = 0;
+      int64_t kLim8 = num_filters - 7;
+      float * ps = pcur;
+      float * pd = pres;
+      for( ; k < kLim8; k += 8, ps += 8, pd += 8 )
+      {
+         __m256 source = _mm256_loadu_ps( ps );
+         __m256 res = _mm256_loadu_ps( pd );
+         res = _mm256_max_ps( source, res );
+         _mm256_storeu_ps( pd, res );
       }
+      for( ; k < num_filters; k++ )
+      {
+         pres[ k ] = std::max( pcur[ k ], pres[ k ] );
+      }
+
+      //for (int64_t filter_inx = 0; filter_inx < num_filters; filter_inx++) {
+      //  pres[filter_inx] = std::max(pcur[filter_inx], pres[filter_inx]);
+      //}
     }
   }
 }
