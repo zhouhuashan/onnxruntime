@@ -87,6 +87,10 @@ endif()
 find_package(Threads)
 
 if (MSVC)
+
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /Zi /O1 /Ob1 /GL /DNDEBUG")
+  set(CMAKE_${type}_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_${type}_LINKER_FLAGS_RELWITHDEBINFO} /LTCG")
+  message("CMAKE_CXX_FLAGS_RELWITHDEBINFO is ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
   if (onnxruntime_MSVC_STATIC_RUNTIME)
     # set all of our submodules to static runtime
     set(ONNX_USE_MSVC_STATIC_RUNTIME ON)
