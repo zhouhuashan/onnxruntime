@@ -66,8 +66,9 @@ void WordConvEmbedding::ComputeConvMaxPoolWithActivation(
     float* pres = output + word_inx * num_filters;
 
     // Unfolding from pin to pufbuf.
+    int64_t cur_word_unfolded_width = std::max<int64_t>(words_len_ptr[ word_inx ], filter_width) - filter_width + 1;
     float* tmp_unfolded_buffer_ptr = current_word_unfolded_buffer_p;
-    for (int64_t unfolded_inx = 0; unfolded_inx < unfolded_width; unfolded_inx++) {
+    for (int64_t unfolded_inx = 0; unfolded_inx < cur_word_unfolded_width; unfolded_inx++) {
       memcpy(tmp_unfolded_buffer_ptr, current_word_input, memcpy_size);
       current_word_input += char_embedding_size;
       tmp_unfolded_buffer_ptr += unfolded_kernal_size;
@@ -75,17 +76,17 @@ void WordConvEmbedding::ComputeConvMaxPoolWithActivation(
 
     math::GemmEx<float, CPUMathUtil>(
         CblasNoTrans, CblasTrans,
-        static_cast<int>(unfolded_width), static_cast<int>(num_filters), static_cast<int>(unfolded_kernal_size), 1.0f,
+        static_cast<int>( cur_word_unfolded_width ), static_cast<int>(num_filters), static_cast<int>(unfolded_kernal_size), 1.0f,
         current_word_unfolded_buffer_p, static_cast<int>(unfolded_kernal_size),
         weights, static_cast<int>(unfolded_kernal_size), 0.0f,
         conv_buf_p, static_cast<int>(num_filters), &CPUMathUtil::Instance());
 
-    for (int64_t unfolded_inx = 0; unfolded_inx < unfolded_width; unfolded_inx++)
+    for (int64_t unfolded_inx = 0; unfolded_inx < cur_word_unfolded_width; unfolded_inx++)
       for (int64_t filter_inx = 0; filter_inx < num_filters; filter_inx++) {
         conv_buf_p[unfolded_inx * num_filters + filter_inx] += bias[filter_inx];
       }
 
-    MlasComputeTanh(conv_buf_p, pactivationbuf, unfolded_width * num_filters);
+    MlasComputeTanh(conv_buf_p, pactivationbuf, cur_word_unfolded_width * num_filters);
 
     // Max pooling.
     for (int64_t filter_inx = 0; filter_inx < num_filters; filter_inx++) {
