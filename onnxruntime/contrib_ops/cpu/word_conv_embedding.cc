@@ -16,13 +16,14 @@ void WordConvEmbedding::CharEmbeddingLookup(
     size_t seq_len,
     size_t word_len,
     size_t char_embedding_size,
+    size_t filter_width,
     const int* words_len_ptr,
     float* dst) const {
   for (size_t word_inx = 0; word_inx < seq_len; word_inx++) {
     if (words_len_ptr[word_inx] > 0) {
       const int* cur_seq_ptr = seq_ptr + word_inx * word_len;
       float* cur_dst_ptr = dst + word_inx * word_len * char_embedding_size;
-      for (size_t char_inx = 0; char_inx < word_len; char_inx++) {
+      for (size_t char_inx = 0; char_inx < std::max<size_t>(words_len_ptr[word_inx], filter_width); char_inx++) {
         memcpy(cur_dst_ptr, char_embedding_weight_p + (*cur_seq_ptr) * char_embedding_size, sizeof(float) * char_embedding_size);
         cur_dst_ptr += char_embedding_size;
         cur_seq_ptr++;
@@ -204,6 +205,7 @@ Status WordConvEmbedding::Compute(OpKernelContext* ctx) const {
                       seq_len,
                       word_len,
                       char_embedding_size,
+                      filter_width,
                       words_length_ptr.get(),
                       chars_embeddings_ptr.get());
 
