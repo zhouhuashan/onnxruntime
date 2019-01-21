@@ -87,10 +87,10 @@ class DeepCpuLstmOp final : public OpKernel {
   // cost on every call.
 
 #ifdef USE_EIGEN_THREADPOOL
-  mutable Eigen::NonBlockingThreadPool ttp_{static_cast<int>(std::thread::hardware_concurrency())};
+  mutable Eigen::NonBlockingThreadPool* ttp_;
 #else
   mutable TaskThreadPool ttp_{std::thread::hardware_concurrency()};
 #endif
-};
+};  // namespace onnxruntime
 
 }  // namespace onnxruntime

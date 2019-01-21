@@ -315,6 +315,10 @@ DeepCpuLstmOp::Compute(OpKernelContext* context) const {
   Status status;
   // auto& logger = context->Logger();
 
+#ifdef USE_EIGEN_THREADPOOL
+  ttp_ = Info().GetOpThreadPool();
+#endif
+
   auto data_type = X.DataType();
   if (data_type == DataTypeImpl::GetType<float>())
     status = ComputeImpl<float>(*context);
@@ -473,7 +477,12 @@ Status DeepCpuLstmOp::ComputeImpl(OpKernelContext& context) const {
                                                          activation_funcs_.Entries()[0],
                                                          activation_funcs_.Entries()[1],
                                                          activation_funcs_.Entries()[2],
-                                                         clip_, ttp_);
+                                                         clip_,
+#ifdef USE_EIGEN_THREADPOOL
+                                                         *ttp_);
+#else
+                                                         ttp_);
+#endif
 
     bw = std::make_unique<detail::UniDirectionalLstm<T>>(alloc, logger,
                                                          seq_length, batch_size, input_size,
@@ -482,7 +491,12 @@ Status DeepCpuLstmOp::ComputeImpl(OpKernelContext& context) const {
                                                          activation_funcs_.Entries()[3],
                                                          activation_funcs_.Entries()[4],
                                                          activation_funcs_.Entries()[5],
-                                                         clip_, ttp_);
+                                                         clip_,
+#ifdef USE_EIGEN_THREADPOOL
+                                                         *ttp_);
+#else
+                                                         ttp_);
+#endif
 
     fw->Compute(input, sequence_lens_span, num_directions_, input_weights_1, recurrent_weights_1, output_1, hidden_output_1, last_cell_1);
     bw->Compute(input, sequence_lens_span, num_directions_, input_weights_2, hidden_weights_2, output_2, hidden_output_2, last_cell_2);
@@ -494,7 +508,12 @@ Status DeepCpuLstmOp::ComputeImpl(OpKernelContext& context) const {
                                                          activation_funcs_.Entries()[0],
                                                          activation_funcs_.Entries()[1],
                                                          activation_funcs_.Entries()[2],
-                                                         clip_, ttp_);
+                                                         clip_,
+#ifdef USE_EIGEN_THREADPOOL
+                                                         *ttp_);
+#else
+                                                         ttp_);
+#endif
 
     fw->Compute(input, sequence_lens_span, num_directions_, input_weights_1, recurrent_weights_1, output_1, hidden_output_1, last_cell_1);
   }

@@ -65,13 +65,17 @@ class InferenceSession::Impl {
 
     InitLogger(logging_manager);
 
+    int pool_size = session_options_.session_thread_pool_size == 0
+                        ? std::thread::hardware_concurrency() / 2
+                        : session_options_.session_thread_pool_size;
+#ifdef USE_EIGEN_THREADPOOL
+    op_thread_pool_ = std::make_unique<Eigen::NonBlockingThreadPool>(pool_size / 4);
+    session_state_.SetOperatorThreadPool(op_thread_pool_.get());
+#endif
+
     // currently the threadpool is used by the parallel executor only and hence
     // there is no point creating it when only sequential execution is enabled.
     if (!session_options.enable_sequential_execution) {
-      int pool_size = session_options_.session_thread_pool_size == 0
-                          ? std::thread::hardware_concurrency() / 2
-                          : session_options_.session_thread_pool_size;
-
 #ifdef USE_EIGEN_THREADPOOL
       thread_pool_ = std::make_unique<Eigen::NonBlockingThreadPool>(pool_size);
 #else
@@ -919,6 +923,7 @@ class InferenceSession::Impl {
   //thread::ThreadPool thread_pool_; // not used for now; will add it later when implementing RunAsync
 #ifdef USE_EIGEN_THREADPOOL
   std::unique_ptr<Eigen::NonBlockingThreadPool> thread_pool_;
+  std::unique_ptr<Eigen::NonBlockingThreadPool> op_thread_pool_;
 #else
   std::unique_ptr<TaskThreadPool> thread_pool_;
 #endif

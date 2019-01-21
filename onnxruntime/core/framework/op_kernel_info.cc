@@ -70,4 +70,11 @@ common::Status OpKernelInfo::GetFusedFuncs(ComputeFunc* compute, CreateFunctionS
   auto* funcs_mgr = session_state_.GetFuncMgr();
   return funcs_mgr->GetFuncs(node_.Name(), compute, create, release);
 }
+
+#ifdef USE_EIGEN_THREADPOOL
+Eigen::NonBlockingThreadPool* OpKernelInfo::GetOpThreadPool() const {
+  return this->session_state_.GetOperatorThreadPool();
+}
+#endif
+
 }  // namespace onnxruntime

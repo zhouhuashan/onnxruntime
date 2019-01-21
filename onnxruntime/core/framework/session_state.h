@@ -156,6 +156,9 @@ class SessionState {
 #ifdef USE_EIGEN_THREADPOOL
   Eigen::NonBlockingThreadPool* GetThreadPool() const { return thread_pool_; }
   void SetThreadPool(Eigen::NonBlockingThreadPool* p_pool) { thread_pool_ = p_pool; }
+
+  Eigen::NonBlockingThreadPool* GetOperatorThreadPool() const { return op_thread_pool_; }
+  void SetOperatorThreadPool(Eigen::NonBlockingThreadPool* p_pool) { op_thread_pool_ = p_pool; }
 #else
   TaskThreadPool* GetThreadPool() const { return thread_pool_; }
   void SetThreadPool(TaskThreadPool* p_pool) { thread_pool_ = p_pool; }
@@ -202,6 +205,7 @@ class SessionState {
 
 #ifdef USE_EIGEN_THREADPOOL
   Eigen::NonBlockingThreadPool* thread_pool_ = nullptr;
+  Eigen::NonBlockingThreadPool* op_thread_pool_ = nullptr;
 #else
   TaskThreadPool* thread_pool_ = nullptr;
 #endif

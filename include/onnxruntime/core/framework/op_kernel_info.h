@@ -11,6 +11,10 @@
 #include "gsl/span"
 #include "gsl/gsl_util"
 
+#ifdef USE_EIGEN_THREADPOOL
+#include <unsupported/Eigen/CXX11/ThreadPool>
+#endif
+
 namespace onnxruntime {
 
 class SessionState;
@@ -54,6 +58,11 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
   gsl::not_null<const ::onnxruntime::IExecutionProvider*> execution_provider_;
   ProtoHelperNodeContext proto_helper_context_;
   const SessionState& session_state_;
+
+ public:
+#ifdef USE_EIGEN_THREADPOOL
+  Eigen::NonBlockingThreadPool* GetOpThreadPool() const;
+#endif
 };
 
 }  // namespace onnxruntime

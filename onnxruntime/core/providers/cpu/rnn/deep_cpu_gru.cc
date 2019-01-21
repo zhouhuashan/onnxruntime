@@ -272,9 +272,12 @@ class UniDirectionalGru {
 
 Status DeepCpuGruOp::Compute(OpKernelContext* context) const {
   const Tensor& X = *context->Input<Tensor>(0);  // inputs. [seq_length, batch_size, input_size]
-
   Status status;
   // auto& logger = context->Logger();
+
+#ifdef USE_EIGEN_THREADPOOL
+  ttp_ = Info().GetOpThreadPool();
+#endif
 
   auto data_type = X.DataType();
   if (data_type == DataTypeImpl::GetType<float>())
@@ -398,7 +401,12 @@ Status DeepCpuGruOp::ComputeImpl(OpKernelContext& context) const {
               bias_1, initial_hidden_1,
               activation_funcs_.Entries()[0],
               activation_funcs_.Entries()[1],
-              clip_, ttp_);
+              clip_,
+#ifdef USE_EIGEN_THREADPOOL
+              *ttp_);
+#else
+        ttp_);
+#endif
           fw->Compute(input, sequence_lens_span, num_directions_, input_weights_1, recurrent_weights_1, output_1, hidden_output_1);
 #ifndef USE_MKLDNN
 
@@ -413,7 +421,7 @@ Status DeepCpuGruOp::ComputeImpl(OpKernelContext& context) const {
     std::mutex lock;
     bool done = false;
 
-    ttp_.Schedule([&]() {
+    ttp_->Schedule([&]() {
       fn();
       auto ul = std::unique_lock<std::mutex>(lock);
       done = true;
@@ -429,13 +437,19 @@ Status DeepCpuGruOp::ComputeImpl(OpKernelContext& context) const {
       bias_2, initial_hidden_2,
       activation_funcs_.Entries()[2],
       activation_funcs_.Entries()[3],
-      clip_, ttp_);
+      clip_,
+#ifdef USE_EIGEN_THREADPOOL
+      *ttp_);
+#else
+        ttp_);
+#endif
+
   bw->Compute(input, sequence_lens_span, num_directions_, input_weights_2, recurrent_weights_2, output_2, hidden_output_2);
 
 #ifndef USE_MKLDNN
 #ifdef USE_EIGEN_THREADPOOL
   auto ul = std::unique_lock<std::mutex>(lock);
-    if (!done) cv.wait(ul);
+  if (!done) cv.wait(ul);
 #else
     task_results_fw.get();
 #endif
@@ -449,8 +463,12 @@ else {
       bias_1, initial_hidden_1,
       activation_funcs_.Entries()[0],
       activation_funcs_.Entries()[1],
-      clip_, ttp_);
-
+      clip_,
+#ifdef USE_EIGEN_THREADPOOL
+      *ttp_);
+#else
+        ttp_);
+#endif
   gru_p->Compute(input, sequence_lens_span, num_directions_, input_weights_1, recurrent_weights_1, output_1, hidden_output_1);
 }
 
