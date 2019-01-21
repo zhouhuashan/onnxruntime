@@ -24,6 +24,7 @@
 
 #ifdef USE_EIGEN_THREADPOOL
 #include <unsupported/Eigen/CXX11/ThreadPool>
+#include "core/common/Barrier.h"
 #else
 #include "core/common/task_thread_pool.h"
 #endif
@@ -216,6 +217,28 @@ T* SafeRawPointer(typename gsl::span<T> span, size_t offset, size_t size) {
   return span.data() + offset;
 }
 
+#ifdef USE_EIGEN_THREADPOOL
+template <typename Function, typename... Args>
+struct FunctionWrapperWithBarrier {
+  static void run(Eigen::Barrier* b, Function f, Args... args) {
+    f(args...);
+
+    if (b) {
+      b->Notify();
+    }
+  }
+};
+
+template <class Function, class... Args>
+inline void enqueue_with_barrier(Eigen::NonBlockingThreadPool& ttp, Eigen::Barrier* b, Function&& f,
+                                 Args&&... args) {
+  ttp.Schedule(
+      std::bind(&FunctionWrapperWithBarrier<Function, Args...>::run, b,
+                std::move(f), args...));
+}
+
+#endif
+
 template <typename TLambda>
 void ExecuteLambdaInParallel(const std::string& name, TLambda lambda, int max, int step,
 #ifdef USE_EIGEN_THREADPOOL
@@ -240,17 +263,14 @@ void ExecuteLambdaInParallel(const std::string& name, TLambda lambda, int max, i
   ORT_UNUSED_PARAMETER(name);
   ORT_UNUSED_PARAMETER(logger);
 
-  std::atomic<int> done(0);
+  int totalTasks = (int)max / (step > 0 ? step : 1) + (max % step > 0 ? 1 : 0);
+  Eigen::Barrier barrier(totalTasks);
+
   for (int i = 0; i < max; i += step) {
-    ttp.Schedule([lambda, i, &done]() {
-      lambda(i);
-      ++done;
-    });
+    enqueue_with_barrier(ttp, &barrier, lambda, i);
   }
 
-  int totalTasks = (int)max / (step > 0 ? step : 1) + (max % step > 0 ? 1 : 0);
-  while (done != totalTasks) {
-  }
+  barrier.Wait();
 #else
   std::vector<std::future<void> > task_results{};
   task_results.reserve(static_cast<size_t>(std::ceil(max / step)));
