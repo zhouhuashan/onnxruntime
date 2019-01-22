@@ -4,7 +4,7 @@
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/framework/op_kernel.h"
 #include "core/framework/kernel_registry.h"
-#include "contrib_ops/contrib_kernels.h"
+//#include "contrib_ops/contrib_kernels.h"
 #include "core/framework/compute_capability.h"
 
 namespace onnxruntime {
@@ -563,7 +563,7 @@ void RegisterOnnxMLOperatorKernels(std::function<void(KernelCreateInfo&&)> fn) {
 static void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn) {
   RegisterOnnxOperatorKernels(create_fn);
   ::onnxruntime::ml::RegisterOnnxMLOperatorKernels(create_fn);
-  ::onnxruntime::contrib::RegisterContribKernels(create_fn);
+ // ::onnxruntime::contrib::RegisterContribKernels(create_fn);
 }
 
 std::shared_ptr<KernelRegistry> CPUExecutionProvider::GetKernelRegistry() const {
