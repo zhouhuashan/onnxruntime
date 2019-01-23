@@ -417,16 +417,9 @@ Status DeepCpuGruOp::ComputeImpl(OpKernelContext& context) const {
   ttp_.RunTask(std::move(task_fw));
 #else
         };
-    std::condition_variable cv;
-    std::mutex lock;
-    bool done = false;
+    Eigen::Notification done;
+    enqueue_with_barrier(*ttp_, &done, fn);
 
-    ttp_->Schedule([&]() {
-      fn();
-      auto ul = std::unique_lock<std::mutex>(lock);
-      done = true;
-      cv.notify_one();
-    });
 #endif  // USE_EIGEN_THREADPOOL
 
 #endif  // ! USE_MKLDNN
@@ -448,8 +441,7 @@ Status DeepCpuGruOp::ComputeImpl(OpKernelContext& context) const {
 
 #ifndef USE_MKLDNN
 #ifdef USE_EIGEN_THREADPOOL
-  auto ul = std::unique_lock<std::mutex>(lock);
-  if (!done) cv.wait(ul);
+  done.Wait();
 #else
     task_results_fw.get();
 #endif

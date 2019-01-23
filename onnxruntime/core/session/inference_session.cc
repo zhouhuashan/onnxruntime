@@ -69,7 +69,7 @@ class InferenceSession::Impl {
                         ? std::thread::hardware_concurrency() / 2
                         : session_options_.session_thread_pool_size;
 #ifdef USE_EIGEN_THREADPOOL
-    op_thread_pool_ = std::make_unique<Eigen::NonBlockingThreadPool>(pool_size / 4);
+    op_thread_pool_ = std::make_unique<Eigen::NonBlockingThreadPool>(pool_size / 2);
     session_state_.SetOperatorThreadPool(op_thread_pool_.get());
 #endif
 
