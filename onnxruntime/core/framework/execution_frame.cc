@@ -264,7 +264,7 @@ Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
   // if there is a custom allocator for this mlvalue_index, call it to do the allocation
   auto custom_alloc_entry = custom_allocators_.find(mlvalue_index);
   if (custom_alloc_entry != custom_allocators_.cend()) {
-    return (custom_alloc_entry->second)(parameters.tensor_shape, all_values_[mlvalue_index]);
+    return (custom_alloc_entry->second)(parameters.GetTensorShape(), all_values_[mlvalue_index]);
   }
 
   const SequentialExecutionPlan* p_seq_exec_plan = session_state_.GetExecutionPlan();
@@ -293,20 +293,20 @@ Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
     case AllocKind::kAllocateOutput:
     case AllocKind::kAllocate: {
       ORT_RETURN_IF_ERROR(AllocateMLValueTensorSelfOwnBuffer(mlvalue_index,
-                                                                     ml_data_type,
-                                                                     alloc_info,
-                                                                     parameters.GetTensorShape(),
-                                                                     per_alloc_plan.create_fence_if_async));
+                                                             ml_data_type,
+                                                             alloc_info,
+                                                             parameters.GetTensorShape(),
+                                                             per_alloc_plan.create_fence_if_async));
       break;
     }
     case AllocKind::kReuse: {
       int reuse_mlvalue_index = per_alloc_plan.reused_buffer;
       ORT_RETURN_IF_ERROR(AllocateMLValueTensorPreAllocateBuffer(mlvalue_index,
-                                                                         reuse_mlvalue_index,
-                                                                         ml_data_type,
-                                                                         alloc_info,
-                                                                         parameters.GetTensorShape(),
-                                                                         per_alloc_plan.create_fence_if_async));
+                                                                 reuse_mlvalue_index,
+                                                                 ml_data_type,
+                                                                 alloc_info,
+                                                                 parameters.GetTensorShape(),
+                                                                 per_alloc_plan.create_fence_if_async));
       break;
     }
     default: {
@@ -361,8 +361,8 @@ void ExecutionFrame::Init(const onnxruntime::GraphViewer& graph,
   if (!fetches.empty()) {
     // should've already verified this much before when Run() starts
     ORT_ENFORCE(output_names.size() == fetches.size(),
-                        "output_names vector size: " + std::to_string(output_names.size()) +
-                            " does not match that of fetches vector: " + std::to_string(fetches.size()));
+                "output_names vector size: " + std::to_string(output_names.size()) +
+                    " does not match that of fetches vector: " + std::to_string(fetches.size()));
 
     auto idx = 0;
     for (const auto& oname : output_names) {
@@ -383,8 +383,7 @@ void ExecutionFrame::Init(const onnxruntime::GraphViewer& graph,
 
   // 5. set node args
   std::size_t total_def_count{};
-  for (const auto& node : graph.Nodes())
-  {
+  for (const auto& node : graph.Nodes()) {
     node.ForEachDef([&](const onnxruntime::NodeArg& /*arg*/, bool /*is_input*/) {
       ++total_def_count;
     });
@@ -480,8 +479,8 @@ static inline void VerifyShape(const MLValue* p_mlvalue,
     const Tensor* tensor = &p_mlvalue->Get<Tensor>();
 
     ORT_ENFORCE(tensor->Shape() == parameters.GetTensorShape(),
-                        "MLValue shape verification failed. Current shape:", tensor->Shape(),
-                        " Requested shape:", parameters.GetTensorShape());
+                "MLValue shape verification failed. Current shape:", tensor->Shape(),
+                " Requested shape:", parameters.GetTensorShape());
   }
 }
 
@@ -512,7 +511,7 @@ Status ExecutionFrame::GetOrCreateNodeOutputMLValue(int index,
 
   // It's not allocated, then allocate it with given shape and return.
   // Perform allocation based on the allocation plan
-    ORT_RETURN_IF_ERROR(AllocateAsPerAllocationPlan(node_values_[index], parameters));
+  ORT_RETURN_IF_ERROR(AllocateAsPerAllocationPlan(node_values_[index], parameters));
   return Status::OK();
 }
 

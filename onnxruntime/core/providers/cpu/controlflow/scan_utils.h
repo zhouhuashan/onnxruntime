@@ -83,6 +83,14 @@ class OutputIterator {
   MLValue& operator*();
   OutputIterator& operator++();
 
+  bool FinalOutputAllocated() const { return is_concrete_shape_; }
+
+  // custom fetch allocator that can be used when the final shape is not concrete
+  // when the subgraph requests the allocation of the subgraph output, we forward the request to this instance,
+  // add the sequence length dimension, allocate the overall output, and use a slicer to return the chunk for the
+  // subgraph output.
+  Status AllocateScanOutput(const TensorShape& shape, MLValue& mlvalue);
+
   // set the output for the current iteration to zeros. used for short sequence lengths
   void ZeroOutCurrent() {
     auto* tensor = (**this).GetMutable<Tensor>();
@@ -99,7 +107,8 @@ class OutputIterator {
 
   Status Initialize();
   Status AllocateFinalBuffer();
-  Status MakeConcrete();
+  // Status MakeConcrete();
+  Status MakeConcrete(const TensorShape& shape);
 
   OpKernelContextInternal& context_;
   bool is_v8_;

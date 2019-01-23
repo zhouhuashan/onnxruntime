@@ -110,6 +110,7 @@ Status IterateSequence(OpKernelContextInternal& context,
 
   NameMLValMap feeds;
   std::vector<MLValue> fetches;
+  std::unordered_map<size_t, IExecutor::CustomAllocator> fetch_allocators;
   feeds.reserve(num_variadic_inputs + implicit_inputs.size());
   fetches.resize(num_variadic_outputs);
 
@@ -139,39 +140,31 @@ Status IterateSequence(OpKernelContextInternal& context,
 
     fetches.clear();
 
-    // one or more outputs have symbolic dimensions and need the first fetch to be copied to the OutputIterator
-    bool have_symbolic_dim_in_output = false;
-
     for (int output = 0, end = num_variadic_outputs; output < end; ++output) {
       if (output < num_loop_state_variables) {
         // add loop state variable output
         fetches.push_back(loop_state_variables[output].Output());
       } else {
-        // add MLValue from sliced output
         auto& iterator = *output_iterators[output];
-        auto& mlvalue = *iterator;
-        fetches.push_back(mlvalue);
 
-        // mlvalue.IsAllocated will be false when the OutputIterator is using a temporary MLValue
-        // and not the overall output buffer.
-        have_symbolic_dim_in_output = seq_no == 0 &&
-                                      (mlvalue.IsAllocated() == false ||
-                                       have_symbolic_dim_in_output);  // don't unset
+        if (iterator.FinalOutputAllocated()) {
+          // add MLValue from sliced output
+          auto& mlvalue = *iterator;
+          fetches.push_back(mlvalue);
+        } else {
+          // use a custom allocator that will forward the allocation request to the Scan context
+          // and add the sequence length dimension. this avoids using a temporary value for the first output
+          fetch_allocators[output] =
+              [&context, output, &iterator](const TensorShape& shape, MLValue& mlvalue) {
+                return iterator.AllocateScanOutput(shape, mlvalue);
+              };
+        }
       }
     }
 
     // Create Executor and run graph.
-    // TODO: Consider pulling ExecutionFrame up from within SequentialExecutor
-    // and separating it out a bit so we can maybe just update the feeds/fetches in the frame on each iteration.
-    // Many of the other pieces are constant across usages.
-    // Not sure how best to handle the memory pattern side of things though.
-    // For now just making it work. Optimization and refinement will follow.
-    //SequentialExecutor executor{context.GetTerminateFlag()};
-    //status = executor.Execute(session_state, feeds, subgraph_output_names, fetches, context.Logger());
-    //ORT_RETURN_IF_ERROR(status);
-
-    status = utils::ExecuteGraph(session_state, feeds, subgraph_output_names, fetches, /*sequential_execution*/ true,
-                                 context.GetTerminateFlag(), context.Logger());
+    status = utils::ExecuteGraph(session_state, feeds, subgraph_output_names, fetches, fetch_allocators,
+                                 /*sequential_execution*/ true, context.GetTerminateFlag(), context.Logger());
     ORT_RETURN_IF_ERROR(status);
 
     // cycle the LoopStateVariable input/output in preparation for the next iteration
@@ -179,15 +172,12 @@ Status IterateSequence(OpKernelContextInternal& context,
 
     // and move the output iterators.
     for (int output = num_loop_state_variables; output < num_variadic_outputs; ++output) {
-      auto& iterator = *output_iterators[output];
+      ++(*output_iterators[output]);
+    }
 
-      // copy data from the fetch to the iterator so it can setup the overall output when the iterator is incremented.
-      // if the iterator is already using the overall output buffer IsAllocated() will be true and no copy is required.
-      if (have_symbolic_dim_in_output && (*iterator).IsAllocated() == false) {
-        *iterator = fetches[output];
-      }
-
-      ++iterator;
+    if (seq_no == 0) {
+      // we only ever use custom allocators on the first iteration as the final output is always allocated during that
+      fetch_allocators.clear();
     }
   }
 
@@ -331,9 +321,9 @@ Status OutputIterator::AllocateFinalBuffer() {
   // make sure a single buffer for the full output is created upfront.
   // we slice this into per-iteration pieces in Execute using MLValueTensorSlicer.
   auto* tensor = context_.Output(output_index_, final_shape_);
-
-  if (!tensor)
+  if (!tensor) {
     return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "Failed to create output tensor for output #", output_index_);
+  }
 
   // get the output tensor we just created as an MLValue
   final_output_mlvalue_ = context_.GetOutputMLValue(output_index_);
@@ -369,37 +359,62 @@ Status OutputIterator::AllocateFinalBuffer() {
   return Status::OK();
 }
 
-Status OutputIterator::MakeConcrete() {
-  ORT_ENFORCE(first_output_.IsAllocated(), "First usage of OutputIterator did not result in any output.");
-  Status status = Status::OK();
+//Status OutputIterator::MakeConcrete() {
+//  ORT_ENFORCE(first_output_.IsAllocated(), "First usage of OutputIterator did not result in any output.");
+//  Status status = Status::OK();
+//
+//  auto& tensor = first_output_.Get<Tensor>();
+//  auto& tensor_shape = tensor.Shape();
+//
+//  // update the final shape
+//  status = MakeShapeConcrete(tensor_shape, final_shape_);
+//  ORT_RETURN_IF_ERROR(status);
+//
+//  is_concrete_shape_ = true;
+//  status = AllocateFinalBuffer();
+//  ORT_RETURN_IF_ERROR(status);
+//
+//  // copy first output to final buffer
+//  auto input_span = gsl::make_span<const gsl::byte>(static_cast<const gsl::byte*>(tensor.DataRaw()), tensor.Size());
+//
+//  auto output = (**this).GetMutable<Tensor>();
+//  auto output_span = gsl::make_span<gsl::byte>(static_cast<gsl::byte*>(output->MutableDataRaw()), output->Size());
+//
+//  gsl::copy(input_span, output_span);
+//
+//  // release the MLValue we used for the first output
+//  first_output_ = {};
+//
+//  return status;
+//}
 
-  auto& tensor = first_output_.Get<Tensor>();
-  auto& tensor_shape = tensor.Shape();
-
+Status OutputIterator::MakeConcrete(const TensorShape& tensor_shape) {
   // update the final shape
-  status = MakeShapeConcrete(tensor_shape, final_shape_);
+  auto status = MakeShapeConcrete(tensor_shape, final_shape_);
   ORT_RETURN_IF_ERROR(status);
 
   is_concrete_shape_ = true;
   status = AllocateFinalBuffer();
   ORT_RETURN_IF_ERROR(status);
 
-  // copy first output to final buffer
-  auto input_span = gsl::make_span<const gsl::byte>(static_cast<const gsl::byte*>(tensor.DataRaw()), tensor.Size());
-
-  auto output = (**this).GetMutable<Tensor>();
-  auto output_span = gsl::make_span<gsl::byte>(static_cast<gsl::byte*>(output->MutableDataRaw()), output->Size());
-
-  gsl::copy(input_span, output_span);
-
-  // release the MLValue we used for the first output
-  first_output_ = {};
-
   return status;
+}
+
+Status OutputIterator::AllocateScanOutput(const TensorShape& shape, MLValue& mlvalue) {
+  ORT_ENFORCE(!is_concrete_shape_, "If shape was concrete we shouldn't be using a custom allocator");
+
+  auto status = MakeConcrete(shape);
+  ORT_RETURN_IF_ERROR(status);
+
+  mlvalue = **this;
+
+  return Status::OK();
 }
 
 MLValue& OutputIterator::operator*() {
   ORT_ENFORCE(cur_iteration_ < num_iterations_);
+  ORT_ENFORCE(is_concrete_shape_,
+              "Expected AllocateScanOutput to have been called to before we read the MLValue from the iterator.");
 
   if (is_concrete_shape_)
     // for v8 both outputs and loop state vars use slicers. for v9 only outputs do
@@ -413,11 +428,13 @@ MLValue& OutputIterator::operator*() {
 
 OutputIterator& OutputIterator::operator++() {
   if (cur_iteration_ < num_iterations_) {
-    if (!is_concrete_shape_) {
-      // we should have an output now, so convert to using the overall output buffer and slicers
-      auto status = MakeConcrete();
-      ORT_ENFORCE(status.IsOK(), status.ErrorMessage());
-    }
+    ORT_ENFORCE(is_concrete_shape_, "Expected AllocateScanOutput to have been called to before we increment the iterator");
+
+    //if (!is_concrete_shape_) {
+    //  // we should have an output now, so convert to using the overall output buffer and slicers
+    //  auto status = MakeConcrete();
+    //  ORT_ENFORCE(status.IsOK(), status.ErrorMessage());
+    //}
 
     ++cur_iteration_;
 

@@ -316,8 +316,10 @@ Status LoopImpl::Execute() {
       fetches.clear();
     }
 
-    status = utils::ExecuteGraph(session_state_, feeds, subgraph_output_names_, fetches, {}, /*sequential_execution*/ true,
-                                 context_.GetTerminateFlag(), context_.Logger());
+    // loop outputs can change shape over executions so we can't use any custom fetch allocators when executing
+    // and just have to concatenate the output from each iteration when we're done.
+    status = utils::ExecuteGraph(session_state_, feeds, subgraph_output_names_, fetches, {},
+                                 /*sequential_execution*/ true, context_.GetTerminateFlag(), context_.Logger());
     ORT_RETURN_IF_ERROR(status);
 
     condition_mlvalue_ = fetches[0];
