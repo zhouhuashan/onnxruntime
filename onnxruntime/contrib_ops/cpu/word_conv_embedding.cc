@@ -52,71 +52,84 @@ void WordConvEmbedding::ComputeConvMaxPoolWithActivation(
   int64_t conv_res_segment_size = unfolded_width * num_filters;
   int64_t memcpy_size = unfolded_kernal_size * sizeof(float);
 
-  auto input_unfolded_buffer_p = IAllocator::MakeUniquePtr<float>(allocator, seq_len * unfolded_segment_size);
+  auto unfolded_buffer_p = IAllocator::MakeUniquePtr<float>(allocator, seq_len * unfolded_segment_size);
   auto conv_result_p = IAllocator::MakeUniquePtr<float>(allocator, seq_len * conv_res_segment_size);
   auto conv_activation_result_p = IAllocator::MakeUniquePtr<float>(allocator, seq_len * conv_res_segment_size);
 
-  for (int64_t word_inx = 0; word_inx < seq_len; word_inx++) {
-    if (words_len_ptr[word_inx] <= 0) continue;
+  int64_t word_inx = 0;
+  while(word_inx < seq_len) {
+     if( words_len_ptr[ word_inx ] <= 0 ) {
+        word_inx++;
+        continue;
+     }
 
-    const float* current_word_input = input + word_inx * input_word_size;
-    float* current_word_unfolded_buffer_p = input_unfolded_buffer_p.get() + word_inx * unfolded_segment_size;
-    float* conv_buf_p = conv_result_p.get() + word_inx * conv_res_segment_size;
-    float* pactivationbuf = conv_activation_result_p.get() + word_inx * conv_res_segment_size;
-    float* pres = output + word_inx * num_filters;
+    float* words_unfolded_buffer_p = unfolded_buffer_p.get();
+    int64_t words_unfolded_width = 0;
+    int64_t tmp_word_inx = word_inx;
+    float* conv_buf_p = conv_result_p.get();
+    float* pactivationbuf = conv_activation_result_p.get();
 
-    // Unfolding from pin to pufbuf.
-    int64_t cur_word_unfolded_width = std::max<int64_t>(words_len_ptr[ word_inx ], filter_width) - filter_width + 1;
-    float* tmp_unfolded_buffer_ptr = current_word_unfolded_buffer_p;
-    for (int64_t unfolded_inx = 0; unfolded_inx < cur_word_unfolded_width; unfolded_inx++) {
-      memcpy(tmp_unfolded_buffer_ptr, current_word_input, memcpy_size);
-      current_word_input += char_embedding_size;
-      tmp_unfolded_buffer_ptr += unfolded_kernal_size;
+    // unfolding buffer
+    while( words_len_ptr[ tmp_word_inx ] > 0 && tmp_word_inx < seq_len )
+    {
+       const float* current_word_input = input + tmp_word_inx * input_word_size;
+       int64_t word_unfolded_width = std::max<int64_t>( words_len_ptr[ tmp_word_inx ], filter_width ) - filter_width + 1;
+       words_unfolded_width += word_unfolded_width;
+       for( int64_t unfolded_inx = 0; unfolded_inx < word_unfolded_width; unfolded_inx++ )
+       {
+          memcpy( words_unfolded_buffer_p, current_word_input, memcpy_size );
+          current_word_input += char_embedding_size;
+          words_unfolded_buffer_p += unfolded_kernal_size;
+       }
+       tmp_word_inx++;
     }
 
     math::GemmEx<float, CPUMathUtil>(
-        CblasNoTrans, CblasTrans,
-        static_cast<int>( cur_word_unfolded_width ), static_cast<int>(num_filters), static_cast<int>(unfolded_kernal_size), 1.0f,
-        current_word_unfolded_buffer_p, static_cast<int>(unfolded_kernal_size),
-        weights, static_cast<int>(unfolded_kernal_size), 0.0f,
-        conv_buf_p, static_cast<int>(num_filters), &CPUMathUtil::Instance());
+       CblasNoTrans, CblasTrans,
+       static_cast< int >( words_unfolded_width ), static_cast< int >( num_filters ), static_cast< int >( unfolded_kernal_size ), 1.0f,
+       unfolded_buffer_p.get(), static_cast< int >( unfolded_kernal_size ),
+       weights, static_cast< int >( unfolded_kernal_size ), 0.0f,
+       conv_buf_p, static_cast< int >( num_filters ), &CPUMathUtil::Instance() );
 
-    for (int64_t unfolded_inx = 0; unfolded_inx < cur_word_unfolded_width; unfolded_inx++)
-      for (int64_t filter_inx = 0; filter_inx < num_filters; filter_inx++) {
-        conv_buf_p[unfolded_inx * num_filters + filter_inx] += bias[filter_inx];
-      }
+    for( int64_t unfolded_inx = 0; unfolded_inx < words_unfolded_width; unfolded_inx++ )
+       for( int64_t filter_inx = 0; filter_inx < num_filters; filter_inx++ )
+       {
+          conv_buf_p[ unfolded_inx * num_filters + filter_inx ] += bias[ filter_inx ];
+       }
+    MlasComputeTanh( conv_buf_p, pactivationbuf, words_unfolded_width * num_filters );
 
-    MlasComputeTanh(conv_buf_p, pactivationbuf, cur_word_unfolded_width * num_filters);
+    float* activationbuf_cur_ptr = pactivationbuf;
+    for( int64_t pool_word_inx = word_inx; pool_word_inx < tmp_word_inx; pool_word_inx++ )
+    {
+       float* result_ptr = output + pool_word_inx * num_filters;
+       for( int64_t filter_inx = 0; filter_inx < num_filters; filter_inx++ )
+       {
+          result_ptr[ filter_inx ] = -1.0f * 1e12f;
+       }
 
-    // Max pooling.
-    for (int64_t filter_inx = 0; filter_inx < num_filters; filter_inx++) {
-      pres[filter_inx] = -1.0f * 1e12f;
+       int64_t word_unfolded_width = std::max<int64_t>( words_len_ptr[ pool_word_inx ], filter_width ) - filter_width + 1;
+       for( int64_t unfolded_inx = 0; unfolded_inx < word_unfolded_width; unfolded_inx++ )
+       {
+          int64_t k = 0;
+          int64_t kLim8 = num_filters - 7;
+          float * ps = activationbuf_cur_ptr;
+          float * pd = result_ptr;
+          for( ; k < kLim8; k += 8, ps += 8, pd += 8 )
+          {
+             __m256 source = _mm256_loadu_ps( ps );
+             __m256 res = _mm256_loadu_ps( pd );
+             res = _mm256_max_ps( source, res );
+             _mm256_storeu_ps( pd, res );
+          }
+          for( ; k < num_filters; k++ )
+          {
+             result_ptr[ k ] = std::max( activationbuf_cur_ptr[ k ], result_ptr[ k ] );
+          }
+
+          activationbuf_cur_ptr += num_filters;
+       }
     }
-
-    for (int64_t unfolded_inx = 0; unfolded_inx < unfolded_width; unfolded_inx++) {
-      if (unfolded_inx > 0 && unfolded_inx > (words_len_ptr[word_inx] - filter_width)) break;
-      float* pcur = pactivationbuf + unfolded_inx * num_filters;
-
-      int64_t k = 0;
-      int64_t kLim8 = num_filters - 7;
-      float * ps = pcur;
-      float * pd = pres;
-      for( ; k < kLim8; k += 8, ps += 8, pd += 8 )
-      {
-         __m256 source = _mm256_loadu_ps( ps );
-         __m256 res = _mm256_loadu_ps( pd );
-         res = _mm256_max_ps( source, res );
-         _mm256_storeu_ps( pd, res );
-      }
-      for( ; k < num_filters; k++ )
-      {
-         pres[ k ] = std::max( pcur[ k ], pres[ k ] );
-      }
-
-      //for (int64_t filter_inx = 0; filter_inx < num_filters; filter_inx++) {
-      //  pres[filter_inx] = std::max(pcur[filter_inx], pres[filter_inx]);
-      //}
-    }
+    word_inx = tmp_word_inx;
   }
 }
 void WordConvEmbedding::CalculateLengthOfEachWordInSequence(
