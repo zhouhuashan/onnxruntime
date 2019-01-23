@@ -158,6 +158,9 @@ Status IterateSequence(OpKernelContextInternal& context,
               [&context, output, &iterator](const TensorShape& shape, MLValue& mlvalue) {
                 return iterator.AllocateScanOutput(shape, mlvalue);
               };
+
+          // also need a dummy empty entry in fetches so the order matches the output names
+          fetches.push_back({});
         }
       }
     }
