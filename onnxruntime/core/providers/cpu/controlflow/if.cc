@@ -8,9 +8,9 @@
 #include "core/framework/op_kernel_context_internal.h"
 #include "core/framework/sequential_executor.h"
 #include "core/framework/session_state.h"
+#include "core/framework/utils.h"
 
 #include "core/framework/tensorprotoutils.h"
-// #include "core/providers/cpu/tensor/utils.h"
 
 using namespace ONNX_NAMESPACE;
 using namespace onnxruntime::common;
@@ -191,7 +191,6 @@ Status IfImpl::Execute() {
       feeds[entry.first] = *entry.second;
     }
   }
-
   std::vector<MLValue> fetches;
   std::unordered_map<size_t, IExecutor::CustomAllocator> fetch_allocators;
   fetches.reserve(num_outputs_);
@@ -217,9 +216,8 @@ Status IfImpl::Execute() {
     }
   }
 
-  SequentialExecutor executor{context_.GetTerminateFlag()};
-  status = executor.Execute(session_state_, feeds, subgraph_output_names_, fetches, fetch_allocators,
-                            context_.Logger());
+  status = utils::ExecuteGraph(session_state_, feeds, subgraph_output_names_, fetches, fetch_allocators, /*sequential_execution*/ true,
+                               context_.GetTerminateFlag(), context_.Logger());
   ORT_RETURN_IF_ERROR(status);
 
   return status;
