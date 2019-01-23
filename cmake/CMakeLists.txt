@@ -87,6 +87,8 @@ endif()
 find_package(Threads)
 
 if (MSVC)
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /Zi /O2 /Ob1 /GL /DNDEBUG")
+  message("CMAKE_CXX_FLAGS_RELWITHDEBINFO is ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
   if (onnxruntime_MSVC_STATIC_RUNTIME)
     # set all of our submodules to static runtime
     set(ONNX_USE_MSVC_STATIC_RUNTIME ON)
@@ -339,6 +341,7 @@ if (WIN32)
 
     # set linker flags to minimize the binary size.
     if (MSVC)
+	  set(CMAKE_${type}_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_${type}_LINKER_FLAGS_RELWITHDEBINFO} /LTCG")
       foreach(type EXE SHARED)    
         set(CMAKE_${type}_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_${type}_LINKER_FLAGS_RELWITHDEBINFO} /OPT:REF")
         set(CMAKE_${type}_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_${type}_LINKER_FLAGS_RELWITHDEBINFO} /INCREMENTAL:NO")
