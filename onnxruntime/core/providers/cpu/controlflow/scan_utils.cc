@@ -156,7 +156,7 @@ Status IterateSequence(OpKernelContextInternal& context,
           // and add the sequence length dimension. this avoids using a temporary value for the first output
           fetch_allocators[output] =
               [&context, output, &iterator](const TensorShape& shape, MLValue& mlvalue) {
-                return iterator.AllocateScanOutput(shape, mlvalue);
+                return iterator.AllocateSubgraphOutput(shape, mlvalue);
               };
 
           // also need a dummy empty entry in fetches so the order matches the output names
@@ -314,7 +314,7 @@ Status OutputIterator::Initialize() {
     status = AllocateFinalBuffer();
     ORT_RETURN_IF_ERROR(status);
   } else {
-    // use first_output_
+    // delay until the first subgraph execution calls AllocateSubgraphOutput.
   }
 
   return Status::OK();
@@ -322,7 +322,7 @@ Status OutputIterator::Initialize() {
 
 Status OutputIterator::AllocateFinalBuffer() {
   // make sure a single buffer for the full output is created upfront.
-  // we slice this into per-iteration pieces in Execute using MLValueTensorSlicer.
+  // we slice this into per-iteration pieces using MLValueTensorSlicer.
   auto* tensor = context_.Output(output_index_, final_shape_);
   if (!tensor) {
     return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "Failed to create output tensor for output #", output_index_);
@@ -362,53 +362,18 @@ Status OutputIterator::AllocateFinalBuffer() {
   return Status::OK();
 }
 
-//Status OutputIterator::MakeConcrete() {
-//  ORT_ENFORCE(first_output_.IsAllocated(), "First usage of OutputIterator did not result in any output.");
-//  Status status = Status::OK();
-//
-//  auto& tensor = first_output_.Get<Tensor>();
-//  auto& tensor_shape = tensor.Shape();
-//
-//  // update the final shape
-//  status = MakeShapeConcrete(tensor_shape, final_shape_);
-//  ORT_RETURN_IF_ERROR(status);
-//
-//  is_concrete_shape_ = true;
-//  status = AllocateFinalBuffer();
-//  ORT_RETURN_IF_ERROR(status);
-//
-//  // copy first output to final buffer
-//  auto input_span = gsl::make_span<const gsl::byte>(static_cast<const gsl::byte*>(tensor.DataRaw()), tensor.Size());
-//
-//  auto output = (**this).GetMutable<Tensor>();
-//  auto output_span = gsl::make_span<gsl::byte>(static_cast<gsl::byte*>(output->MutableDataRaw()), output->Size());
-//
-//  gsl::copy(input_span, output_span);
-//
-//  // release the MLValue we used for the first output
-//  first_output_ = {};
-//
-//  return status;
-//}
+Status OutputIterator::AllocateSubgraphOutput(const TensorShape& shape, MLValue& mlvalue) {
+  ORT_ENFORCE(!is_concrete_shape_, "If shape was concrete we shouldn't be using a custom allocator");
 
-Status OutputIterator::MakeConcrete(const TensorShape& tensor_shape) {
-  // update the final shape
-  auto status = MakeShapeConcrete(tensor_shape, final_shape_);
+  // update the final shape now that we can fill in the symbolic dimension with an actual value
+  auto status = MakeShapeConcrete(shape, final_shape_);
   ORT_RETURN_IF_ERROR(status);
 
   is_concrete_shape_ = true;
   status = AllocateFinalBuffer();
   ORT_RETURN_IF_ERROR(status);
 
-  return status;
-}
-
-Status OutputIterator::AllocateScanOutput(const TensorShape& shape, MLValue& mlvalue) {
-  ORT_ENFORCE(!is_concrete_shape_, "If shape was concrete we shouldn't be using a custom allocator");
-
-  auto status = MakeConcrete(shape);
-  ORT_RETURN_IF_ERROR(status);
-
+  // get MLValue from operator*()
   mlvalue = **this;
 
   return Status::OK();
@@ -417,39 +382,32 @@ Status OutputIterator::AllocateScanOutput(const TensorShape& shape, MLValue& mlv
 MLValue& OutputIterator::operator*() {
   ORT_ENFORCE(cur_iteration_ < num_iterations_);
   ORT_ENFORCE(is_concrete_shape_,
-              "Expected AllocateScanOutput to have been called to before we read the MLValue from the iterator.");
+              "Expected AllocateSubgraphOutput to have been called to before we read the MLValue from the iterator.");
 
-  if (is_concrete_shape_)
-    // for v8 both outputs and loop state vars use slicers. for v9 only outputs do
-    if (is_v8_ || !is_loop_state_var_)
-      return **cur_slicer_iterator_;
-    else
-      return *final_output_mlvalue_;
+  // for v8 both outputs and loop state vars use slicers. for v9 only outputs do
+  if (is_v8_ || !is_loop_state_var_)
+    return **cur_slicer_iterator_;
   else
-    return first_output_;
+    return *final_output_mlvalue_;
 }
 
 OutputIterator& OutputIterator::operator++() {
   if (cur_iteration_ < num_iterations_) {
-    ORT_ENFORCE(is_concrete_shape_, "Expected AllocateScanOutput to have been called to before we increment the iterator");
-
-    //if (!is_concrete_shape_) {
-    //  // we should have an output now, so convert to using the overall output buffer and slicers
-    //  auto status = MakeConcrete();
-    //  ORT_ENFORCE(status.IsOK(), status.ErrorMessage());
-    //}
+    ORT_ENFORCE(is_concrete_shape_,
+                "Expected AllocateSubgraphOutput to have been called to before we increment the iterator");
 
     ++cur_iteration_;
 
     if (is_v8_) {
-      // if not a loop state var, see if we just finished the current sequence (dim 1)
+      // if not a loop state var, see if we just finished the current sequence (dim 1) and need to move to the
+      // next iterator. otherwise increment the current one
       if (!is_loop_state_var_ && cur_iteration_ % final_shape_[1] == 0) {
         ++cur_slicer_iterator_;
       } else {
         ++(*cur_slicer_iterator_);
       }
     } else if (!is_loop_state_var_) {
-      // v9 output uses iterator
+      // v9 output uses iterator (v9 loop state vars do not)
       ++(*cur_slicer_iterator_);
     }
   }
