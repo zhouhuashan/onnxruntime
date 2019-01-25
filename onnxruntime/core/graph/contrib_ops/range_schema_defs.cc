@@ -75,7 +75,7 @@ static int64_t CalcRangeDim(const TensorProto* startShapeInitializer,
     if (delta == T{0}) {
         fail_shape_inference("delta in Range operator can not be zero!");
     }
-    return static_cast<int64_t>(ceil((1.0 * (limit - start)) / delta));
+    return static_cast<int64_t>(ceil((1.0 * (double)(limit - start)) / delta));
 }
 
 static int64_t CalcResultDim(const TensorProto* startShapeInitializer,
