@@ -310,6 +310,9 @@ Status LoopImpl::Execute() {
 
   auto& iter_num_value = *iter_num_mlvalue_.GetMutable<Tensor>()->MutableData<int64_t>();
 
+  // track whether we need to copy to/from devices with each ExecuteGraph call
+  utils::DeviceCopyChecks device_copy_checks = {};
+
   while (iter_num_value < max_trip_count_ && *condition_mlvalue_.GetMutable<Tensor>()->MutableData<bool>()) {
     if (iter_num_value != 0) {
       UpdateFeeds(fetches, feeds);
@@ -320,7 +323,8 @@ Status LoopImpl::Execute() {
     // there will be to allocate loop outputs upfront. due to that we can't use a custom fetch allocator
     // for any outputs
     status = utils::ExecuteGraph(session_state_, feeds, subgraph_output_names_, fetches, {},
-                                 /*sequential_execution*/ true, context_.GetTerminateFlag(), context_.Logger());
+                                 /*sequential_execution*/ true, context_.GetTerminateFlag(), context_.Logger(),
+                                 device_copy_checks);
     ORT_RETURN_IF_ERROR(status);
 
     condition_mlvalue_ = fetches[0];

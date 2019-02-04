@@ -161,11 +161,11 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
       status = Status(common::ONNXRUNTIME, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
-    
+
     if (session_profiler_.FEnabled()) {
       session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, event_name, tp);
     }
-    
+
     return status;
   }
 
@@ -580,9 +580,14 @@ class InferenceSession::Impl {
         ORT_CHECK_AND_SET_RETVAL(xp->OnRunStart());
       }
 
+      // TODO: Can we assume that the same device copy behaviour will apply to all Run calls? If so, we should
+      // store this in the session state and re-use it for subsequent calls to Execute.
+      utils::DeviceCopyChecks device_copy_checks = {};
+
       ORT_CHECK_AND_SET_RETVAL(
           utils::ExecuteGraph(session_state_, feeds, output_names, *p_fetches, {},
-                              session_options_.enable_sequential_execution, run_options.terminate, run_logger));
+                              session_options_.enable_sequential_execution, run_options.terminate, run_logger,
+                              device_copy_checks));
     } catch (const std::exception& e) {
       retval = Status(common::ONNXRUNTIME, common::FAIL, e.what());
     } catch (...) {

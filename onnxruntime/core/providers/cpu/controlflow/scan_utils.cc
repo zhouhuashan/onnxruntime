@@ -132,6 +132,9 @@ Status IterateSequence(OpKernelContextInternal& context,
     feeds[entry.first] = *entry.second;
   }
 
+  // track whether we need to copy to/from devices with each ExecuteGraph call
+  utils::DeviceCopyChecks device_copy_checks = {};
+
   int64_t seq_no = 0;
   for (; seq_no < seq_length; ++seq_no) {
     for (int input = 0; input < num_variadic_inputs; ++input) {
@@ -179,7 +182,8 @@ Status IterateSequence(OpKernelContextInternal& context,
 
     // Create Executor and run graph.
     status = utils::ExecuteGraph(session_state, feeds, subgraph_output_names, fetches, fetch_allocators,
-                                 /*sequential_execution*/ true, context.GetTerminateFlag(), context.Logger());
+                                 /*sequential_execution*/ true, context.GetTerminateFlag(), context.Logger(),
+                                 device_copy_checks);
     ORT_RETURN_IF_ERROR(status);
 
     // cycle the LoopStateVariable input/output in preparation for the next iteration

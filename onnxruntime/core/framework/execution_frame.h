@@ -73,7 +73,7 @@ class ExecutionFrame {
   }
 
   // Get the index for the first entry of the given node.
-  int GetNodeOffset(onnxruntime::NodeIndex index) const;
+  int GetNodeOffset(NodeIndex index) const;
 
   // Return nullptr if index map to an value that is an unused optional input/output
   const MLValue* GetNodeInputOrOutputMLValue(int index) const;

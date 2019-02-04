@@ -18,11 +18,11 @@ void SessionState::SetGraphViewer(std::unique_ptr<onnxruntime::GraphViewer> grap
   graph_viewer_ = std::move(graph_viewer);
 }
 
-const onnxruntime::GraphViewer* SessionState::GetGraphViewer() const {
+const GraphViewer* SessionState::GetGraphViewer() const {
   return graph_viewer_.get();
 }
 
-const OpKernel* SessionState::GetKernel(onnxruntime::NodeIndex node_id) const {
+const OpKernel* SessionState::GetKernel(NodeIndex node_id) const {
   if (session_kernels_.count(node_id) == 0) {
     return nullptr;
   }
@@ -222,6 +222,15 @@ void SessionState::CalculateNodeIndexInfo() {
 const NodeIndexInfo& SessionState::GetNodeIndexInfo() const {
   ORT_ENFORCE(node_index_info_, "CalculateNodeIndexInfo must be called prior to GetExecutionInfo.");
   return *node_index_info_;
+}
+
+Status SessionState::CalculateGraphInputMLValueIndexes() {
+  ORT_ENFORCE(graph_viewer_, "SetGraphViewer should have been called previously.");
+
+  auto& graph_inputs = graph_viewer_->GetInputsIncludingInitializers();
+
+  auto status = utils::MapGraphInputsToMLValueIdxs(graph_inputs, mlvalue_name_idx_map_, graph_input_mlvalue_indexes_);
+  return status;
 }
 
 }  // namespace onnxruntime

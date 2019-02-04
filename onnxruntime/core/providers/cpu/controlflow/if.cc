@@ -216,8 +216,10 @@ Status IfImpl::Execute() {
     }
   }
 
+  utils::DeviceCopyChecks device_copy_checks = {};
   status = utils::ExecuteGraph(session_state_, feeds, subgraph_output_names_, fetches, fetch_allocators,
-                               /*sequential_execution*/ true, context_.GetTerminateFlag(), context_.Logger());
+                               /*sequential_execution*/ true, context_.GetTerminateFlag(), context_.Logger(),
+                               device_copy_checks);
   ORT_RETURN_IF_ERROR(status);
 
   return status;

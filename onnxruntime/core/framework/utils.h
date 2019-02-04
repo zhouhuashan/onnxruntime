@@ -42,20 +42,45 @@ const std::string& GetNodeInputProviderType(const SessionState::NodeInfo& info);
 common::Status CopyOneInputAcrossDevices(const SessionState& session_state,
                                          const std::string& input_name,
                                          const MLValue& orig_mlvalue,
-                                         MLValue& new_mlvalue);
+                                         MLValue& new_mlvalue,
+                                         bool& needed_copy);
 
-common::Status CopyInputsAcrossDevices(const SessionState& session_state,
-                                       const NameMLValMap& orig_feeds,
-                                       NameMLValMap& new_feeds);
+//common::Status CopyInputsAcrossDevices(const SessionState& session_state,
+//                                       const NameMLValMap& orig_feeds,
+//                                       NameMLValMap& new_feeds,
+//                                       bool* needed_copy = nullptr);
+//
+//common::Status MatchOutputsWithProviders(const SessionState& session_state,
+//                                         const std::vector<std::string>& output_names,
+//                                         std::vector<MLValue>& fetches,
+//                                         std::vector<MLValue>& new_fetches);
+//
+//common::Status CopyOutputsAcrossDevices(const SessionState& session_state,
+//                                        std::vector<MLValue>& fetches,
+//                                        std::vector<MLValue>& user_fetches,
+//                                        bool* needed_copy = nullptr);
 
-common::Status MatchOutputsWithProviders(const SessionState& session_state,
-                                         const std::vector<std::string>& output_names,
-                                         std::vector<MLValue>& fetches,
-                                         std::vector<MLValue>& new_fetches);
+enum class DeviceCopyCheck {
+  Skip,  // skip checking if a copy is needed
+  Check  // check if a copy is needed
+};
 
-common::Status CopyOutputsAcrossDevices(const SessionState& session_state,
-                                        std::vector<MLValue>& fetches,
-                                        std::vector<MLValue>& user_fetches);
+struct DeviceCopyChecks {
+  DeviceCopyCheck check_input_copy_needed = DeviceCopyCheck::Check;
+  DeviceCopyCheck check_output_copy_needed = DeviceCopyCheck::Check;
+  // vectors containing information about individual feeds and fetches that need copying.
+  // if you change the order of the feeds or fetches across calls to ExecuteGraph this will become invalid.
+  std::vector<bool> input_copy_needed;
+  std::vector<bool> output_copy_needed;
+};
+
+common::Status MapGraphInputsToMLValueIdxs(const InputDefList& graph_inputs_including_initializers,
+                                           const MLValueNameIdxMap& mlvalue_name_idx_map,
+                                           std::vector<int>& graph_inputs_to_mlvalue_idxs);
+
+// convert an NameMLValMap to a vector of MLValue instances that match the order of GraphProto.inputs()
+void VectorizeGraphInputs(const NameMLValMap& feeds, const InputDefList& graph_inputs_including_initializers,
+                          std::vector<const MLValue*>& vectorized_feeds);
 
 common::Status ExecuteGraph(const SessionState& session_state,
                             const NameMLValMap& feeds,
@@ -64,7 +89,8 @@ common::Status ExecuteGraph(const SessionState& session_state,
                             const std::unordered_map<size_t, IExecutor::CustomAllocator>& fetch_allocators,
                             bool sequential_execution,
                             const bool& terminate_flag,
-                            const logging::Logger& logger);
+                            const logging::Logger& logger,
+                            DeviceCopyChecks& device_copy_checks);
 
 #define DispatchOnTensorType(tensor_type, function, ...)      \
   if (tensor_type == DataTypeImpl::GetType<float>())          \

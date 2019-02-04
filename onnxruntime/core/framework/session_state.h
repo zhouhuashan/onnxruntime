@@ -48,15 +48,15 @@ class SessionState {
   }
 
   // Graph viewer.
-  void SetGraphViewer(std::unique_ptr<onnxruntime::GraphViewer> graph_viewer);
-  const onnxruntime::GraphViewer* GetGraphViewer() const;
+  void SetGraphViewer(std::unique_ptr<GraphViewer> graph_viewer);
+  const GraphViewer* GetGraphViewer() const;
 
   // kernels
   // Get kernel for specified node.
   // It should called right before graph execution only.
-  const OpKernel* GetKernel(onnxruntime::NodeIndex node_id) const;
+  const OpKernel* GetKernel(NodeIndex node_id) const;
 
-  void AddKernel(onnxruntime::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel);
+  void AddKernel(NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel);
 
   const ExecutionProviders& GetExecutionProviders() const noexcept { return execution_providers_; }
 
@@ -170,13 +170,16 @@ class SessionState {
   void CalculateNodeIndexInfo();
   const NodeIndexInfo& GetNodeIndexInfo() const;
 
+  Status CalculateGraphInputMLValueIndexes();
+  const std::vector<int>& GraphInputMLValueIndexes() const { return graph_input_mlvalue_indexes_; }
+
  private:
   ORT_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(SessionState);
 
   // cache of the constructed kernels to avoid spending construction
   // time per executor
-  std::unordered_map<onnxruntime::NodeIndex, std::unique_ptr<OpKernel>> session_kernels_;
-  std::unique_ptr<onnxruntime::GraphViewer> graph_viewer_;
+  std::unordered_map<NodeIndex, std::unique_ptr<OpKernel>> session_kernels_;
+  std::unique_ptr<GraphViewer> graph_viewer_;
 
   const ExecutionProviders& execution_providers_;  // owned by InferenceSession
   MLValueNameIdxMap mlvalue_name_idx_map_;
@@ -201,7 +204,7 @@ class SessionState {
   // subgraph SessionState. entry for node containing subgraph, with value containing attribute:SessionState pair
   // as a node may contain multiple subgraphs (e.g. 'If' has one for both the 'then' and 'else' branches).
   using SubgraphSessionStateMap =
-      std::unordered_map<onnxruntime::NodeIndex,
+      std::unordered_map<NodeIndex,
                          std::unordered_map<std::string, gsl::not_null<const SessionState*>>>;
   SubgraphSessionStateMap subgraph_session_states_;
 
@@ -215,5 +218,9 @@ class SessionState {
   FuncManager fused_funcs_mgr_;
 
   std::unique_ptr<NodeIndexInfo> node_index_info_;
+
+  // vector of the MLValue indexes for the graph inputs, in the same order as GraphProto.input()
+  std::vector<int> graph_input_mlvalue_indexes_;
 };
+
 }  // namespace onnxruntime
