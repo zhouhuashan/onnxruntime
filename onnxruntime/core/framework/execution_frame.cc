@@ -291,7 +291,7 @@ Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
 }
 
 void ExecutionFrame::Init(const std::unordered_map<std::string, MLValue>& feeds,
-                          const std::vector<std::string>& output_names,
+                          const std::vector<int>& output_mlvalue_idxs,
                           const std::vector<MLValue>& fetches,
                           const std::unordered_map<size_t, IExecutor::CustomAllocator>& fetch_allocators) {
   auto& mlvalue_idx_map = session_state_.GetMLValueNameIdxMap();

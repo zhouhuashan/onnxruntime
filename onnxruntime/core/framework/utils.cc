@@ -91,38 +91,95 @@ const std::string& GetNodeInputProviderType(const SessionState::NodeInfo& info) 
   return required_provider_type;
 }
 
-common::Status MapGraphInputsToMLValueIdxs(const InputDefList& graph_inputs_including_initializers,
-                                           const MLValueNameIdxMap& mlvalue_name_idx_map,
-                                           std::vector<int>& graph_inputs_to_mlvalue_idxs) {
+//static common::Status MapGraphInputsToMLValueIdxs(const InputDefList& graph_inputs_including_initializers,
+//                                                  const MLValueNameIdxMap& mlvalue_name_idx_map,
+//                                                  std::vector<FeedsFetchesOrder::EntryInfo>& graph_inputs_to_mlvalue_idxs) {
+//  auto status = Status::OK();
+//
+//  graph_inputs_to_mlvalue_idxs.reserve(graph_inputs_including_initializers.size());
+//
+//  for (const auto& graph_input : graph_inputs_including_initializers) {
+//    int idx;
+//    status = mlvalue_name_idx_map.GetIdx(graph_input->Name(), idx);
+//    ORT_RETURN_IF_ERROR(status);
+//
+//    graph_inputs_to_mlvalue_idxs.push_back({graph_input->Name(), idx});
+//  }
+//
+//  return status;
+//}
+
+//void VectorizeFeeds(const NameMLValMap& feeds, const InputDefList& graph_inputs_including_initializers,
+//                    std::vector<const MLValue*>& vectorized_feeds) {
+//  vectorized_feeds.resize(graph_inputs_including_initializers.size(), nullptr);
+//
+//  int idx = 0;
+//  auto feeds_end = feeds.cend();
+//  for (const auto& input : graph_inputs_including_initializers) {
+//    auto input_in_feeds = feeds.find(input->Name());
+//    if (input_in_feeds != feeds_end) {
+//      vectorized_feeds[idx] = &input_in_feeds->second;
+//    }
+//
+//    ++idx;
+//  }
+//}
+
+//common::Status MapOutputsToMLValueIdxs(const std::vector<std::string>& output_names,
+//                                       const MLValueNameIdxMap& mlvalue_name_idx_map,
+//                                       std::vector<FeedsFetchesOrder::EntryInfo>& outputs_to_mlvalue_idxs) {
+//  auto status = Status::OK();
+//
+//  outputs_to_mlvalue_idxs.reserve(output_names.size());
+//
+//  for (const auto& output : output_names) {
+//    int idx;
+//    status = mlvalue_name_idx_map.GetIdx(output, idx);
+//    ORT_RETURN_IF_ERROR(status);
+//
+//    outputs_to_mlvalue_idxs.push_back({output, idx});
+//  }
+//
+//  return status;
+//}
+
+static common::Status MapNamesToMLValueIdxs(const std::vector<std::string>& names,
+                                            const MLValueNameIdxMap& mlvalue_name_idx_map,
+                                            std::vector<int>& mlvalue_idxs) {
   auto status = Status::OK();
 
-  graph_inputs_to_mlvalue_idxs.resize(graph_inputs_including_initializers.size());
+  mlvalue_idxs.reserve(names.size());
 
-  int idx = 0;
-  for (const auto& graph_input : graph_inputs_including_initializers) {
-    status = mlvalue_name_idx_map.GetIdx(graph_input->Name(), idx);
+  for (const auto& name : names) {
+    int idx;
+    status = mlvalue_name_idx_map.GetIdx(name, idx);
     ORT_RETURN_IF_ERROR(status);
 
-    graph_inputs_to_mlvalue_idxs[idx++] = idx;
+    mlvalue_idxs.push_back(idx);
   }
 
   return status;
 }
 
-void VectorizeGraphInputs(const NameMLValMap& feeds, const InputDefList& graph_inputs_including_initializers,
-                          std::vector<const MLValue*>& vectorized_feeds) {
-  vectorized_feeds.resize(graph_inputs_including_initializers.size(), nullptr);
+Status FeedsFetchesOrder::Create(const std::vector<std::string> feed_names,
+                                 const std::vector<std::string>& fetch_names,
+                                 const MLValueNameIdxMap& mlvalue_name_idx_map,
+                                 std::unique_ptr<FeedsFetchesOrder>& feed_fetch_order) {
+  feed_fetch_order = std::make_unique<FeedsFetchesOrder>();
 
-  int idx = 0;
-  auto feeds_end = feeds.cend();
-  for (const auto& input : graph_inputs_including_initializers) {
-    auto input_in_feeds = feeds.find(input->Name());
-    if (input_in_feeds != feeds_end) {
-      vectorized_feeds[idx] = &input_in_feeds->second;
-    }
+  auto status = MapNamesToMLValueIdxs(feed_names,
+                                      mlvalue_name_idx_map,
+                                      feed_fetch_order->feeds_mlvalue_idxs_);
+  ORT_RETURN_IF_ERROR(status);
 
-    ++idx;
-  }
+  status = MapNamesToMLValueIdxs(fetch_names, mlvalue_name_idx_map, feed_fetch_order->fetches_mlvalue_idxs_);
+
+  return status;
+}
+
+static Status NoCopy(const MLValue& orig_value, MLValue& new_value) {
+  new_value = orig_value;
+  return Status::OK();
 }
 
 // TODO should we handle the case of one input name feeding 2 nodes placed on different devices?
@@ -130,8 +187,9 @@ common::Status CopyOneInputAcrossDevices(const SessionState& session_state,
                                          const std::string& input_name,
                                          const MLValue& orig_mlvalue,
                                          MLValue& new_mlvalue,
-                                         bool& needed_copy) {
-  bool copied = false;
+                                         bool& needed_copy,
+                                         std::vector<std::function<Status(const MLValue&, MLValue&)>>* copiers) {
+  needed_copy = false;
 
   //TODO: make it configurable
   const int target_device_id = 0;
@@ -191,55 +249,81 @@ common::Status CopyOneInputAcrossDevices(const SessionState& session_state,
 
     auto* required_provider = exec_providers.Get(required_provider_type);
     ORT_ENFORCE(required_provider);
-    ORT_RETURN_IF_ERROR(utils::AllocateHelper(*required_provider, target_device_id, input_tensor, new_mlvalue));
+    auto copier = [&required_provider_type,
+                   &required_provider,
+                   &p_input_provider,
+                   &target_device_id](const MLValue& feed_value, MLValue& new_value) {
+      const auto& feed_tensor = feed_value.Get<Tensor>();
+      ORT_RETURN_IF_ERROR(utils::AllocateHelper(*required_provider, target_device_id, feed_tensor, new_value));
+      auto* new_tensor = new_value.GetMutable<Tensor>();
 
-    auto* new_tensor = new_mlvalue.GetMutable<Tensor>();
+      if (required_provider_type != onnxruntime::kCpuExecutionProvider) {
+        ORT_RETURN_IF_ERROR(required_provider->CopyTensor(feed_tensor, *new_tensor));
+      } else {
+        ORT_RETURN_IF_ERROR(p_input_provider->CopyTensor(feed_tensor, *new_tensor));
+      }
+    };
 
-    copied = true;
+    // ORT_RETURN_IF_ERROR(utils::AllocateHelper(*required_provider, target_device_id, input_tensor, new_mlvalue));
+    // auto* new_tensor = new_mlvalue.GetMutable<Tensor>();
 
     // our CPU exec provider doesn't support copy from GPU->CPU
-    if (required_provider_type != onnxruntime::kCpuExecutionProvider) {
-      ORT_RETURN_IF_ERROR(required_provider->CopyTensor(input_tensor, *new_tensor));
-    } else {
-      ORT_RETURN_IF_ERROR(p_input_provider->CopyTensor(input_tensor, *new_tensor));
-    }
+    //if (required_provider_type != onnxruntime::kCpuExecutionProvider) {
+    //  ORT_RETURN_IF_ERROR(required_provider->CopyTensor(input_tensor, *new_tensor));
+    //} else {
+    //  ORT_RETURN_IF_ERROR(p_input_provider->CopyTensor(input_tensor, *new_tensor));
+    //}
+
+    ORT_RETURN_IF_ERROR(copier(orig_mlvalue, new_mlvalue));
+
+    if (copiers)
+      copiers->push_back(std::move(copier));
+
+    needed_copy = true;
 
     // } loop of node_info_vec
   } while (false);
 
-  needed_copy = copied;
+  if (!needed_copy && copiers)
+    copiers->push_back(NoCopy);
 
   return Status::OK();
 }
 
 // copies inputs across devices only if required
 static common::Status CopyInputsAcrossDevices(const SessionState& session_state,
-                                              const NameMLValMap& orig_feeds,
-                                              NameMLValMap& new_feeds,
+                                              //const NameMLValMap& orig_feeds,
+                                              // NameMLValMap& new_feeds,
+                                              const std::vector<std::string>& feed_names,
+                                              std::vector<MLValue> orig_feeds,
+                                              std::vector<MLValue> new_feeds,
                                               bool& needed_copy,
-                                              std::vector<bool>& feeds_needing_copy) {
+                                              std::vector<std::function<Status(const MLValue&, MLValue&)>>& copiers) {
   bool copied = false;
+  size_t num_feeds = orig_feeds.size();
+  ORT_ENFORCE(feed_names.size() == num_feeds);
 
-  if (feeds_needing_copy.size() == orig_feeds.size()) {
+  new_feeds.resize(num_feeds);
+
+  if (!copiers.empty()) {
+    ORT_ENFORCE(num_feeds == copiers.size());
+    needed_copy = true;
+
     // use cached info
+    for (size_t idx = 0; idx < num_feeds; ++idx) {
+      ORT_RETURN_IF_ERROR(copiers[idx](orig_feeds[idx], new_feeds[idx]));
+    }
+
+  } else {
+    for (size_t idx = 0; idx < num_feeds; ++idx) {
+      bool copied_this_input = false;
+      ORT_RETURN_IF_ERROR(CopyOneInputAcrossDevices(session_state, feed_names[idx], orig_feeds[idx], new_feeds[idx],
+                                                    copied_this_input, &copiers));
+      copied = copied || copied_this_input;
+    }
+
+    needed_copy = copied;
   }
-
-  feeds_needing_copy.clear();
-  feeds_needing_copy.reserve(orig_feeds.size());
-
-  for (auto& pair : orig_feeds) {
-    MLValue new_mlvalue;
-    auto& input_name = pair.first;
-    auto& orig_mlvalue = pair.second;
-    bool copied_this_input = false;
-    ORT_RETURN_IF_ERROR(CopyOneInputAcrossDevices(session_state, input_name, orig_mlvalue, new_mlvalue,
-                                                  copied_this_input));
-    new_feeds[input_name] = new_mlvalue;
-    feeds_needing_copy.push_back(copied_this_input);
-    copied = copied || copied_this_input;
-  }
-
-  needed_copy = copied;
 
   return Status::OK();
 }
@@ -270,8 +354,19 @@ static common::Status MatchOutputsWithProviders(const SessionState& session_stat
   auto p_graph = session_state.GetGraphViewer();
   ORT_ENFORCE(p_graph);
 
+  std::vector<const Node*> leaf_nodes;
+
+  for (auto& node : p_graph->Nodes()) {
+    if (node.OutputNodesBegin() == node.OutputNodesEnd()) {
+      // This is a leaf node (without any output node).
+      leaf_nodes.push_back(&node);
+    }
+  }
+
   std::pair<bool, size_t> found;
-  for (auto& node : p_graph->Nodes()) {  // TODO optimize this
+  //  for (auto& node : p_graph->Nodes()) {  // TODO optimize this
+  for (auto* p_node : leaf_nodes) {
+    auto& node = *p_node;
     if (seen_outputs.size() == fetches.size()) {
       break;
     }
@@ -311,6 +406,7 @@ static common::Status MatchOutputsWithProviders(const SessionState& session_stat
         continue;
 
       } else {
+        // TODO this seems unnecessary. if fetches[idx] wasn't allocated, is there any point copying it to new_fetches[idx]?
         new_fetches[idx] = fetches[idx];
         continue;
       }
@@ -396,6 +492,17 @@ common::Status ExecuteGraph(const SessionState& session_state,
                             const bool& terminate_flag,
                             const logging::Logger& logger,
                             DeviceCopyChecks& device_copy_checks) {
+}
+
+common::Status ExecuteGraph(const SessionState& session_state,
+                            const std::vector<MLValue>& feeds,
+                            const std::vector<int>& output_mlvalue_idx,
+                            std::vector<MLValue>& fetches,
+                            const std::unordered_map<size_t, IExecutor::CustomAllocator>& fetch_allocators,
+                            bool sequential_execution,
+                            const bool& terminate_flag,
+                            const logging::Logger& logger,
+                            DeviceCopyChecks& device_copy_checks) {
   std::unique_ptr<IExecutor> p_exec;
 
   if (sequential_execution) {
@@ -407,6 +514,8 @@ common::Status ExecuteGraph(const SessionState& session_state,
   // If we know we don't need to check both inputs and outputs for copies, we can just execute.
   // If we only have one provider it's the CPU provider as that is always automatically registered, and if that's the
   // case we can also assume no copy to/from other devices is required.
+  // TODO: When the different execution providers can share a single CPU Allocator we should be able to easily handle
+  // checking if all execution providers are CPU based and skip the copy in that case
   if ((device_copy_checks.check_input_copy_needed == DeviceCopyCheck::Skip &&
        device_copy_checks.check_output_copy_needed == DeviceCopyCheck::Skip) /*||
       session_state.GetExecutionProviders().NumProviders() == 1*/

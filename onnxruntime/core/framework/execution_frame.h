@@ -45,6 +45,13 @@ class ExecutionFrame {
                  const std::unordered_map<size_t, IExecutor::CustomAllocator>& fetch_allocators,
                  const SessionState& session_state);
 
+  ExecutionFrame(const utils::FeedsFetchesOrder& feeds_fetches_order,
+                 const std::vector<MLValue>& feeds,
+                 const std::vector<MLValue>& fetches,
+                 // optional custom allocators. key is index in fetches
+                 const std::unordered_map<size_t, IExecutor::CustomAllocator>& fetch_allocators,
+                 const SessionState& session_state);
+
   ~ExecutionFrame();
 
   // TODO: These two AllocateMLValue... methods are in the API purely for unit test usage.
