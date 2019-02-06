@@ -18,8 +18,7 @@ common::Status IOBinding::BindInput(const std::string& name, const MLValue& ml_v
   }
 
   MLValue new_mlvalue;
-  bool copied_input = false;  // ignored. set to true if an actual copy to a different device was required
-  ORT_RETURN_IF_ERROR(utils::CopyOneInputAcrossDevices(session_state_, name, ml_value, new_mlvalue, copied_input));
+  ORT_RETURN_IF_ERROR(utils::CopyOneInputAcrossDevices(session_state_, name, ml_value, new_mlvalue));
   feeds_[name] = new_mlvalue;
   return Status::OK();
 }

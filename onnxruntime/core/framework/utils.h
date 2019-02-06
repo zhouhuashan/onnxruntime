@@ -100,25 +100,17 @@ class FeedsFetchesManager {
   std::vector<MLValueCopyFunc> fetches_device_copiers_;
 };
 
+// ExecuteGraph, using FeedsFetchesManager to optimize feed and fetch usage across invocations when the
+// order and location of the feeds and fetches is unchanged.
 common::Status ExecuteGraph(const SessionState& session_state,
-                            const NameMLValMap& feeds,
-                            const std::vector<std::string>& output_names,
+                            FeedsFetchesManager& feeds_fetches_manager,
+                            const std::vector<MLValue>& feeds,
                             std::vector<MLValue>& fetches,
                             const std::unordered_map<size_t, IExecutor::CustomAllocator>& fetch_allocators,
                             bool sequential_execution,
                             const bool& terminate_flag,
                             const logging::Logger& logger,
-                            DeviceCopyChecks& device_copy_checks);
-
-common::Status ExecuteGraph(const SessionState& session_state,
-                            const std::vector<MLValue*>& feeds,
-                            const std::vector<int>& output_mlvalue_idx,
-                            std::vector<MLValue>& fetches,
-                            const std::unordered_map<size_t, IExecutor::CustomAllocator>& fetch_allocators,
-                            bool sequential_execution,
-                            const bool& terminate_flag,
-                            const logging::Logger& logger,
-                            DeviceCopyChecks& device_copy_checks);
+                            bool cache_copy_info = true);
 
 #define DispatchOnTensorType(tensor_type, function, ...)      \
   if (tensor_type == DataTypeImpl::GetType<float>())          \

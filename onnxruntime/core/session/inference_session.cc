@@ -580,14 +580,22 @@ class InferenceSession::Impl {
         ORT_CHECK_AND_SET_RETVAL(xp->OnRunStart());
       }
 
-      // TODO: Can we assume that the same device copy behaviour will apply to all Run calls? If so, we should
-      // store this in the session state and re-use it for subsequent calls to Execute.
-      utils::DeviceCopyChecks device_copy_checks = {};
+      // TODO: Provide a way to re-use FeedsFetchesManager info across Run calls.
+      // Could store in SessionState and re-use based on a new flag to Run. Could also skip the input/output validation
+      // if found and the flag is true.
+      std::unique_ptr<utils::FeedsFetchesManager> ffm;
+      auto status = utils::FeedsFetchesManager::Create(feeds, output_names, session_state_.GetMLValueNameIdxMap(), ffm);
+      ORT_RETURN_IF_ERROR(status);
+
+      std::vector<MLValue> vector_feeds;
+      vector_feeds.reserve(feeds.size());
+      std::transform(feeds.cbegin(), feeds.cend(), std::back_inserter(vector_feeds),
+                     [](const std::pair<std::string, MLValue>& pair) { return pair.second; });
 
       ORT_CHECK_AND_SET_RETVAL(
-          utils::ExecuteGraph(session_state_, feeds, output_names, *p_fetches, {},
-                              session_options_.enable_sequential_execution, run_options.terminate, run_logger,
-                              device_copy_checks));
+          utils::ExecuteGraph(session_state_, *ffm, vector_feeds, *p_fetches, {},
+                              session_options_.enable_sequential_execution, run_options.terminate, run_logger));
+
     } catch (const std::exception& e) {
       retval = Status(common::ONNXRUNTIME, common::FAIL, e.what());
     } catch (...) {

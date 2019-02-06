@@ -224,13 +224,4 @@ const NodeIndexInfo& SessionState::GetNodeIndexInfo() const {
   return *node_index_info_;
 }
 
-Status SessionState::CalculateGraphInputMLValueIndexes() {
-  ORT_ENFORCE(graph_viewer_, "SetGraphViewer should have been called previously.");
-
-  auto& graph_inputs = graph_viewer_->GetInputsIncludingInitializers();
-
-  auto status = utils::MapGraphInputsToMLValueIdxs(graph_inputs, mlvalue_name_idx_map_, graph_input_mlvalue_indexes_);
-  return status;
-}
-
 }  // namespace onnxruntime
