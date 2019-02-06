@@ -18,6 +18,13 @@ class SequentialExecutor : public IExecutor {
  public:
   SequentialExecutor(const bool& terminate_flag = false) : terminate_flag_{terminate_flag} {}
 
+  //common::Status Execute(const SessionState& session_state,
+  //                       const NameMLValMap& feeds,
+  //                       const std::vector<std::string>& output_names,
+  //                       std::vector<MLValue>& fetches,
+  //                       const std::unordered_map<size_t, CustomAllocator> fetch_allocators,
+  //                       const logging::Logger& logger) override;
+
   common::Status Execute(const SessionState& session_state,
                          const NameMLValMap& feeds,
                          const std::vector<std::string>& output_names,
