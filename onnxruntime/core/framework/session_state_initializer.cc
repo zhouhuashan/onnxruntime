@@ -103,8 +103,6 @@ common::Status SessionStateInitializer::CreatePlan(const std::vector<NodeArg*>& 
 
   session_state_.SetGraphViewer(std::move(graph_viewer));
 
-  ORT_RETURN_IF_ERROR(session_state_.CalculateGraphInputMLValueIndexes());
-
   return Status::OK();
 }
 

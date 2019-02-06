@@ -58,6 +58,9 @@ struct DeviceCopyChecks {
 };
 
 struct FeedsFetchesInfo {
+  // set the mlvalue_idxs for the current values in feed_names and output_names
+  Status SetMLValueIdxs(const MLValueNameIdxMap& mlvalue_name_idx_map);
+
   std::vector<std::string> feed_names;
   std::vector<std::string> output_names;
 
@@ -79,6 +82,8 @@ class FeedsFetchesManager {
                        const MLValueNameIdxMap& mlvalue_name_idx_map,
                        std::unique_ptr<FeedsFetchesManager>& feed_fetch_order);
 
+  FeedsFetchesManager(FeedsFetchesInfo&& info) : feeds_fetches_info_{info} {}
+
   const FeedsFetchesInfo& GetFeedsFetchesInfo() const { return feeds_fetches_info_; }
 
   std::vector<MLValueCopyFunc>& GetFeedsDeviceCopiers() { return feeds_device_copiers_; }
@@ -89,8 +94,6 @@ class FeedsFetchesManager {
   void SetDeviceCopyChecks(DeviceCopyChecks checks) { device_copy_checks_ = checks; }
 
  private:
-  FeedsFetchesManager(FeedsFetchesInfo&& info) : feeds_fetches_info_{info} {}
-
   DeviceCopyChecks device_copy_checks_ = {};
 
   FeedsFetchesInfo feeds_fetches_info_;

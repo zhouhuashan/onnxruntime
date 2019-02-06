@@ -120,7 +120,6 @@ Status IterateSequence(OpKernelContextInternal& context,
                 "num_variadic_inputs matched the subgraph inputs or required inputs.");
   }
 
-  // NameMLValMap feeds;
   std::vector<std::string> feed_names;
   std::vector<MLValue> feeds;
   std::vector<MLValue> fetches;
@@ -148,11 +147,9 @@ Status IterateSequence(OpKernelContextInternal& context,
     ++i;
   }
 
-  std::unique_ptr<utils::FeedsFetchesManager> ffm;
-  // TODO: Use flat vector of feeds so need vector of feed names that matches
-  auto status = utils::FeedsFetchesManager::Create(feed_names, subgraph_output_names,
-                                                   session_state.GetMLValueNameIdxMap(), ffm);
-  ORT_RETURN_IF_ERROR(status);
+  utils::FeedsFetchesInfo ffi{feed_names, subgraph_output_names};
+  ORT_RETURN_IF_ERROR(ffi.SetMLValueIdxs(session_state.GetMLValueNameIdxMap()));
+  utils::FeedsFetchesManager ffm{std::move(ffi)};
 
   int64_t seq_no = 0;
   for (; seq_no < seq_length; ++seq_no) {
@@ -197,7 +194,7 @@ Status IterateSequence(OpKernelContextInternal& context,
     }
 
     // Create Executor and run graph.
-    status = utils::ExecuteGraph(session_state, *ffm, feeds, fetches, fetch_allocators,
+    status = utils::ExecuteGraph(session_state, ffm, feeds, fetches, fetch_allocators,
                                  /*sequential_execution*/ true, context.GetTerminateFlag(), context.Logger());
     ORT_RETURN_IF_ERROR(status);
 

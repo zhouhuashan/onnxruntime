@@ -170,9 +170,6 @@ class SessionState {
   void CalculateNodeIndexInfo();
   const NodeIndexInfo& GetNodeIndexInfo() const;
 
-  Status CalculateGraphInputMLValueIndexes();
-  const std::vector<int>& GraphInputMLValueIndexes() const { return graph_input_mlvalue_indexes_; }
-
  private:
   ORT_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(SessionState);
 
@@ -218,9 +215,6 @@ class SessionState {
   FuncManager fused_funcs_mgr_;
 
   std::unique_ptr<NodeIndexInfo> node_index_info_;
-
-  // vector of the MLValue indexes for the graph inputs, in the same order as GraphProto.input()
-  std::vector<int> graph_input_mlvalue_indexes_;
 };
 
 }  // namespace onnxruntime

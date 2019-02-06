@@ -109,18 +109,22 @@ static common::Status MapNamesToMLValueIdxs(const std::vector<std::string>& name
   return status;
 }
 
-Status SetupFeedsFetchesInfo(std::function<void(std::vector<std::string>& feed_names)> feed_name_populator,
-                             const std::vector<std::string>& output_names,
-                             const MLValueNameIdxMap& mlvalue_name_idx_map,
-                             FeedsFetchesInfo& info) {
+Status FeedsFetchesInfo::SetMLValueIdxs(const MLValueNameIdxMap& mlvalue_name_idx_map) {
+  auto status = MapNamesToMLValueIdxs(feed_names, mlvalue_name_idx_map, feeds_mlvalue_idxs);
+  ORT_RETURN_IF_ERROR(status);
+
+  status = MapNamesToMLValueIdxs(output_names, mlvalue_name_idx_map, fetches_mlvalue_idxs);
+  return status;
+}
+
+static Status SetupFeedsFetchesInfo(std::function<void(std::vector<std::string>& feed_names)> feed_name_populator,
+                                    const std::vector<std::string>& output_names,
+                                    const MLValueNameIdxMap& mlvalue_name_idx_map,
+                                    FeedsFetchesInfo& info) {
   feed_name_populator(info.feed_names);
   info.output_names = output_names;
 
-  auto status = MapNamesToMLValueIdxs(info.feed_names, mlvalue_name_idx_map, info.feeds_mlvalue_idxs);
-  ORT_RETURN_IF_ERROR(status);
-
-  status = MapNamesToMLValueIdxs(output_names, mlvalue_name_idx_map, info.fetches_mlvalue_idxs);
-  return status;
+  return info.SetMLValueIdxs(mlvalue_name_idx_map);
 }
 
 Status FeedsFetchesManager::Create(const std::vector<std::string>& feed_names,
@@ -137,6 +141,7 @@ Status FeedsFetchesManager::Create(const std::vector<std::string>& feed_names,
       output_names, mlvalue_name_idx_map, info));
 
   // can't use std::make_unique to call a private ctor
+  // FIXME!
   feed_fetch_order = std::unique_ptr<FeedsFetchesManager>(new FeedsFetchesManager(std::move(info)));
 
   return Status::OK();
