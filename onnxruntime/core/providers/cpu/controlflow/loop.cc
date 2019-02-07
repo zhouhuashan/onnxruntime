@@ -318,9 +318,9 @@ Status LoopImpl::Execute() {
 
   // FeedsFetchesManager will minimized name lookups and copy logic on each subsequent execution of the graph,
   // based on what is required during the first execution
-  utils::FeedsFetchesInfo ffi{feed_names, subgraph_output_names_};
+  FeedsFetchesInfo ffi{feed_names, subgraph_output_names_};
   ORT_RETURN_IF_ERROR(ffi.SetMLValueIdxs(session_state_.GetMLValueNameIdxMap()));
-  utils::FeedsFetchesManager ffm{std::move(ffi)};
+  FeedsFetchesManager ffm{std::move(ffi)};
 
   while (iter_num_value < max_trip_count_ && *condition_mlvalue_.GetMutable<Tensor>()->MutableData<bool>()) {
     if (iter_num_value != 0) {
@@ -332,7 +332,8 @@ Status LoopImpl::Execute() {
     // there will be to allocate loop outputs upfront. due to that we can't use a custom fetch allocator
     // for any outputs
     status = utils::ExecuteGraph(session_state_, ffm, feeds, fetches, {},
-                                 /*sequential_execution*/ true, context_.GetTerminateFlag(), context_.Logger());
+                                 /*sequential_execution*/ true, context_.GetTerminateFlag(), context_.Logger(),
+                                 /*cache_copy_info*/ true);
     ORT_RETURN_IF_ERROR(status);
 
     condition_mlvalue_ = fetches[0];

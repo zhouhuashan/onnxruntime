@@ -174,7 +174,7 @@ Status IfImpl::Execute() {
   Status status = Status::OK();
 
   // we setup the FeedsFetchesInfo manually here as we need to skip implicit inputs that aren't in this subgraph
-  utils::FeedsFetchesInfo ffi;
+  FeedsFetchesInfo ffi;
   std::vector<MLValue> feeds;
 
   auto num_inputs = implicit_inputs_.size();
@@ -238,9 +238,10 @@ Status IfImpl::Execute() {
     }
   }
 
-  utils::FeedsFetchesManager ffm(std::move(ffi));
+  FeedsFetchesManager ffm(std::move(ffi));
   status = utils::ExecuteGraph(session_state_, ffm, feeds, fetches, fetch_allocators,
-                               /*sequential_execution*/ true, context_.GetTerminateFlag(), context_.Logger());
+                               /*sequential_execution*/ true, context_.GetTerminateFlag(), context_.Logger(),
+                               /*cache_copy_info*/ false);  // we're only executing the subgraph once so no point caching
 
   ORT_RETURN_IF_ERROR(status);
 

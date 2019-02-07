@@ -147,9 +147,9 @@ Status IterateSequence(OpKernelContextInternal& context,
     ++i;
   }
 
-  utils::FeedsFetchesInfo ffi{feed_names, subgraph_output_names};
+  FeedsFetchesInfo ffi{feed_names, subgraph_output_names};
   ORT_RETURN_IF_ERROR(ffi.SetMLValueIdxs(session_state.GetMLValueNameIdxMap()));
-  utils::FeedsFetchesManager ffm{std::move(ffi)};
+  FeedsFetchesManager ffm{std::move(ffi)};
 
   int64_t seq_no = 0;
   for (; seq_no < seq_length; ++seq_no) {
@@ -195,7 +195,8 @@ Status IterateSequence(OpKernelContextInternal& context,
 
     // Create Executor and run graph.
     status = utils::ExecuteGraph(session_state, ffm, feeds, fetches, fetch_allocators,
-                                 /*sequential_execution*/ true, context.GetTerminateFlag(), context.Logger());
+                                 /*sequential_execution*/ true, context.GetTerminateFlag(), context.Logger(),
+                                 /*cache_copy_info*/ true);
     ORT_RETURN_IF_ERROR(status);
 
     // cycle the LoopStateVariable input/output in preparation for the next iteration

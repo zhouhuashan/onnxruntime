@@ -12,6 +12,7 @@
 
 namespace onnxruntime {
 class ExecutionProviders;
+class FeedsFetchesManager;
 class Graph;
 class KernelDef;
 class KernelRegistryManager;
@@ -43,65 +44,6 @@ common::Status CopyOneInputAcrossDevices(const SessionState& session_state,
                                          const std::string& input_name,
                                          const MLValue& orig_mlvalue,
                                          MLValue& new_mlvalue);
-
-enum class DeviceCopyCheck {
-  Check,
-  NoCopy,
-  Copy
-};
-
-struct DeviceCopyChecks {
-  DeviceCopyCheck status = DeviceCopyCheck::Check;
-  DeviceCopyCheck input_copy_needed = DeviceCopyCheck::Check;
-  DeviceCopyCheck copy_fetch_for_execution_needed = DeviceCopyCheck::Check;
-  DeviceCopyCheck output_copy_needed = DeviceCopyCheck::Check;
-};
-
-struct FeedsFetchesInfo {
-  // set the mlvalue_idxs for the current values in feed_names and output_names
-  Status SetMLValueIdxs(const MLValueNameIdxMap& mlvalue_name_idx_map);
-
-  std::vector<std::string> feed_names;
-  std::vector<std::string> output_names;
-
-  std::vector<int> feeds_mlvalue_idxs;
-  std::vector<int> fetches_mlvalue_idxs;
-};
-
-class FeedsFetchesManager {
- public:
-  using MLValueCopyFunc = std::function<Status(const MLValue&, MLValue&)>;
-
-  static Status Create(const std::vector<std::string>& feed_names,
-                       const std::vector<std::string>& output_names,
-                       const MLValueNameIdxMap& mlvalue_name_idx_map,
-                       std::unique_ptr<FeedsFetchesManager>& feed_fetch_order);
-
-  static Status Create(const std::unordered_map<std::string, MLValue>& feeds,
-                       const std::vector<std::string>& output_names,
-                       const MLValueNameIdxMap& mlvalue_name_idx_map,
-                       std::unique_ptr<FeedsFetchesManager>& feed_fetch_order);
-
-  FeedsFetchesManager(FeedsFetchesInfo&& info) : feeds_fetches_info_{info} {}
-
-  const FeedsFetchesInfo& GetFeedsFetchesInfo() const { return feeds_fetches_info_; }
-
-  std::vector<MLValueCopyFunc>& GetFeedsDeviceCopiers() { return feeds_device_copiers_; }
-  std::vector<bool>& GetCanUseFetchDuringExecutionFlags() { return can_use_fetch_during_execution_flags_; }
-  std::vector<MLValueCopyFunc>& GetFetchesDeviceCopiers() { return fetches_device_copiers_; }
-
-  DeviceCopyChecks GetDeviceCopyChecks() const { return device_copy_checks_; }
-  void SetDeviceCopyChecks(DeviceCopyChecks checks) { device_copy_checks_ = checks; }
-
- private:
-  DeviceCopyChecks device_copy_checks_ = {};
-
-  FeedsFetchesInfo feeds_fetches_info_;
-
-  std::vector<MLValueCopyFunc> feeds_device_copiers_;
-  std::vector<bool> can_use_fetch_during_execution_flags_;
-  std::vector<MLValueCopyFunc> fetches_device_copiers_;
-};
 
 // ExecuteGraph, using FeedsFetchesManager to optimize feed and fetch usage across invocations when the
 // order and location of the feeds and fetches is unchanged.

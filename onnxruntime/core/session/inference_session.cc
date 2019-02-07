@@ -24,6 +24,7 @@
 #include "core/framework/customregistry.h"
 #include "core/framework/environment.h"
 #include "core/framework/execution_frame.h"
+#include "core/framework/feeds_fetches_manager.h"
 #include "core/framework/graph_partitioner.h"
 #include "core/framework/insert_cast_transformer.h"
 #include "core/framework/kernel_def_builder.h"
@@ -399,13 +400,6 @@ class InferenceSession::Impl {
     return current_num_runs_.load();
   }
 
-  common::Status Run(const NameMLValMap& feeds,
-                     const std::vector<std::string>& output_names,
-                     std::vector<MLValue>* p_fetches) {
-    RunOptions run_options;
-    return Run(run_options, feeds, output_names, p_fetches);
-  }
-
   static common::Status CheckTypes(MLDataType actual, MLDataType expected) {
     if (actual == expected) {
       return Status::OK();
@@ -416,14 +410,22 @@ class InferenceSession::Impl {
                   "Unexpected input data type. Actual: (" + actual_name + ") , expected: (" + expected_name + ")");
   }
 
-  common::Status ValidateInputTypes(const NameMLValMap& feeds) {
+  common::Status ValidateInputTypes(const std::vector<std::string>& feed_names,
+                                    const std::vector<MLValue>& feeds) {
+    auto end_names = feed_names.cend();
     for (auto& arg : input_def_list_) {
       auto& arg_name = arg->Name();
-      if (arg_name.empty() || !feeds.count(arg_name)) {
+      if (arg_name.empty()) {
         continue;
       }
 
-      auto& input_ml_value = feeds.at(arg_name);
+      auto feed_names_entry = std::find(feed_names.cbegin(), end_names, arg_name);
+      if (feed_names_entry == end_names) {
+        continue;
+      }
+
+      auto idx = feed_names_entry - feed_names.cbegin();
+      auto& input_ml_value = feeds.at(idx);
       auto input_type = input_ml_value.Type();
       auto expected_type = utils::GetMLDataType(*arg);
 
@@ -445,12 +447,13 @@ class InferenceSession::Impl {
     return Status::OK();
   }
 
-  common::Status ValidateInputNames(const NameMLValMap& feeds) {
+  common::Status ValidateInputNames(const std::vector<std::string>& feed_names) {
     std::string missing_required_inputs;
 
+    auto end_names = feed_names.cend();
     std::for_each(required_model_input_names_.cbegin(), required_model_input_names_.cend(),
                   [&](const std::string& required_input) {
-                    if (feeds.find(required_input) == feeds.cend()) {
+                    if (std::find(feed_names.cbegin(), end_names, required_input) == end_names) {
                       if (!missing_required_inputs.empty())
                         missing_required_inputs += ",";
 
@@ -465,10 +468,10 @@ class InferenceSession::Impl {
 
     bool valid = true;
     std::ostringstream invalid_names;
-    for (const auto& pair : feeds) {
-      if (model_input_names_.find(pair.first) == model_input_names_.end()) {
+    for (const auto& name : feed_names) {
+      if (model_input_names_.find(name) == model_input_names_.end()) {
         valid = false;
-        invalid_names << " " << pair.first;
+        invalid_names << " " << name;
       }
     }
 
@@ -487,10 +490,11 @@ class InferenceSession::Impl {
     return Status::OK();
   }
 
-  common::Status ValidateInputs(const NameMLValMap& feeds) {
-    ORT_RETURN_IF_ERROR(ValidateInputNames(feeds));
+  common::Status ValidateInputs(const std::vector<std::string>& feed_names,
+                                const std::vector<MLValue>& feeds) {
+    ORT_RETURN_IF_ERROR(ValidateInputNames(feed_names));
     //TODO: It should also validate the input shapes?
-    ORT_RETURN_IF_ERROR(ValidateInputTypes(feeds));
+    ORT_RETURN_IF_ERROR(ValidateInputTypes(feed_names, feeds));
     return Status::OK();
   }
 
@@ -541,25 +545,61 @@ class InferenceSession::Impl {
   }
 
   Status Run(const RunOptions& run_options,
-             const NameMLValMap& feeds,
+             const std::vector<std::string>& feed_names,
+             const std::vector<MLValue>& feeds,
              const std::vector<std::string>& output_names,
              std::vector<MLValue>* p_fetches) {
     auto tp = session_profiler_.StartTime();
     Status retval = Status::OK();
 
     try {
+      bool created_ffm = false;
+      std::unique_ptr<FeedsFetchesManager> local_ffm;
+      FeedsFetchesManager* feeds_fetches_manager = nullptr;
       {
         std::lock_guard<onnxruntime::OrtMutex> l(session_mutex_);
         if (!is_inited_) {
           LOGS(*session_logger_, ERROR) << "Session was not initialized";
           retval = Status(common::ONNXRUNTIME, common::FAIL, "Session not initialized.");
         }
+
+        // if we're using the cached FeedsFetchesManager get it under the lock so there's no concurrency issues if
+        // multiple concurrent calls to Run attempt to create it
+        if (run_options.cache_feeds_fetches_info) {
+          retval = session_state_.GetOrCreateFeedsFetchesManager(feed_names, output_names, feeds_fetches_manager,
+                                                                 created_ffm);
+          ORT_RETURN_IF_ERROR(retval);
+        }
       }
 
-      ORT_CHECK_AND_SET_RETVAL(ValidateInputs(feeds));
+      if (run_options.cache_feeds_fetches_info) {
+        // make sure that if we didn't create the FeedsFetchesManager it has been fully initialized by the
+        // successful completion of a call to Run.
+        if (!created_ffm && feeds_fetches_manager->GetDeviceCopyChecks().status == DeviceCopyCheck::Check) {
+          return ORT_MAKE_STATUS(
+              ONNXRUNTIME, FAIL,
+              "Existing cached information was found but was not fully initialized. "
+              "If caching is enabled, the first call to Run must successfully complete to fully initialize the "
+              "cache information. Once it is fully initialized, Run calls can be made in parallel. "
+              "If the first call to Run failed and you wish to use cached information, you will need to create a new "
+              "InferenceSession.");
+        }
+      } else {
+        // create local FeedsFetchesManager
+        created_ffm = true;
+        auto status = FeedsFetchesManager::Create(feed_names, output_names, session_state_.GetMLValueNameIdxMap(), local_ffm);
+        ORT_RETURN_IF_ERROR(status);
+        feeds_fetches_manager = local_ffm.get();
+      }
 
-      // if the output vector is non-empty, ensure that its the same size as the output_names
-      ORT_CHECK_AND_SET_RETVAL(ValidateOutputs(output_names, p_fetches));
+      if (created_ffm) {
+        ORT_CHECK_AND_SET_RETVAL(ValidateInputs(feed_names, feeds));
+
+        // if the output vector is non-empty, ensure that its the same size as the output_names
+        ORT_CHECK_AND_SET_RETVAL(ValidateOutputs(output_names, p_fetches));
+      } else {
+        LOGS(*session_logger_, INFO) << "Skipping validation of inputs and outputs as cached information was found";
+      }
 
       if (!run_options.run_tag.empty()) {
         LOGS(*session_logger_, INFO) << "Running with tag: " << run_options.run_tag;
@@ -580,21 +620,10 @@ class InferenceSession::Impl {
         ORT_CHECK_AND_SET_RETVAL(xp->OnRunStart());
       }
 
-      // TODO: Provide a way to re-use FeedsFetchesManager info across Run calls.
-      // Could store in SessionState and re-use based on a new flag to Run. Could also skip the input/output validation
-      // if found and the flag is true.
-      std::unique_ptr<utils::FeedsFetchesManager> ffm;
-      auto status = utils::FeedsFetchesManager::Create(feeds, output_names, session_state_.GetMLValueNameIdxMap(), ffm);
-      ORT_RETURN_IF_ERROR(status);
-
-      std::vector<MLValue> vector_feeds;
-      vector_feeds.reserve(feeds.size());
-      std::transform(feeds.cbegin(), feeds.cend(), std::back_inserter(vector_feeds),
-                     [](const std::pair<std::string, MLValue>& pair) { return pair.second; });
-
       ORT_CHECK_AND_SET_RETVAL(
-          utils::ExecuteGraph(session_state_, *ffm, vector_feeds, *p_fetches, {},
-                              session_options_.enable_sequential_execution, run_options.terminate, run_logger));
+          utils::ExecuteGraph(session_state_, *feeds_fetches_manager, feeds, *p_fetches, {},
+                              session_options_.enable_sequential_execution, run_options.terminate, run_logger,
+                              run_options.cache_feeds_fetches_info));
 
     } catch (const std::exception& e) {
       retval = Status(common::ONNXRUNTIME, common::FAIL, e.what());
@@ -603,13 +632,15 @@ class InferenceSession::Impl {
     }
 
     // info all execution providers InferenceSession:Run ended
-    for (auto& xp : execution_providers_)
+    for (auto& xp : execution_providers_) {
       ORT_CHECK_AND_SET_RETVAL(xp->OnRunEnd());
+    }
 
     --current_num_runs_;
     if (session_profiler_.FEnabled()) {
       session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, "model_run", tp);
     }
+
     return retval;
   }
 
@@ -669,7 +700,7 @@ class InferenceSession::Impl {
   common::Status Run(const RunOptions& run_options, IOBinding& io_binding) {
     // TODO should Run() call io_binding.SynchronizeInputs() or should it let the callers do it?
     // io_binding.SynchronizeInputs();
-    return Run(run_options, io_binding.feeds_, io_binding.output_names_, &io_binding.outputs_);
+    return Run(run_options, io_binding.feed_names_, io_binding.feeds_, io_binding.output_names_, &io_binding.outputs_);
   }
 
   common::Status Run(IOBinding& io_binding) {
@@ -921,17 +952,37 @@ common::Status InferenceSession::Initialize() {
   return impl_->Initialize();
 }
 
+common::Status InferenceSession::Run(const RunOptions& run_options,
+                                     const std::vector<std::string>& feed_names,
+                                     const std::vector<MLValue>& feeds,
+                                     const std::vector<std::string>& output_names,
+                                     std::vector<MLValue>* p_fetches) {
+  return impl_->Run(run_options, feed_names, feeds, output_names, p_fetches);
+}
+
 common::Status InferenceSession::Run(const NameMLValMap& feeds,
                                      const std::vector<std::string>& output_names,
                                      std::vector<MLValue>* p_fetches) {
-  return impl_->Run(feeds, output_names, p_fetches);
+  return Run({}, feeds, output_names, p_fetches);
 }
 
 common::Status InferenceSession::Run(const RunOptions& run_options,
-                                     const NameMLValMap& feeds,
+                                     const NameMLValMap& feeds_map,
                                      const std::vector<std::string>& output_names,
                                      std::vector<MLValue>* p_fetches) {
-  return impl_->Run(run_options, feeds, output_names, p_fetches);
+  std::vector<std::string> feed_names;
+  std::vector<MLValue> feeds;
+
+  auto num_feeds = feeds_map.size();
+  feed_names.reserve(num_feeds);
+  feeds.reserve(num_feeds);
+
+  for (auto& pair : feeds_map) {
+    feed_names.push_back(pair.first);
+    feeds.push_back(pair.second);
+  }
+
+  return Run(run_options, feed_names, feeds, output_names, p_fetches);
 }
 
 std::pair<common::Status, const ModelMetadata*> InferenceSession::GetModelMetadata() const {

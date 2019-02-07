@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <map>
 #include <unordered_map>
 #include <vector>
 #include "gsl/gsl_util"
@@ -14,6 +15,7 @@
 #include "core/common/profiler.h"
 #include "core/framework/allocation_planner.h"
 #include "core/framework/execution_providers.h"
+#include "core/framework/feeds_fetches_manager.h"
 #include "core/framework/kernel_registry_manager.h"
 #include "core/framework/mem_pattern.h"
 #include "core/framework/ml_value.h"
@@ -170,6 +172,11 @@ class SessionState {
   void CalculateNodeIndexInfo();
   const NodeIndexInfo& GetNodeIndexInfo() const;
 
+  Status GetOrCreateFeedsFetchesManager(const std::vector<std::string>& feed_names,
+                                        const std::vector<std::string>& output_names,
+                                        FeedsFetchesManager*& manager,
+                                        bool& created);
+
  private:
   ORT_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(SessionState);
 
@@ -215,6 +222,7 @@ class SessionState {
   FuncManager fused_funcs_mgr_;
 
   std::unique_ptr<NodeIndexInfo> node_index_info_;
+  std::multimap<int, std::unique_ptr<FeedsFetchesManager>> cached_feeds_fetches_managers_;
 };
 
 }  // namespace onnxruntime
