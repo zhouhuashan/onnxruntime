@@ -166,7 +166,7 @@ common::Status CopyOneInputAcrossDevices(const SessionState& session_state,
 
     auto* required_provider = exec_providers.Get(required_provider_type);
     ORT_ENFORCE(required_provider);
-    auto copier = [&required_provider_type,
+    auto copier = [required_provider_type,
                    required_provider,
                    p_input_provider,
                    target_device_id](const MLValue& feed_value, MLValue& new_value) {
@@ -323,10 +323,10 @@ static common::Status SetupFetchesForExecute(const SessionState& session_state,
           continue;
         }
 
-        auto& node_provider_type = node.GetExecutionProviderType();
-        auto& orig_tensor = provided_mlvalue.Get<Tensor>();
-        auto& orig_tensor_loc = orig_tensor.Location();
-        auto* tensor_provider = execution_providers.Get(orig_tensor_loc);
+        const auto& node_provider_type = node.GetExecutionProviderType();
+        const auto& provided_tensor = provided_mlvalue.Get<Tensor>();
+        const auto& provided_tensor_loc = provided_tensor.Location();
+        const auto* tensor_provider = execution_providers.Get(provided_tensor_loc);
         if (!tensor_provider) {
           tensor_provider = execution_providers.Get(onnxruntime::kCpuExecutionProvider);
         }
@@ -404,37 +404,22 @@ static common::Status CopyOutputsAcrossDevices(const SessionState& session_state
 
     const IExecutionProvider* p_output_provider = cpu_execution_provider;
 
-    if (!output_mlvalue.IsAllocated()) {
-      if (fetched_provider_type == onnxruntime::kCpuExecutionProvider ||
-          fetched_tensor_location.mem_type == OrtMemTypeCPUOutput) {
-        do_simple_copy(fetched_mlvalue, idx);
-        continue;
-      } /*else {
-        ORT_RETURN_IF_ERROR(utils::AllocateHelper(*cpu_execution_provider, 0, fetched_tensor, output_mlvalue));
-      }*/
-    } else {
+    if (output_mlvalue.IsAllocated()) {
       Tensor* p_output_tensor = output_mlvalue.GetMutable<Tensor>();
       p_output_provider = execution_providers.Get(p_output_tensor->Location());
     }
 
-    /*
-    Tensor* p_output_tensor = output_mlvalue.GetMutable<Tensor>();
-    auto& output_tensor_loc = p_output_tensor->Location();
-    auto* p_output_provider = execution_providers.Get(output_tensor_loc);
-    if (!p_output_provider) {
-      p_output_provider = cpu_execution_provider;
-    }
-
     auto output_provider_type = p_output_provider->Type();
 
-    if (output_provider_type == fetched_provider_type || fetched_tensor_location.mem_type == OrtMemTypeCPUOutput) {
+    if (fetched_provider_type == output_provider_type ||
+        (p_output_provider == cpu_execution_provider && fetched_tensor_location.mem_type == OrtMemTypeCPUOutput)) {
       do_simple_copy(fetched_mlvalue, idx);
       continue;
     }
-    */
+
     needed_copy = true;
 
-    auto copy_between_providers = [&fetched_provider_type,
+    auto copy_between_providers = [fetched_provider_type,
                                    p_fetched_provider,
                                    p_output_provider](const MLValue& fetched_mlvalue, MLValue& output_mlvalue) {
       auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
@@ -529,7 +514,7 @@ common::Status ExecuteGraph(const SessionState& session_state,
     }
 
     // if no output copy is needed, we can just use the fetches directly. otherwise we need to use a temporary set
-    // and run CopyOutputsAcrossDevices .
+    // and run CopyOutputsAcrossDevices.
     if (check_all || device_copy_checks.output_copy_needed != DeviceCopyCheck::NoCopy) {
       auto* use_provided_fetch_flags = cache_copy_info ? &feeds_fetches_manager.GetCanUseFetchDuringExecutionFlags()
                                                        : nullptr;

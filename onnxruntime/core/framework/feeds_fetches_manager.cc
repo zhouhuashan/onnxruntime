@@ -70,13 +70,7 @@ DeviceCopyCheck FeedsFetchesManager::CheckExecutionProviders(const ExecutionProv
     }
   }
 
-  /*
-  
-  FIXME
-  
-  
-  */
-  if (all_cpu || execution_providers.NumProviders() == 77) {
+  if (all_cpu) {
     device_copy_checks_.status = DeviceCopyCheck::NoCopy;
   }
 
