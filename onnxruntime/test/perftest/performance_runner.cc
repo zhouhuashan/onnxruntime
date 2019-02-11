@@ -58,12 +58,12 @@ bool PerformanceRunner::Initialize() {
     return false;
   }
 
-  // TO DO: remove the input and model name's dependency on directory tree
+  // TODO: remove the input and model name's dependency on directory tree
   std::string model_name = model_path.parent_path().filename().string();
   if (model_name.compare(0, 5, "test_") == 0) model_name = model_name.substr(5);
   performance_result_.model_name = model_name;
 
-  // TO DO: remove depedency on OnnxTestCase.
+  // TODO: remove dependency on OnnxTestCase.
   std::unique_ptr<ITestCase> test_case(CreateOnnxTestCase(model_name));
 
   if (!test_case->SetModelPath(model_path).IsOK()) {
