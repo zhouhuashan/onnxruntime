@@ -331,8 +331,8 @@ void ExecutionFrame::Init(const std::vector<int>& feed_mlvalue_idxs,
   }
 
   // 4. handle feed in values. these can override initializer values so must be last
-  for (size_t idx = 0, end = fetch_mlvalue_idxs.size(); idx < end; ++idx) {
-    int mlvalue_idx = fetch_mlvalue_idxs[idx];
+  for (size_t idx = 0, end = feed_mlvalue_idxs.size(); idx < end; ++idx) {
+    int mlvalue_idx = feed_mlvalue_idxs[idx];
     // we are sharing the underline tensor/object for MLValue
     all_values_[mlvalue_idx] = feeds[idx];
   }

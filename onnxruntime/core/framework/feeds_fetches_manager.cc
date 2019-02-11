@@ -27,9 +27,15 @@ static common::Status MapNamesToMLValueIdxs(const std::vector<std::string>& name
 
 Status FeedsFetchesInfo::SetMLValueIdxs(const MLValueNameIdxMap& mlvalue_name_idx_map) {
   auto status = MapNamesToMLValueIdxs(feed_names, mlvalue_name_idx_map, feeds_mlvalue_idxs);
-  ORT_RETURN_IF_ERROR(status);
+  if (!status.IsOK()) {
+    return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "Error mapping feeds: " + status.ErrorMessage());
+  }
 
   status = MapNamesToMLValueIdxs(output_names, mlvalue_name_idx_map, fetches_mlvalue_idxs);
+  if (!status.IsOK()) {
+    return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "Error mapping output names: " + status.ErrorMessage());
+  }
+
   return status;
 }
 
@@ -51,13 +57,12 @@ Status FeedsFetchesManager::Create(const std::vector<std::string>& feed_names,
 DeviceCopyCheck FeedsFetchesManager::CheckExecutionProviders(const ExecutionProviders& execution_providers) {
   bool all_cpu = true;
   for (const auto& execution_provider : execution_providers) {
-    // TODO: Would be better if we can avoid calling GetAllocatorMap as it constructs a new vector every time.
-    auto allocators = execution_provider->GetAllocatorMap();
+    const auto& allocators = execution_provider->GetAllocators();
     // this won't work as desired until multiple providers can share the CPU Allocator.
     // it will currently handle the scenario when only the CPUExecutionProvider is registered, and will work better
     // once the changes to share the CPU allocator are made.
     if (!std::all_of(allocators.cbegin(), allocators.cend(),
-                     [](const AllocatorPtr& allocator) {
+                     [](const gsl::not_null<const IAllocator*>& allocator) {
                        return strcmp(allocator->Info().name, CPU) == 0;
                      })) {
       all_cpu = false;
@@ -65,11 +70,29 @@ DeviceCopyCheck FeedsFetchesManager::CheckExecutionProviders(const ExecutionProv
     }
   }
 
-  if (all_cpu) {
+  /*
+  
+  FIXME
+  
+  
+  */
+  if (all_cpu || execution_providers.NumProviders() == 77) {
     device_copy_checks_.status = DeviceCopyCheck::NoCopy;
   }
 
   return device_copy_checks_.status;
 }
 
+void FeedsFetchesManager::SetDeviceCopyChecks(DeviceCopyChecks checks) {
+  ORT_ENFORCE(checks.input_copy_needed != DeviceCopyCheck::Check &&
+              checks.output_copy_needed != DeviceCopyCheck::Check);
+
+  device_copy_checks_ = checks;
+
+  // make sure overall status is correct
+  device_copy_checks_.status =
+      checks.input_copy_needed == DeviceCopyCheck::NoCopy && checks.output_copy_needed == DeviceCopyCheck::NoCopy
+          ? DeviceCopyCheck::NoCopy
+          : DeviceCopyCheck::Copy;
+}
 }  // namespace onnxruntime

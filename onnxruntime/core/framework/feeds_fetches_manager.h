@@ -21,7 +21,6 @@ enum class DeviceCopyCheck {
 struct DeviceCopyChecks {
   DeviceCopyCheck status = DeviceCopyCheck::Check;
   DeviceCopyCheck input_copy_needed = DeviceCopyCheck::Check;
-  DeviceCopyCheck copy_fetch_for_execution_needed = DeviceCopyCheck::Check;
   DeviceCopyCheck output_copy_needed = DeviceCopyCheck::Check;
 };
 
@@ -58,7 +57,7 @@ class FeedsFetchesManager {
   std::vector<MLValueCopyFunc>& GetFetchesDeviceCopiers() { return fetches_device_copiers_; }
 
   DeviceCopyChecks GetDeviceCopyChecks() const { return device_copy_checks_; }
-  void SetDeviceCopyChecks(DeviceCopyChecks checks) { device_copy_checks_ = checks; }
+  void SetDeviceCopyChecks(DeviceCopyChecks checks);
 
  private:
   ORT_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(FeedsFetchesManager);
