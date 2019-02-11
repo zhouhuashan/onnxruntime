@@ -71,14 +71,25 @@ bool PerformanceRunner::Initialize() {
     return false;
   }
 
-  std::vector<std::string> provider_types;
-  if (performance_test_config_.machine_config.provider_type_name == onnxruntime::kCpuExecutionProvider) {
-    provider_types = {onnxruntime::kMklDnnExecutionProvider,
-                      onnxruntime::kCudaExecutionProvider,
-                      onnxruntime::kCpuExecutionProvider};
-  }
+  std::vector<std::string> provider_types {
+#ifdef USE_MKLDNN
+    onnxruntime::kMklDnnExecutionProvider,
+#endif
+#ifdef USE_CUDA
+        onnxruntime::kCudaExecutionProvider,
+#endif
+#ifdef USE_NUPHAR
+        onnxruntime::kNupharExecutionProvider,
+#endif
+#if USE_BRAINSLICE
+        onnxruntime::kBrainSliceExecutionProvider,
+#endif
+#if USE_TRT
+        onnxruntime::kTRTExecutionProvider,
+#endif
+        onnxruntime::kCpuExecutionProvider
+  };
 
-  provider_types = {performance_test_config_.machine_config.provider_type_name};
   SessionFactory sf(std::move(provider_types), true, true);
   sf.enable_sequential_execution = performance_test_config_.run_config.enable_sequential_execution;
   sf.session_thread_pool_size = 6;
@@ -127,7 +138,7 @@ bool PerformanceRunner::Initialize() {
   }
 
   return true;
-}
+}  // namespace perftest
 
 }  // namespace perftest
 

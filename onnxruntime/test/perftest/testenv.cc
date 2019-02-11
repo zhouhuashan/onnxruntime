@@ -46,13 +46,13 @@ Status SessionFactory::Create(std::shared_ptr<InferenceSession>& sess, const pat
 #ifdef USE_MKLDNN
       RegisterExecutionProvider(sess.get(), test::DefaultMkldnnExecutionProvider(enable_cpu_mem_arena_ ? 1 : 0));
 #else
-      ORT_THROW("CUDA is not supported in this build");
+      ORT_THROW("MKLDNN is not supported in this build");
 #endif
     } else if (provider == kNupharExecutionProvider) {
 #ifdef USE_NUPHAR
       RegisterExecutionProvider(sess.get(), test::DefaultNupharExecutionProvider());
 #else
-      ORT_THROW("CUDA is not supported in this build");
+      ORT_THROW("NUPHAR is not supported in this build");
 #endif
     } else if (provider == kBrainSliceExecutionProvider) {
 #if USE_BRAINSLICE
