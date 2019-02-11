@@ -73,14 +73,17 @@ bool PerformanceRunner::Initialize() {
 
   std::vector<std::string> provider_types;
   if (performance_test_config_.machine_config.provider_type_name == onnxruntime::kCpuExecutionProvider) {
-    provider_types = {onnxruntime::kMklDnnExecutionProvider, onnxruntime::kCpuExecutionProvider};
+    provider_types = {onnxruntime::kMklDnnExecutionProvider,
+                      onnxruntime::kCudaExecutionProvider,
+                      onnxruntime::kCpuExecutionProvider};
   }
+
   provider_types = {performance_test_config_.machine_config.provider_type_name};
-  SessionFactory sf(provider_types, true, true);
+  SessionFactory sf(std::move(provider_types), true, true);
   sf.enable_sequential_execution = performance_test_config_.run_config.enable_sequential_execution;
   sf.session_thread_pool_size = 6;
 
-  sf.create(session_object_, test_case->GetModelUrl(), test_case->GetTestCaseName());
+  sf.Create(session_object_, test_case->GetModelUrl(), test_case->GetTestCaseName());
 
   // Initialize IO Binding
   if (!session_object_->NewIOBinding(&io_binding_).IsOK()) {

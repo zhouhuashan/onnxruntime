@@ -74,7 +74,10 @@ class PerformanceRunner {
 
   inline const PerformanceResult& GetResult() const { return performance_result_; }
 
-  inline void SerializeResult() const { performance_result_.DumpToFile(performance_test_config_.model_info.result_file_path, performance_test_config_.run_config.f_dump_statistics); }
+  inline void SerializeResult() const {
+    performance_result_.DumpToFile(performance_test_config_.model_info.result_file_path,
+                                   performance_test_config_.run_config.f_dump_statistics);
+  }
 
  private:
   bool Initialize();
