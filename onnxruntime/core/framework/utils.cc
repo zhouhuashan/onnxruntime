@@ -15,8 +15,6 @@
 #include "core/framework/session_state.h"
 #include "core/framework/sequential_executor.h"
 
-#include "Windows.h"
-
 namespace onnxruntime {
 namespace utils {
 
@@ -293,7 +291,6 @@ static common::Status SetupFetchesForExecute(const SessionState& session_state,
   }
 
   // track which fetches can be copied to new_fetches and used directly in the execution.
-  // this could turn out to be all values, in which case we don't need new_fetches.
   std::vector<bool> local_can_copy_flags(num_outputs, false);
 
   std::set<std::string> seen_outputs;
@@ -377,9 +374,9 @@ static common::Status CopyOutputsAcrossDevices(const SessionState& session_state
   // CPU execution provider is always registered so this is not null
   const auto* cpu_execution_provider = execution_providers.Get(onnxruntime::kCpuExecutionProvider);
 
-  // lambda to capture a straight copy from fetched to user_fetches
-  auto do_simple_copy = [&user_fetches, &copiers](const MLValue& fetched, size_t idx) {
-    user_fetches[idx] = fetched;
+  // lambda to capture a straight copy from fetches to user_fetches
+  auto do_simple_copy = [&user_fetches, &copiers](const MLValue& fetch, size_t idx) {
+    user_fetches[idx] = fetch;
     if (copiers) {
       copiers->push_back(SimpleCopy);
     }
@@ -460,7 +457,7 @@ common::Status ExecuteGraph(const SessionState& session_state,
                             const logging::Logger& logger,
                             bool cache_copy_info) {
   const auto& feeds_fetches_info = feeds_fetches_manager.GetFeedsFetchesInfo();
-  auto device_copy_checks = feeds_fetches_manager.GetDeviceCopyChecks();  // copy to update locally if needed
+  auto device_copy_checks = feeds_fetches_manager.GetDeviceCopyChecks();
 
   std::unique_ptr<IExecutor> p_exec;
 
@@ -470,7 +467,7 @@ common::Status ExecuteGraph(const SessionState& session_state,
     p_exec = std::unique_ptr<IExecutor>(new ParallelExecutor(session_state, terminate_flag));
   }
 
-  if (device_copy_checks.status == DeviceCopyCheck::Check) {
+  if (device_copy_checks.status == DeviceCopyCheck::Unknown) {
     // see if we can skip copies due to the types of execution providers available
     device_copy_checks.status = feeds_fetches_manager.CheckExecutionProviders(session_state.GetExecutionProviders());
   }
@@ -482,7 +479,7 @@ common::Status ExecuteGraph(const SessionState& session_state,
                                         feeds_fetches_info.fetches_mlvalue_idxs, fetches, fetch_allocators, logger));
   } else {
     // first execution we check and update. after that we use cached values.
-    bool check_all = device_copy_checks.status == DeviceCopyCheck::Check;
+    bool check_all = device_copy_checks.status == DeviceCopyCheck::Unknown;
     bool copy_needed = false;
 
     const std::vector<MLValue>* p_feeds = &feeds;

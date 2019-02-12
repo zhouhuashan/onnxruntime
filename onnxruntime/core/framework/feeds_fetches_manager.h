@@ -13,15 +13,15 @@ class ExecutionProviders;
 class MLValueNameIdxMap;
 
 enum class DeviceCopyCheck {
-  Check,
+  Unknown,
   NoCopy,
   Copy
 };
 
 struct DeviceCopyChecks {
-  DeviceCopyCheck status = DeviceCopyCheck::Check;
-  DeviceCopyCheck input_copy_needed = DeviceCopyCheck::Check;
-  DeviceCopyCheck output_copy_needed = DeviceCopyCheck::Check;
+  DeviceCopyCheck status = DeviceCopyCheck::Unknown;  ///< Overall status. If NoCopy no input or output copies are needed
+  DeviceCopyCheck input_copy_needed = DeviceCopyCheck::Unknown;
+  DeviceCopyCheck output_copy_needed = DeviceCopyCheck::Unknown;
 };
 
 struct FeedsFetchesInfo {

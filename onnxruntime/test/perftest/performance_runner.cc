@@ -138,7 +138,7 @@ bool PerformanceRunner::Initialize() {
   }
 
   return true;
-}  // namespace perftest
+}
 
 }  // namespace perftest
 

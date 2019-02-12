@@ -316,7 +316,7 @@ Status LoopImpl::Execute() {
 
   auto& iter_num_value = *iter_num_mlvalue_.GetMutable<Tensor>()->MutableData<int64_t>();
 
-  // FeedsFetchesManager will minimized name lookups and copy logic on each subsequent execution of the graph,
+  // FeedsFetchesManager will minimize name lookups and copy logic on each subsequent execution of the graph,
   // based on what is required during the first execution
   FeedsFetchesInfo ffi{feed_names, subgraph_output_names_};
   ORT_RETURN_IF_ERROR(ffi.SetMLValueIdxs(session_state_.GetMLValueNameIdxMap()));

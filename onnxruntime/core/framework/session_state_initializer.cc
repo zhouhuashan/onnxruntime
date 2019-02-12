@@ -173,7 +173,7 @@ common::Status SaveMLValueNameIndexMapping(const GraphViewer& graph_viewer,
     if (output->Exists()) {
       idx = mlvalue_name_idx_map.Add(output->Name());
       VLOGS(logger, 1)
-          << "Added graph_viewer output with name: " << output->Name() << " to MLValueIndex with index: " << idx;
+          << "Added graph output with name: " << output->Name() << " to MLValueIndex with index: " << idx;
     }
   }
 

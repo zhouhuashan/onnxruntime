@@ -403,19 +403,20 @@ class InferenceSession::Impl {
 
   common::Status ValidateInputTypes(const std::vector<std::string>& feed_names,
                                     const std::vector<MLValue>& feeds) {
-    auto end_names = feed_names.cend();
+    const auto begin_names = feed_names.cbegin();
+    const auto end_names = feed_names.cend();
     for (auto& arg : input_def_list_) {
       auto& arg_name = arg->Name();
       if (arg_name.empty()) {
         continue;
       }
 
-      auto feed_names_entry = std::find(feed_names.cbegin(), end_names, arg_name);
+      auto feed_names_entry = std::find(begin_names, end_names, arg_name);
       if (feed_names_entry == end_names) {
         continue;
       }
 
-      auto idx = feed_names_entry - feed_names.cbegin();
+      auto idx = feed_names_entry - begin_names;
       auto& input_ml_value = feeds.at(idx);
       auto input_type = input_ml_value.Type();
       auto expected_type = utils::GetMLDataType(*arg);
@@ -441,10 +442,11 @@ class InferenceSession::Impl {
   common::Status ValidateInputNames(const std::vector<std::string>& feed_names) {
     std::string missing_required_inputs;
 
-    auto end_names = feed_names.cend();
+    const auto begin_names = feed_names.cbegin();
+    const auto end_names = feed_names.cend();
     std::for_each(required_model_input_names_.cbegin(), required_model_input_names_.cend(),
                   [&](const std::string& required_input) {
-                    if (std::find(feed_names.cbegin(), end_names, required_input) == end_names) {
+                    if (std::find(begin_names, end_names, required_input) == end_names) {
                       if (!missing_required_inputs.empty())
                         missing_required_inputs += ",";
 
@@ -547,6 +549,7 @@ class InferenceSession::Impl {
       bool created_ffm = false;
       std::unique_ptr<FeedsFetchesManager> local_ffm;
       FeedsFetchesManager* feeds_fetches_manager = nullptr;
+      
       {
         std::lock_guard<onnxruntime::OrtMutex> l(session_mutex_);
         if (!is_inited_) {
@@ -565,8 +568,10 @@ class InferenceSession::Impl {
 
       if (run_options.cache_feeds_fetches_info) {
         // make sure that if we didn't create the FeedsFetchesManager it has been fully initialized by the
-        // successful completion of a call to Run.
-        if (!created_ffm && feeds_fetches_manager->GetDeviceCopyChecks().status == DeviceCopyCheck::Check) {
+        // successful completion of a call to Run. this is primarily to detect concurrent calls to Run
+        // prior to the initial call completing. we could do something more complicated to handle failure on the
+        // initial call if a real need to do so is proven.
+        if (!created_ffm && feeds_fetches_manager->GetDeviceCopyChecks().status == DeviceCopyCheck::Unknown) {
           return ORT_MAKE_STATUS(
               ONNXRUNTIME, FAIL,
               "Existing cached information was found but was not fully initialized. "
@@ -576,7 +581,7 @@ class InferenceSession::Impl {
               "InferenceSession.");
         }
       } else {
-        // create local FeedsFetchesManager
+        // create local FeedsFetchesManager for this Run call only
         created_ffm = true;
         auto status = FeedsFetchesManager::Create(feed_names, output_names, session_state_.GetMLValueNameIdxMap(), local_ffm);
         ORT_RETURN_IF_ERROR(status);
