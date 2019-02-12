@@ -147,7 +147,7 @@ Status IterateSequence(OpKernelContextInternal& context,
     ++i;
   }
 
-  FeedsFetchesInfo ffi{feed_names, subgraph_output_names};
+  FeedsFetchesInfo ffi(feed_names, subgraph_output_names);
   ORT_RETURN_IF_ERROR(ffi.SetMLValueIdxs(session_state.GetMLValueNameIdxMap()));
   FeedsFetchesManager ffm{std::move(ffi)};
 

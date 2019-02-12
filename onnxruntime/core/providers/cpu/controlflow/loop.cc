@@ -185,7 +185,7 @@ Status LoopImpl::Initialize() {
   // we know how many inputs we are going to call the subgraph with based on the Loop inputs,
   // and that value is in num_subgraph_inputs_.
   // validate that the subgraph has that many inputs.
-  if (num_subgraph_inputs_ != subgraph_inputs.size()) {
+  if (static_cast<size_t>(num_subgraph_inputs_) != subgraph_inputs.size()) {
     return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL,
                            "Graph in 'body' attribute of Loop should have ",
                            num_subgraph_inputs_, " inputs. Found:", subgraph_.GetInputs().size());
@@ -195,7 +195,7 @@ Status LoopImpl::Initialize() {
   auto num_subgraph_outputs = subgraph_outputs.size();
 
   // check num outputs are correct. the 'cond' output from the subgraph is not a Loop output, so diff is 1
-  if (num_subgraph_outputs - 1 != num_outputs_) {
+  if (num_subgraph_outputs - 1 != static_cast<size_t>(num_outputs_)) {
     return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "'Loop' node has ", num_outputs_,
                            " outputs so the subgraph requires ", num_outputs_ + 1,
                            " but has ", num_subgraph_outputs);
@@ -209,7 +209,7 @@ Status LoopImpl::Initialize() {
   iter_num_mlvalue_ = MakeScalarMLValue<int64_t>(allocator, 0);
 
   subgraph_input_names_.reserve(num_subgraph_inputs_);
-  for (size_t i = 0; i < num_subgraph_inputs_; ++i) {
+  for (int i = 0; i < num_subgraph_inputs_; ++i) {
     subgraph_input_names_.push_back(subgraph_inputs[i]->Name());
   }
 
@@ -318,7 +318,7 @@ Status LoopImpl::Execute() {
 
   // FeedsFetchesManager will minimize name lookups and copy logic on each subsequent execution of the graph,
   // based on what is required during the first execution
-  FeedsFetchesInfo ffi{feed_names, subgraph_output_names_};
+  FeedsFetchesInfo ffi(feed_names, subgraph_output_names_);
   ORT_RETURN_IF_ERROR(ffi.SetMLValueIdxs(session_state_.GetMLValueNameIdxMap()));
   FeedsFetchesManager ffm{std::move(ffi)};
 
