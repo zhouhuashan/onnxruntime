@@ -54,29 +54,6 @@ Status FeedsFetchesManager::Create(const std::vector<std::string>& feed_names,
   return Status::OK();
 }
 
-DeviceCopyCheck FeedsFetchesManager::CheckExecutionProviders(const ExecutionProviders& execution_providers) {
-  bool all_cpu = true;
-  for (const auto& execution_provider : execution_providers) {
-    const auto& allocators = execution_provider->GetAllocators();
-    // this won't work as desired until multiple providers can share the CPU Allocator and the logic here is updated
-    // to detect that..
-    // it will currently handle the scenario when only the CPUExecutionProvider is registered though
-    if (!std::all_of(allocators.cbegin(), allocators.cend(),
-                     [](const gsl::not_null<const IAllocator*>& allocator) {
-                       return strcmp(allocator->Info().name, CPU) == 0;
-                     })) {
-      all_cpu = false;
-      break;
-    }
-  }
-
-  if (all_cpu) {
-    device_copy_checks_.status = DeviceCopyCheck::NoCopy;
-  }
-
-  return device_copy_checks_.status;
-}
-
 void FeedsFetchesManager::SetDeviceCopyChecks(DeviceCopyChecks checks) {
   ORT_ENFORCE(checks.input_copy_needed != DeviceCopyCheck::Unknown &&
               checks.output_copy_needed != DeviceCopyCheck::Unknown);

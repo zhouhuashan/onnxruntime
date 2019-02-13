@@ -92,9 +92,11 @@ class Scan8Impl {
   // Initialize by validating all the inputs, and allocating the output tensors
   Status Initialize();
 
+  Status CreateFeedsFetchesManager(std::unique_ptr<FeedsFetchesManager>& ffm);
+
   // Execute the batch, by iterating the sequence in each batch entry
   // and calling the subgraph with each item in the sequence.
-  Status Execute();
+  Status Execute(FeedsFetchesManager* ffm, const FeedsFetchesManager* cached_ffm);
 
  private:
   // validate inputs and setup batch size and max sequence length.
@@ -159,7 +161,19 @@ Status Scan<8>::Compute(OpKernelContext* ctx) const {
   auto status = scan_impl.Initialize();
   ORT_RETURN_IF_ERROR(status);
 
-  status = scan_impl.Execute();
+  if (cached_feeds_fetches_manager_) {
+    // make it clear we don't update this instance when executing so therre are no potential concurrency issues
+    const FeedsFetchesManager* cached_ffm = &*cached_feeds_fetches_manager_;
+    status = scan_impl.Execute(nullptr, cached_ffm);
+  } else {
+    // use a local instance until we know we're successful, and cache if it is
+    std::unique_ptr<FeedsFetchesManager> new_ffm;
+    scan_impl.CreateFeedsFetchesManager(new_ffm);
+    status = scan_impl.Execute(&*new_ffm, nullptr);
+    if (status.IsOK()) {
+      cached_feeds_fetches_manager_ = std::move(new_ffm);
+    }
+  }
 
   return status;
 }
@@ -376,7 +390,13 @@ Status Scan8Impl::CreateLoopStateVariables(std::vector<std::vector<LoopStateVari
   return status;
 }
 
-Status Scan8Impl::Execute() {
+Status Scan8Impl::CreateFeedsFetchesManager(std::unique_ptr<FeedsFetchesManager>& ffm) {
+  return scan::detail::CreateFeedsFetchesManager(subgraph_, num_variadic_inputs_, implicit_inputs_,
+                                                 subgraph_output_names_, session_state_.GetMLValueNameIdxMap(),
+                                                 ffm);
+}
+
+Status Scan8Impl::Execute(FeedsFetchesManager* ffm, const FeedsFetchesManager* cached_ffm) {
   Status status = Status::OK();
 
   // for each batch item, std::vector of LoopStateVariables
@@ -413,7 +433,7 @@ Status Scan8Impl::Execute() {
     status = IterateSequence(context_, session_state_, subgraph_, batch_loop_state_variables[b],
                              scan_input_stream_iterators, sequence_len, num_loop_state_variables_,
                              num_variadic_inputs_, num_variadic_outputs_, implicit_inputs_,
-                             subgraph_output_names_, output_iterators_);
+                             subgraph_output_names_, output_iterators_, ffm, cached_ffm);
 
     // zero out any remaining values in the sequence
     for (int64_t i = sequence_len; i < max_sequence_len_; ++i) {
