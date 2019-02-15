@@ -67,8 +67,8 @@ Status SequentialExecutor::Execute(const SessionState& session_state,
 
     // construct OpKernelContext
     // TODO: log kernel inputs?
-    OpKernelContextInternal op_kernel_context(frame, *p_op_kernel, logger, p_op_kernel->Node().ImplicitInputDefs(),
-                                              terminate_flag_);
+    OpKernelContextInternal op_kernel_context(session_state, frame, *p_op_kernel, logger,
+                                              p_op_kernel->Node().ImplicitInputDefs(), terminate_flag_);
     // TODO: log kernel outputs?
     if (f_profiler_enabled) {
       sync_time_begin = session_state.Profiler().StartTime();
@@ -164,7 +164,7 @@ Status SequentialExecutor::Execute(const SessionState& session_state,
   VLOGS(logger, 1) << "Fetching output.";
   ORT_RETURN_IF_ERROR(FetchOutput(session_state.GetMLValueNameIdxMap(), frame, output_names, fetches, logger));
 
-  if (frame.HasPlan()) {
+  if (frame.HasMemoryPatternPlanner()) {
     std::vector<TensorShape> input_shapes;
     bool all_tensors = true;
     for (const auto& feed : feeds) {

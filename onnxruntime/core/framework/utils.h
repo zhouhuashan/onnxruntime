@@ -28,6 +28,8 @@ namespace utils {
 const KernelDef* GetKernelDef(const KernelRegistryManager& kernel_registry,
                               const onnxruntime::Node& node);
 
+const AllocPlanPerValue& GetAllocationPlan(const SessionState& session_state, int mlvalue_idx);
+
 AllocatorPtr GetAllocator(const ExecutionProviders& exec_providers, const OrtAllocatorInfo& allocator_info);
 
 AllocatorPtr GetAllocator(const SessionState& session_state, const OrtAllocatorInfo& allocator_info);

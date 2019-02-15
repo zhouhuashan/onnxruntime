@@ -79,7 +79,8 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   EXPECT_EQ(start_index, 0);
 
   TensorShape shape(std::vector<int64_t>{2, 3});
-  status = frame.AllocateMLValueTensorSelfOwnBuffer(start_index, DataTypeImpl::GetType<float>(),
+  MLValue& hack_for_now = const_cast<MLValue&>(frame.GetMLValue(start_index));
+  status = frame.AllocateMLValueTensorSelfOwnBuffer(hack_for_now, start_index, DataTypeImpl::GetType<float>(),
                                                     execution_providers.Get(xp_typ)->GetAllocator(0, OrtMemTypeDefault)->Info(), shape);
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
@@ -91,7 +92,9 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
 
   //test share memory from tensor
   TensorShape shape2(std::vector<int64_t>{3, 2});
-  status = frame.AllocateMLValueTensorPreAllocateBuffer(start_index + 1,
+  MLValue& hack_for_now_2 = const_cast<MLValue&>(frame.GetMLValue(start_index + 1));
+  status = frame.AllocateMLValueTensorPreAllocateBuffer(hack_for_now_2,
+                                                        start_index + 1,
                                                         start_index,
                                                         DataTypeImpl::GetType<float>(),
                                                         p_tensor->Location(),
@@ -230,19 +233,23 @@ TEST(ExecutionFrameTest, MemPatternTest) {
   ExecutionFrame frame(std::unordered_map<std::string, MLValue>{{"X1", v1}, {"X2", v2}, {"X3", v3}},
                        std::vector<std::string>{"T3"}, outputs, {}, state);
 
-  status = frame.AllocateMLValueTensorSelfOwnBuffer(3,
+  MLValue& hack3 = const_cast<MLValue&>(frame.GetMLValue(3));
+  MLValue& hack4 = const_cast<MLValue&>(frame.GetMLValue(3));
+  MLValue& hack5 = const_cast<MLValue&>(frame.GetMLValue(3));
+
+  status = frame.AllocateMLValueTensorSelfOwnBuffer(hack3, 3,
                                                     DataTypeImpl::GetType<float>(),
                                                     cpu_allocator->Info(),
                                                     TensorShape(std::vector<int64_t>{2, 2}));
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
-  status = frame.AllocateMLValueTensorSelfOwnBuffer(4,
+  status = frame.AllocateMLValueTensorSelfOwnBuffer(hack4, 4,
                                                     DataTypeImpl::GetType<float>(),
                                                     cpu_allocator->Info(),
                                                     TensorShape(std::vector<int64_t>{2, 3}));
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
-  status = frame.AllocateMLValueTensorSelfOwnBuffer(5,
+  status = frame.AllocateMLValueTensorSelfOwnBuffer(hack5, 5,
                                                     DataTypeImpl::GetType<float>(),
                                                     cpu_allocator->Info(),
                                                     TensorShape(std::vector<int64_t>{2, 3}));

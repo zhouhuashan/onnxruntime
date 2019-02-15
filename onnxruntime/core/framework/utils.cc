@@ -29,6 +29,13 @@ const KernelDef* GetKernelDef(const KernelRegistryManager& kernel_registry,
   return kernel_def;
 }
 
+const AllocPlanPerValue& GetAllocationPlan(const SessionState& session_state, int mlvalue_idx) {
+  const SequentialExecutionPlan* p_seq_exec_plan = session_state.GetExecutionPlan();
+  const auto& alloc_plan = p_seq_exec_plan->allocation_plan;
+  ORT_ENFORCE(mlvalue_idx != NodeIndexInfo::kInvalidEntry && mlvalue_idx < alloc_plan.size());
+  return alloc_plan[mlvalue_idx];
+}
+
 AllocatorPtr GetAllocator(const ExecutionProviders& exec_providers, const OrtAllocatorInfo& allocator_info) {
   return exec_providers.GetAllocator(allocator_info);
 }
