@@ -94,7 +94,6 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   TensorShape shape2(std::vector<int64_t>{3, 2});
   MLValue& hack_for_now_2 = const_cast<MLValue&>(frame.GetMLValue(start_index + 1));
   status = frame.AllocateMLValueTensorPreAllocateBuffer(hack_for_now_2,
-                                                        start_index + 1,
                                                         start_index,
                                                         DataTypeImpl::GetType<float>(),
                                                         p_tensor->Location(),

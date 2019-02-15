@@ -23,21 +23,6 @@ class MLValuePatternPlanner;
 struct MemoryPatternGroup;
 class NodeIndexInfo;
 
-struct MLValueAllocationParameters {
-  MLValueAllocationParameters() = default;
-  MLValueAllocationParameters(const TensorShape* shape)
-      : tensor_shape{shape} {}
-
-  const TensorShape& GetTensorShape() const {
-    static const TensorShape s_empty_tensor_shape;
-    return tensor_shape != nullptr ? *tensor_shape : s_empty_tensor_shape;
-  }
-
- private:
-  const TensorShape* tensor_shape{};
-  // todo: is there any parameter needed for ml types?
-};
-
 class IExecutionFrame {
  protected:
   IExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
@@ -48,7 +33,7 @@ class IExecutionFrame {
                   const NodeIndexInfo& node_index_info);
 
  public:
-  ~IExecutionFrame();
+  virtual ~IExecutionFrame();
 
   // TODO: This can become private once PR470 is checked in as that moves the FetchOutputs from the two
   // executor classes to being an ExecutionFrame method
@@ -58,7 +43,7 @@ class IExecutionFrame {
   }
 
   // Get the index for the first entry of the given node.
-  int GetNodeOffset(onnxruntime::NodeIndex index) const {
+  int GetNodeOffset(NodeIndex index) const {
     return node_index_info_.GetNodeOffset(index);
   }
 
@@ -70,9 +55,7 @@ class IExecutionFrame {
   // This method is not thread safe!
   // Return S_OK and nullptr if index map to an value that is an unused optional input/output
   // Shape is required for tensors but not traditional ML values.
-  Status GetOrCreateNodeOutputMLValue(int index,
-                                      const TensorShape* shape,
-                                      MLValue*& p_mlvalue);
+  Status GetOrCreateNodeOutputMLValue(int index, const TensorShape* shape, MLValue*& p_mlvalue);
 
   AllocatorPtr GetAllocator(const OrtAllocatorInfo& info) const;
 
@@ -86,6 +69,8 @@ class IExecutionFrame {
     return const_cast<MLValue&>(GetMLValue(mlvalue_index));
   }
 
+  virtual Status ReleaseMLValueImpl(int mlvalue_idx);
+
  private:
   ORT_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(IExecutionFrame);
 
@@ -96,12 +81,7 @@ class IExecutionFrame {
             const MLValueNameIdxMap& mlvalue_idx_map);
 
   virtual AllocatorPtr GetAllocatorImpl(const OrtAllocatorInfo& info) const = 0;
-
-  virtual Status CreateNodeOutputMLValueImpl(int node_idx,
-                                             const TensorShape* shape,
-                                             MLValue& p_mlvalue) = 0;
-
-  virtual Status ReleaseMLValueImpl(int mlvalue_idx);
+  virtual Status CreateNodeOutputMLValueImpl(MLValue& mlvalue, int mlvalue_idx, const TensorShape* shape) = 0;
 
   const NodeIndexInfo& node_index_info_;
 
@@ -132,7 +112,6 @@ class ExecutionFrame : public IExecutionFrame {
                                             bool create_fence = false);
 
   Status AllocateMLValueTensorPreAllocateBuffer(MLValue& mlvalue,
-                                                int mlvalue_index_to_allocate,
                                                 int mlvalue_index_reuse,
                                                 MLDataType element_type,  // annoyingly MLDataType is a const *.
                                                 const OrtAllocatorInfo& location,
@@ -155,9 +134,7 @@ class ExecutionFrame : public IExecutionFrame {
 
   Status ReleaseMLValueImpl(int mlvalue_idx) override;
 
-  Status CreateNodeOutputMLValueImpl(int node_idx,
-                                     const TensorShape* shape,
-                                     MLValue& mlvalue) override;
+  Status CreateNodeOutputMLValueImpl(MLValue& mlvalue, int mlvalue_idx, const TensorShape* shape) override;
 
   common::Status AllocateAsPerAllocationPlan(MLValue& mlvalue,
                                              int mlvalue_index,
