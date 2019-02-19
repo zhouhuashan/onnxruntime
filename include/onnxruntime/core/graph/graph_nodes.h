@@ -12,23 +12,23 @@ namespace onnxruntime {
 class Node;
 
 /**
-Class that provides iteration over all valid nodes in the Graph. 
+Class to filter out null entries from either a vector of unique_ptr<Node> or a vector of [const] Node* and 
+provide an iterator interface that returns [const] Node& for the valid entries.
 */
-class GraphNodes {
-  using TNodesContainer = std::vector<std::unique_ptr<Node>>;
-
+template <typename TNodesContainer>
+class ValidNodes {
  public:
   template <typename TIterator>
   class NodeIterator;
 
   /**
-  Construct a GraphNodes instance to provide iteration over all valid nodes in the Graph
+  Construct a ValidNodes instance to provide iteration over all valid nodes in the TNodesCollection
   @param[in] nodes Nodes to iterate, skipping invalid entries.
   */
-  explicit GraphNodes(TNodesContainer& nodes) noexcept : nodes_(nodes) {}
+  explicit ValidNodes(TNodesContainer& nodes) noexcept : nodes_(nodes) {}
 
-  using ConstNodeIterator = NodeIterator<TNodesContainer::const_iterator>;
-  using MutableNodeIterator = NodeIterator<TNodesContainer::iterator>;
+  using ConstNodeIterator = NodeIterator<typename TNodesContainer::const_iterator>;
+  using MutableNodeIterator = NodeIterator<typename TNodesContainer::iterator>;
 
   ConstNodeIterator cbegin() const noexcept {
     return {nodes_.cbegin(), nodes_.cend()};
@@ -125,6 +125,14 @@ class GraphNodes {
 
  private:
   TNodesContainer& nodes_;
+};
+
+/**
+Class that provides iteration over all valid nodes in the Graph. 
+*/
+class GraphNodes : public ValidNodes<std::vector<std::unique_ptr<Node>>> {
+ public:
+  GraphNodes(std::vector<std::unique_ptr<Node>>& nodes) : ValidNodes(nodes) {}
 };
 
 }  // namespace onnxruntime

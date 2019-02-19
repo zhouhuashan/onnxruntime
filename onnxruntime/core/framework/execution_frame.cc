@@ -178,7 +178,9 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
         for (size_t i = 0; i < mem_patterns_->locations.size(); i++) {
           ORT_ENFORCE(buffers_.find(mem_patterns_->locations[i]) == buffers_.end());
           AllocatorPtr alloc = GetAllocator(mem_patterns_->locations[i]);
-          void* buffer = mem_patterns_->patterns[i].PeakSize() > 0 ? alloc->Alloc(mem_patterns_->patterns[i].PeakSize()) : nullptr;
+          void* buffer = mem_patterns_->patterns[i].PeakSize() > 0
+                             ? alloc->Alloc(mem_patterns_->patterns[i].PeakSize())
+                             : nullptr;
           buffers_[mem_patterns_->locations[i]] = BufferUniquePtr(buffer, alloc);
         }
       }
@@ -247,10 +249,11 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(MLValue& mlvalue
         }
         if (block->size_ != size) {
           LOGS_DEFAULT(WARNING) << "For mlvalue with index: " << mlvalue_index << ", block in memory pattern size is: "
-                                << block->size_ << " but the actually size is: " << size << ", fall back to default allocation behavior";
+                                << block->size_ << " but the actually size is: " << size
+                                << ", fall back to default allocation behavior";
         } else if (it == buffers_.end()) {
-          LOGS_DEFAULT(WARNING) << "For mlvalue with index: " << mlvalue_index << ", block not found in target loation. "
-                                                                                  " fall back to default allocation behavior";
+          LOGS_DEFAULT(WARNING) << "For mlvalue with index: " << mlvalue_index
+                                << ", block not found in target location. fall back to default allocation behavior";
         }
       }
     }

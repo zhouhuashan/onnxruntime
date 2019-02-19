@@ -31,11 +31,11 @@ class OpKernel {
   explicit OpKernel(const OpKernelInfo& info) : op_kernel_info_(info) {}
   virtual ~OpKernel() = default;
 
-  const onnxruntime::Node& Node() const {
+  const Node& Node() const {
     return op_kernel_info_.node();
   }
 
-  const ::onnxruntime::KernelDef& KernelDef() const {
+  const KernelDef& KernelDef() const {
     return op_kernel_info_.GetKernelDef();
   }
 

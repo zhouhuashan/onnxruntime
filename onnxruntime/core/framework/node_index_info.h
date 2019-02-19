@@ -9,12 +9,16 @@
 #include "core/framework/ml_value.h"
 
 namespace onnxruntime {
+class GraphNodes;
 class GraphViewer;
 class MLValueNameIdxMap;
+class Node;
 
 class NodeIndexInfo final {
  public:
   NodeIndexInfo(const GraphViewer& graph_viewer, const MLValueNameIdxMap& mlvalue_idx_map);
+  NodeIndexInfo(const GraphNodes& graph_nodes, int max_node_index, const MLValueNameIdxMap& mlvalue_idx_map);
+  NodeIndexInfo(const std::vector<const Node*>& nodes, const MLValueNameIdxMap& mlvalue_idx_map);
 
   enum { kInvalidEntry = -1 };
 
@@ -38,6 +42,9 @@ class NodeIndexInfo final {
 
  private:
   ORT_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(NodeIndexInfo);
+
+  template <typename TValidNodes>
+  void Init(const TValidNodes& nodes, NodeIndex max_node_index, const MLValueNameIdxMap& mlvalue_idx_map);
 
   // This vector contains the indices from the MLValueNameIdxMap in the SessionState for each Node's input/outputs.
   // Order is node inputs, implicit inputs, outputs.

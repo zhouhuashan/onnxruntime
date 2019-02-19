@@ -90,7 +90,7 @@ class IExecutionFrame {
   std::vector<MLValue> all_values_;
 };
 
-class ExecutionFrame : public IExecutionFrame {
+class ExecutionFrame final : public IExecutionFrame {
  public:
   ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
                  const std::vector<std::string>& output_names,
