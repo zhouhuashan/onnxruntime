@@ -73,13 +73,13 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   state.CalculateNodeIndexInfo();
 
   vector<MLValue> outputs;
-  ExecutionFrame frame(std::unordered_map<std::string, MLValue>{}, std::vector<std::string>{}, outputs, {}, state);
+  ExecutionFrame frame({}, {}, {}, outputs, {}, state);
 
   int start_index = frame.GetNodeOffset(node->Index());
   EXPECT_EQ(start_index, 0);
 
   TensorShape shape(std::vector<int64_t>{2, 3});
-  MLValue& hack_for_now = const_cast<MLValue&>(frame.GetMLValue(start_index));
+  MLValue& hack_for_now = *frame.GetMutableNodeInputOrOutputMLValue(start_index);
   status = frame.AllocateMLValueTensorSelfOwnBuffer(hack_for_now, start_index, DataTypeImpl::GetType<float>(),
                                                     execution_providers.Get(xp_typ)->GetAllocator(0, OrtMemTypeDefault)->Info(), shape);
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
@@ -92,7 +92,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
 
   //test share memory from tensor
   TensorShape shape2(std::vector<int64_t>{3, 2});
-  MLValue& hack_for_now_2 = const_cast<MLValue&>(frame.GetMLValue(start_index + 1));
+  MLValue& hack_for_now_2 = *frame.GetMutableNodeInputOrOutputMLValue(start_index + 1);
   status = frame.AllocateMLValueTensorPreAllocateBuffer(hack_for_now_2,
                                                         start_index,
                                                         DataTypeImpl::GetType<float>(),
@@ -144,14 +144,13 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
   state.SetGraphViewer(std::make_unique<GraphViewer>(graph));
 
   MLValueNameIdxMap& mlvalue_name_idx_map{state.GetMLValueNameIdxMap()};
-  mlvalue_name_idx_map.Add("X");
-  mlvalue_name_idx_map.Add("Y");
+  auto x_idx = mlvalue_name_idx_map.Add("X");
+  auto y_idx = mlvalue_name_idx_map.Add("Y");
 
   state.CalculateNodeIndexInfo();
 
   vector<MLValue> outputs;
-  ExecutionFrame frame(std::unordered_map<std::string, MLValue>{{"X", value}},
-                       std::vector<std::string>{}, outputs, {}, state);
+  ExecutionFrame frame({x_idx}, {value}, {y_idx}, outputs, {}, state);
 
   MLValue* p_ml_value = frame.GetMutableNodeInputOrOutputMLValue(0);
   Tensor* p_tensor_arg_0 = p_ml_value ? p_ml_value->GetMutable<Tensor>() : nullptr;
@@ -199,12 +198,12 @@ TEST(ExecutionFrameTest, MemPatternTest) {
 
   MLValueNameIdxMap& mlvalue_name_idx_map{state.GetMLValueNameIdxMap()};
 
-  mlvalue_name_idx_map.Add("X1");
-  mlvalue_name_idx_map.Add("X2");
-  mlvalue_name_idx_map.Add("X3");
+  auto x1_idx = mlvalue_name_idx_map.Add("X1");
+  auto x2_idx = mlvalue_name_idx_map.Add("X2");
+  auto x3_idx = mlvalue_name_idx_map.Add("X3");
   mlvalue_name_idx_map.Add("T1");
   mlvalue_name_idx_map.Add("T2");
-  mlvalue_name_idx_map.Add("T3");
+  auto t3_idx = mlvalue_name_idx_map.Add("T3");
 
   auto cpu_allocator = execution_providers.Get(xp_type)->GetAllocator(0, OrtMemTypeDefault);
 
@@ -229,12 +228,11 @@ TEST(ExecutionFrameTest, MemPatternTest) {
   state.CalculateNodeIndexInfo();
 
   vector<MLValue> outputs;
-  ExecutionFrame frame(std::unordered_map<std::string, MLValue>{{"X1", v1}, {"X2", v2}, {"X3", v3}},
-                       std::vector<std::string>{"T3"}, outputs, {}, state);
+  ExecutionFrame frame({x1_idx, x2_idx, x3_idx}, {v1, v2, v3}, {t3_idx}, outputs, {}, state);
 
-  MLValue& hack3 = const_cast<MLValue&>(frame.GetMLValue(3));
-  MLValue& hack4 = const_cast<MLValue&>(frame.GetMLValue(3));
-  MLValue& hack5 = const_cast<MLValue&>(frame.GetMLValue(3));
+  MLValue& hack3 = *frame.GetMutableNodeInputOrOutputMLValue(3);
+  MLValue& hack4 = *frame.GetMutableNodeInputOrOutputMLValue(4);
+  MLValue& hack5 = *frame.GetMutableNodeInputOrOutputMLValue(5);
 
   status = frame.AllocateMLValueTensorSelfOwnBuffer(hack3, 3,
                                                     DataTypeImpl::GetType<float>(),

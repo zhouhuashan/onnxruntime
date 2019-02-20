@@ -16,14 +16,18 @@ using namespace onnxruntime::common;
 
 namespace onnxruntime {
 
-IExecutionFrame::IExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
+IExecutionFrame::IExecutionFrame(const std::vector<int>& feed_mlvalue_idxs,
+                                 const std::vector<MLValue>& feeds,
                                  const std::unordered_map<int, MLValue>& initializers,
-                                 const std::vector<std::string>& output_names,
-                                 const std::vector<MLValue>& fetches,
+                                 const std::vector<int>& fetch_mlvalue_idxs,
+                                 std::vector<MLValue>& fetches,
                                  const MLValueNameIdxMap& mlvalue_idx_map,
                                  const NodeIndexInfo& node_index_info)
-    : node_index_info_{node_index_info} {
-  Init(feeds, initializers, output_names, fetches, mlvalue_idx_map);
+    : node_index_info_{node_index_info}, fetch_mlvalue_idxs_{fetch_mlvalue_idxs} {
+  ORT_ENFORCE(feeds.size() == feed_mlvalue_idxs.size());
+  ORT_ENFORCE(fetches.empty() || fetches.size() == fetch_mlvalue_idxs.size());
+
+  Init(feed_mlvalue_idxs, feeds, initializers, fetch_mlvalue_idxs, fetches, mlvalue_idx_map);
 }
 
 IExecutionFrame::~IExecutionFrame() = default;
@@ -92,9 +96,10 @@ int IExecutionFrame::GetNodeIdxToMLValueIdx(int index) const {
   return mlvalue_idx;
 }
 
-void IExecutionFrame::Init(const std::unordered_map<std::string, MLValue>& feeds,
+void IExecutionFrame::Init(const std::vector<int>& feed_mlvalue_idxs,
+                           const std::vector<MLValue>& feeds,
                            const std::unordered_map<int, MLValue>& initializers,
-                           const std::vector<std::string>& output_names,
+                           const std::vector<int>& fetch_mlvalue_idxs,
                            const std::vector<MLValue>& fetches,
                            const MLValueNameIdxMap& mlvalue_idx_map) {
   // 1. resize the all_value_ vector
@@ -102,18 +107,11 @@ void IExecutionFrame::Init(const std::unordered_map<std::string, MLValue>& feeds
 
   // 2. Handle non-empty output vector
   if (!fetches.empty()) {
-    // should've already verified this much before when Run() starts
-    ORT_ENFORCE(output_names.size() == fetches.size(),
-                "output_names vector size: " + std::to_string(output_names.size()) +
-                    " does not match that of fetches vector: " + std::to_string(fetches.size()));
+    auto num_fetches = fetch_mlvalue_idxs.size();
 
-    auto idx = 0;
-    for (const auto& oname : output_names) {
-      int mlvalue_idx;
-      Status status = mlvalue_idx_map.GetIdx(oname, mlvalue_idx);
-      ORT_ENFORCE(status.IsOK(), status.ErrorMessage());
-      all_values_[mlvalue_idx] = fetches.at(idx);
-      ++idx;
+    for (size_t idx = 0; idx < num_fetches; ++idx) {
+      int mlvalue_idx = fetch_mlvalue_idxs[idx];
+      all_values_[mlvalue_idx] = fetches[idx];
     }
   }
 
@@ -130,26 +128,60 @@ void IExecutionFrame::Init(const std::unordered_map<std::string, MLValue>& feeds
   }
 
   // 4. handle feed in values. these can override initializer values so must be last
-  for (const auto& feed : feeds) {
-    int mlvalue_idx;
-    Status status = mlvalue_idx_map.GetIdx(feed.first, mlvalue_idx);
-    ORT_ENFORCE(status.IsOK(), status.ErrorMessage());
+  for (size_t idx = 0, end = feed_mlvalue_idxs.size(); idx < end; ++idx) {
+    int mlvalue_idx = feed_mlvalue_idxs[idx];
     // we are sharing the underline tensor/object for MLValue
-    all_values_[mlvalue_idx] = feed.second;
+    all_values_[mlvalue_idx] = feeds[idx];
   }
 }
 
-ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
-                               const std::vector<std::string>& output_names,
-                               const std::vector<MLValue>& fetches,
+Status IExecutionFrame::GetOutputs(std::vector<MLValue>& fetches) {
+  auto num_fetches = fetch_mlvalue_idxs_.size();
+
+  if (fetches.empty()) {
+    fetches.resize(num_fetches);
+  } else {
+    // if there's a mismatch things are out so sync so fail
+    if (fetches.size() != num_fetches) {
+      return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "Fetches vector passed to GetOutputs contains ", fetches.size(),
+                             " entries which doesn't match the number of fetches the frame was initialized with of ",
+                             num_fetches);
+    }
+  }
+
+  for (size_t idx = 0; idx < num_fetches; ++idx) {
+    fetches[idx] = GetMLValue(fetch_mlvalue_idxs_[idx]);
+  }
+
+  return Status::OK();
+}
+
+bool IExecutionFrame::IsOutput(int mlvalue_idx) const {
+  return std::find(fetch_mlvalue_idxs_.begin(), fetch_mlvalue_idxs_.end(), mlvalue_idx) != fetch_mlvalue_idxs_.end();
+}
+
+ExecutionFrame::ExecutionFrame(const std::vector<int>& feed_mlvalue_idxs,
+                               const std::vector<MLValue>& feeds,
+                               const std::vector<int>& fetch_mlvalue_idxs,
+                               std::vector<MLValue>& fetches,
                                const std::unordered_map<size_t, IExecutor::CustomAllocator>& fetch_allocators,
                                const SessionState& session_state)
-    : IExecutionFrame(feeds, session_state.GetInitializedTensors(), output_names, fetches,
+    : IExecutionFrame(feed_mlvalue_idxs, feeds, session_state.GetInitializedTensors(), fetch_mlvalue_idxs, fetches,
                       session_state.GetMLValueNameIdxMap(), session_state.GetNodeIndexInfo()),
       session_state_{session_state},
-      mem_patterns_(nullptr),
-      planner_(nullptr) {
-  Init(output_names, fetch_allocators);
+      mem_patterns_{nullptr},
+      planner_{nullptr} {
+  // map the custom allocators to mlvalue_idx entries
+  if (!fetch_allocators.empty()) {
+    for (size_t idx = 0, end = fetch_mlvalue_idxs.size(); idx < end; ++idx) {
+      int mlvalue_idx = fetch_mlvalue_idxs[idx];
+
+      auto custom_alloc_entry = fetch_allocators.find(idx);
+      if (custom_alloc_entry != fetch_allocators.cend()) {
+        custom_allocators_[mlvalue_idx] = custom_alloc_entry->second;
+      }
+    }
+  }
 
   // If the session enable memory pattern optimization
   // and we have execution plan generated, try to setup
@@ -158,11 +190,11 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
     std::vector<TensorShape> input_shapes;
     bool all_tensors = true;
     for (const auto& feed : feeds) {
-      if (!(feed.second.IsTensor())) {
+      if (!(feed.IsTensor())) {
         all_tensors = false;
         break;
       }
-      auto& tensor = feed.second.Get<Tensor>();
+      auto& tensor = feed.Get<Tensor>();
       input_shapes.push_back(tensor.Shape());
     }
 
@@ -374,28 +406,6 @@ Status ExecutionFrame::AllocateAsPerAllocationPlan(MLValue& mlvalue, int mlvalue
   return Status::OK();
 }
 
-void ExecutionFrame::Init(const std::vector<std::string>& output_names,
-                          const std::unordered_map<size_t, IExecutor::CustomAllocator>& fetch_allocators) {
-  const auto& mlvalue_idx_map = session_state_.GetMLValueNameIdxMap();
-
-  // setup output_indices_, we don't want to generate mem plan on output tensors.
-  output_indices_.reserve(output_names.size());
-  auto idx = 0;
-  for (const auto& oname : output_names) {
-    int mlvalue_idx;
-    Status status = mlvalue_idx_map.GetIdx(oname, mlvalue_idx);
-    ORT_ENFORCE(status.IsOK(), status.ErrorMessage());
-    output_indices_.push_back(mlvalue_idx);
-
-    auto custom_alloc_entry = fetch_allocators.find(idx);
-    if (custom_alloc_entry != fetch_allocators.cend()) {
-      custom_allocators_[mlvalue_idx] = custom_alloc_entry->second;
-    }
-
-    ++idx;
-  }
-}
-
 AllocatorPtr ExecutionFrame::GetAllocatorImpl(const OrtAllocatorInfo& info) const {
   return utils::GetAllocator(session_state_, info);
 }
@@ -432,8 +442,7 @@ void ExecutionFrame::TraceAllocate(int mlvalue_idx, size_t size) {
 
 void ExecutionFrame::TraceFree(int mlvalue_idx) {
   // don't trace free on output tensors.
-  if (planner_ &&
-      std::find(output_indices_.begin(), output_indices_.end(), mlvalue_idx) == output_indices_.end()) {
+  if (planner_ && !IsOutput(mlvalue_idx)) {
     const SequentialExecutionPlan* p_seq_exec_plan = session_state_.GetExecutionPlan();
     const auto& alloc_plan = p_seq_exec_plan->allocation_plan;
     const auto& per_alloc_plan = alloc_plan.at(mlvalue_idx);
