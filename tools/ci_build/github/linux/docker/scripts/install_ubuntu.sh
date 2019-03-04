@@ -3,7 +3,7 @@ set -e
 while getopts p: parameter_Option
 do case "${parameter_Option}"
 in
-p) PYTHON_VER=${OPTARG};;
+p) PYTHON_VER=${OPTARG:-3.5};;
 esac
 done
 
