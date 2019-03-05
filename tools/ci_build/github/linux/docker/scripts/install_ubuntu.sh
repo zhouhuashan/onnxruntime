@@ -7,6 +7,7 @@ p) PYTHON_VER=${OPTARG:-3.5};;
 esac
 done
 
+PYTHON_VER=${PYTHON_VER:=3.5}
 DEBIAN_FRONTEND=noninteractive
 
 apt-get update && apt-get install -y software-properties-common
