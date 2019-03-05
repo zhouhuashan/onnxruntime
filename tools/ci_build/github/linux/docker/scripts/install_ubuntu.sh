@@ -61,8 +61,7 @@ if [ $PYTHON_VER!="3.5" ]; then
     update-alternatives --set python3 /usr/bin/python${PYTHON_VER}
 fi
 
-ls /usr/bin/
-echo ${PYTHON_VER}
+echo "python version ${PYTHON_VER}"
 python${PYTHON_VER} -m pip install --upgrade --force-reinstall numpy==1.15.0
 rm -rf /var/lib/apt/lists/*
 
