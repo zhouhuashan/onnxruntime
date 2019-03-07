@@ -5,6 +5,7 @@ parameters:
   msbuildPlatform: 'x64'
   buildArch: 'x64'
   buildConfig: 'RelWithDebInfo'
+  buildCSharp: false
 
 steps:
     - task: CmdLine@2
@@ -32,6 +33,27 @@ steps:
         arguments: '$(Build.SourcesDirectory)\tools\ci_build\build.py --config ${{parameters.buildConfig}} --build_dir $(Build.BinariesDirectory) --skip_submodule_sync --cmake_path $(Build.BinariesDirectory)\cmake\bin\cmake.exe --ctest_path $(Build.BinariesDirectory)\cmake\bin\ctest.exe  --build_shared_lib  --enable_onnx_tests --test_data_url $(TestDataUrl) --test_data_checksum $(TestDataChecksum) --test ${{parameters.buildAdditionalParams}}'
         workingFolder: '$(Build.BinariesDirectory)'
 
+    - task: VSBuild@1
+      displayName: 'Build c# ${{parameters.buildConfig}}'
+      inputs:
+        solution: '$(Build.SourcesDirectory)\csharp\OnnxRuntime.CSharp.sln'
+        platform: 'any cpu'
+        configuration: '${{parameters.buildConfig}}'
+        msbuildArchitecture: 'x64'
+        restoreNugetPackages: false
+        workingFolder: '$(Build.SourcesDirectory)\csharp'
+        msbuildArgs: '/m /p:OnnxRuntimeBuildDirectory=$(Build.BinariesDirectory)'
+      condition: ${{parameters.buildCSharp}}
+
+    - task: VSTest@2
+      displayName: 'VsTest - C# ${{parameters.buildConfig}}'
+      inputs:
+        testAssemblyVer2: '**\bin\Release\**\*Tests.dll'
+        searchFolder: '$(Build.SourcesDirectory)\csharp\test'
+        runInParallel: true
+        configuration: ${{parameters.buildConfig}}
+      condition: ${{parameters.buildCSharp}}
+        
     - task: PublishTestResults@2
       displayName: 'Publish unit test results'
       inputs:
