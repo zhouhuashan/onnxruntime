@@ -7,7 +7,7 @@
 // Licensed under the MIT license.
 
 syntax = "proto2";
-
+option optimize_for = CODE_SIZE;
 package onnx;
 
 // Overview

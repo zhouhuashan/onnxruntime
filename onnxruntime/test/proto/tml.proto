@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "onnx-ml.proto";
+option optimize_for = CODE_SIZE;
 package onnxruntime.proto;
 
 //must sync with data_types.h

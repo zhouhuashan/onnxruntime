@@ -307,12 +307,12 @@ endif()  # SingleUnitTestProject
 
 # standalone test for inference session without environment
 # the normal test executables set up a default runtime environment, which we don't want here
-AddTest(
-  TARGET onnxruntime_test_framework_session_without_environment_standalone
-  SOURCES "${TEST_SRC_DIR}/framework/inference_session_without_environment/inference_session_without_environment_standalone_test.cc" "${TEST_SRC_DIR}/framework/test_main.cc"
-  LIBS  onnxruntime_test_utils ${ONNXRUNTIME_TEST_LIBS}
-  DEPENDS ${onnxruntime_EXTERNAL_DEPENDENCIES}
-)
+# AddTest(
+#   TARGET onnxruntime_test_framework_session_without_environment_standalone
+#   SOURCES "${TEST_SRC_DIR}/framework/inference_session_without_environment/inference_session_without_environment_standalone_test.cc" "${TEST_SRC_DIR}/framework/test_main.cc"
+#   LIBS  onnxruntime_test_utils ${ONNXRUNTIME_TEST_LIBS}
+#   DEPENDS ${onnxruntime_EXTERNAL_DEPENDENCIES}
+# )
 
 #
 # onnxruntime_ir_graph test data
