@@ -186,7 +186,7 @@ class SessionObjectInitializer {
   }
 };
 
-inline void RegisterExecutionProvider(InferenceSession* sess, onnxruntime::IExecutionProviderFactory& f) {
+inline void RegisterExecutionProvider(Session* sess, onnxruntime::IExecutionProviderFactory& f) {
   auto p = f.CreateProvider();
   auto status = sess->RegisterExecutionProvider(std::move(p));
   if (!status.IsOK()) {
@@ -194,7 +194,7 @@ inline void RegisterExecutionProvider(InferenceSession* sess, onnxruntime::IExec
   }
 }
 
-void InitializeSession(InferenceSession* sess) {
+void InitializeSession(Session* sess) {
   onnxruntime::common::Status status;
 
 #ifdef USE_TENSORRT
@@ -332,11 +332,11 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           "node shape (assuming the node holds a tensor)");
 
   py::class_<SessionObjectInitializer>(m, "SessionObjectInitializer");
-  py::class_<InferenceSession>(m, "InferenceSession", R"pbdoc(This is the main class used to run a model.)pbdoc")
+  py::class_<Session>(m, "Session", R"pbdoc(This is the main class used to run a model.)pbdoc")
       .def(py::init<SessionObjectInitializer, SessionObjectInitializer>())
       .def(py::init<SessionOptions, SessionObjectInitializer>())
       .def(
-          "load_model", [](InferenceSession* sess, const std::string& path) {
+          "load_model", [](Session* sess, const std::string& path) {
             auto status = sess->Load(path);
             if (!status.IsOK()) {
               throw std::runtime_error(status.ToString().c_str());
@@ -345,7 +345,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           },
           R"pbdoc(Load a model saved in ONNX format.)pbdoc")
       .def(
-          "read_bytes", [](InferenceSession* sess, const py::bytes& serializedModel) {
+          "read_bytes", [](Session* sess, const py::bytes& serializedModel) {
             std::istringstream buffer(serializedModel);
             auto status = sess->Load(buffer);
             if (!status.IsOK()) {
@@ -354,7 +354,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
             InitializeSession(sess);
           },
           R"pbdoc(Load a model serialized in ONNX format.)pbdoc")
-      .def("run", [](InferenceSession* sess, std::vector<std::string> output_names, std::map<std::string, py::object> pyfeeds, RunOptions* run_options = nullptr) -> std::vector<py::object> {
+      .def("run", [](Session* sess, std::vector<std::string> output_names, std::map<std::string, py::object> pyfeeds, RunOptions* run_options = nullptr) -> std::vector<py::object> {
         NameMLValMap feeds;
         for (auto _ : pyfeeds) {
           MLValue ml_value;
@@ -400,10 +400,10 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         }
         return rfetch;
       })
-      .def("end_profiling", [](InferenceSession* sess) -> std::string {
+      .def("end_profiling", [](Session* sess) -> std::string {
         return sess->EndProfiling();
       })
-      .def_property_readonly("inputs_meta", [](const InferenceSession* sess) -> const std::vector<const onnxruntime::NodeArg*>& {
+      .def_property_readonly("inputs_meta", [](const Session* sess) -> const std::vector<const onnxruntime::NodeArg*>& {
         auto res = sess->GetModelInputs();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
@@ -411,7 +411,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           return *(res.second);
         }
       })
-      .def_property_readonly("outputs_meta", [](const InferenceSession* sess) -> const std::vector<const onnxruntime::NodeArg*>& {
+      .def_property_readonly("outputs_meta", [](const Session* sess) -> const std::vector<const onnxruntime::NodeArg*>& {
         auto res = sess->GetModelOutputs();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
@@ -419,7 +419,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           return *(res.second);
         }
       })
-      .def_property_readonly("model_meta", [](const InferenceSession* sess) -> const onnxruntime::ModelMetadata& {
+      .def_property_readonly("model_meta", [](const Session* sess) -> const onnxruntime::ModelMetadata& {
         auto res = sess->GetModelMetadata();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
