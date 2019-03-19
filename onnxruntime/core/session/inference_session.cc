@@ -5,13 +5,10 @@
 #pragma warning(disable : 4267)
 #endif
 
-#include "core/session/session.h"
-
 #include <memory>
 #include <sstream>
 #include <unordered_set>
 #include <list>
-
 #include "core/common/logging/logging.h"
 #include "core/common/task_thread_pool.h"
 #include "core/platform/notification.h"
@@ -43,9 +40,10 @@
 #include "core/optimizer/transformer_memcpy.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/framework/custom_ops_author.h"
-#include "core/session/IOBinding.h"
 #include "core/optimizer/rule_based_graph_transformer.h"
 #include "core/optimizer/graph_transformer_utils.h"
+#include "core/session/IOBinding.h"
+#include "core/session/session.h"
 
 #ifdef USE_EIGEN_THREADPOOL
 #include <unsupported/Eigen/CXX11/ThreadPool>
