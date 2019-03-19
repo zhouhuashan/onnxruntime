@@ -8,7 +8,7 @@
 #include "core/framework/compute_capability.h"
 #include "core/graph/graph_viewer.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
-#include "core/session/inference_session.h"
+#include "core/session/session.h"
 #include "core/common/logging/logging.h"
 #include "test/framework/test_utils.h"
 #include "test/test_environment.h"
@@ -278,7 +278,7 @@ class FuseExecutionProviderX : public CPUExecutionProvider {
   std::unordered_map<std::string, std::shared_ptr<tvm::runtime::Module>> modules_;
 };
 
-static void RunSession(InferenceSession& session_object,
+static void RunSession(Session& session_object,
                        RunOptions& run_options,
                        std::vector<int64_t>& dims_x,
                        std::vector<double>& values_x,
@@ -316,7 +316,8 @@ TEST(TVMTest, Fuse_Add_Test) {
 
   so.session_logid = "InferenceSessionTests.NoTimeout";
 
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
   CPUExecutionProviderInfo info;
   auto tvm_xp = std::make_unique<FuseExecutionProviderX>(info);
   EXPECT_TRUE(session_object.RegisterExecutionProvider(std::move(tvm_xp)).IsOK());

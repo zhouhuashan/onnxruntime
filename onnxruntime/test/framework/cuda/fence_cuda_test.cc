@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include "core/session/inference_session.h"
+#include "core/session/session.h"
 
 #include <algorithm>
 #include <functional>
@@ -40,7 +40,7 @@ size_t CountCopyNodes(const onnxruntime::Graph& graph) {
   return num_copy_nodes;
 }
 
-static common::Status LoadInferenceSessionFromModel(InferenceSession& session, onnxruntime::Model& model) {
+static common::Status LoadInferenceSessionFromModel(Session& session, onnxruntime::Model& model) {
   std::stringstream s1;
   model.ToProto().SerializeToOstream(&s1);
   return session.Load(s1);
@@ -105,7 +105,8 @@ TEST(CUDAFenceTests, DISABLED_PartOnCPU) {
              DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
   SessionOptions so;
-  InferenceSession session(so);
+  auto session_ptr = Session::Create(so);
+  Session& session = *session_ptr;
   LoadInferenceSessionFromModel(session, *model);
   CUDAExecutionProviderInfo xp_info;
   session.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(xp_info));
@@ -160,7 +161,8 @@ TEST(CUDAFenceTests, TileWithInitializer) {
              DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
   SessionOptions so;
-  InferenceSession session(so);
+  auto session_ptr = Session::Create(so);
+  Session& session = *session_ptr;
   LoadInferenceSessionFromModel(session, *model);
   CUDAExecutionProviderInfo xp_info;
   session.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(xp_info));
@@ -224,7 +226,8 @@ TEST(CUDAFenceTests, TileWithComputedInput) {
              DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
   SessionOptions so;
-  InferenceSession session(so);
+  auto session_ptr = Session::Create(so);
+  Session& session = *session_ptr;
   LoadInferenceSessionFromModel(session, *model);
   CUDAExecutionProviderInfo xp_info;
   session.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(xp_info));

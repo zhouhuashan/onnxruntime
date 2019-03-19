@@ -7,11 +7,13 @@
 #include "core/framework/data_types.h"
 #include "core/optimizer/graph_transformer_mgr.h"
 #include "core/common/profiler.h"
+#include "core/common/task_thread_pool.h"
 #include "core/framework/execution_providers.h"
 #include "core/framework/kernel_registry_manager.h"
 #include "core/framework/session_state.h"
 #include "core/optimizer/insert_cast_transformer.h"
 #include "core/framework/path_lib.h"
+#include "core/framework/iexecutor.h"
 
 #ifdef USE_EIGEN_THREADPOOL
 #include <unsupported/Eigen/CXX11/ThreadPool>
@@ -28,8 +30,6 @@ class GraphTransformer;
 class Model;
 class IOBinding;
 class Notification;
-class IExecutor;
-class TaskThreadPool;
 
 class InferenceSession : public Session {
  public:

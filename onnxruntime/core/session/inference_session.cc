@@ -10,7 +10,6 @@
 #include <unordered_set>
 #include <list>
 #include "core/common/logging/logging.h"
-#include "core/common/task_thread_pool.h"
 #include "core/platform/notification.h"
 #include "core/platform/ort_mutex.h"
 #include "core/graph/graph_viewer.h"
