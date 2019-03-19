@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include "core/session/inference_session.h"
+#include "core/session/session.h"
 
 #include <algorithm>
 #include <cfloat>
@@ -177,7 +177,7 @@ void VerifyOutputs(const std::vector<MLValue>& fetches,
   ASSERT_EQ(expected_values, found);
 }
 
-void RunModel(InferenceSession& session_object,
+void RunModel(Session& session_object,
               const RunOptions& run_options,
               bool is_preallocate_output_vec = false) {
   // prepare inputs
@@ -215,7 +215,7 @@ void RunModel(InferenceSession& session_object,
   VerifyOutputs(fetches, expected_dims_mul_y, expected_values_mul_y);
 }
 
-void RunModelWithBindingMatMul(InferenceSession& session_object,
+void RunModelWithBindingMatMul(Session& session_object,
                                const RunOptions& run_options,
                                ProviderType bind_provider_type,
                                bool is_preallocate_output_vec = false,
@@ -311,7 +311,8 @@ TEST(InferenceSessionTests, NoTimeout) {
 
   so.session_logid = "InferenceSessionTests.NoTimeout";
 
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -326,7 +327,8 @@ TEST(InferenceSessionTests, DisableCPUArena) {
   so.session_logid = "InferenceSessionTests.DisableCPUArena";
   so.enable_cpu_mem_arena = false;
 
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -366,7 +368,8 @@ TEST(InferenceSessionTests, ModelMetadata) {
   SessionOptions so;
 
   so.session_logid = "InferenceSessionTests.ModelMetadata";
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
   string model_uri = "../models/opset8/test_squeezenet/model.onnx";
   ASSERT_TRUE(session_object.Load(model_uri).IsOK());
 
@@ -436,7 +439,8 @@ TEST(InferenceSessionTests, CheckRunLogger) {
       std::unique_ptr<ISink>(capturing_sink), logging::Severity::kVERBOSE, false,
       LoggingManager::InstanceType::Temporal);
 
-  InferenceSession session_object{so, logging_manager.get()};
+  auto session_ptr = Session::Create(so, logging_manager.get());
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -465,7 +469,8 @@ TEST(InferenceSessionTests, CheckRunProfilerWithSessionOptions) {
   so.enable_profiling = true;
   so.profile_file_prefix = ORT_TSTR("onnxprofile_profile_test");
 
-  InferenceSession session_object(so);
+  auto session_ptr = Session::Create(so);
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -504,7 +509,8 @@ TEST(InferenceSessionTests, CheckRunProfilerWithStartProfile) {
 
   so.session_logid = "CheckRunProfiler";
 
-  InferenceSession session_object(so);
+  auto session_ptr = Session::Create(so);
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -542,7 +548,8 @@ TEST(InferenceSessionTests, MultipleSessionsNoTimeout) {
   SessionOptions session_options;
 
   session_options.session_logid = "InferenceSessionTests.MultipleSessionsNoTimeout";
-  InferenceSession session_object{session_options, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(session_options, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -567,7 +574,8 @@ TEST(InferenceSessionTests, PreAllocateOutputVector) {
 
   so.session_logid = "InferenceSessionTests.PreAllocateOutputVector";
 
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -593,7 +601,8 @@ TEST(InferenceSessionTests, ConfigureVerbosityLevel) {
       false,
       LoggingManager::InstanceType::Temporal);
 
-  InferenceSession session_object{so, logging_manager.get()};
+  auto session_ptr = Session::Create(so, logging_manager.get());
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -627,7 +636,8 @@ TEST(InferenceSessionTests, TestWithIstream) {
 
   so.session_logid = "InferenceSessionTests.TestWithIstream";
 
-  InferenceSession session_object{so};
+  auto session_ptr = Session::Create(so);
+  Session& session_object = *session_ptr;
 
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
   ASSERT_TRUE(model_file_stream.good());
@@ -644,7 +654,8 @@ TEST(InferenceSessionTests, TestRegisterExecutionProvider) {
 
   so.session_logid = "InferenceSessionTests.TestWithIstream";
 
-  InferenceSession session_object{so};
+  auto session_ptr = Session::Create(so);
+  Session& session_object = *session_ptr;
   CPUExecutionProviderInfo epi;
   ASSERT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(epi)).IsOK());
 
@@ -668,7 +679,8 @@ static void TestBindHelper(const std::string& log_str,
   so.session_logid = "InferenceSessionTests." + log_str;
   so.session_log_verbosity_level = 1;  // change to 1 for detailed logging
 
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
 
   if (bind_provider_type == kCudaExecutionProvider || run_provider_type == kCudaExecutionProvider) {
 #ifdef USE_CUDA
@@ -705,7 +717,8 @@ TEST(InferenceSessionTests, TestBindCpu) {
 
 TEST(InferenceSessionTests, TestIOBindingReuse) {
   SessionOptions so;
-  InferenceSession session_object(so);
+  auto session_ptr = Session::Create(so);
+  Session& session_object = *session_ptr;
   std::unique_ptr<Model> p_model;
   CreateMatMulModel(p_model, kCpuExecutionProvider);
 
@@ -745,7 +758,8 @@ TEST(InferenceSessionTests, InvalidInputTypeOfTensorElement) {
 
   so.session_logid = "InferenceSessionTests.InvalidInputTypeOfTensorElement";
 
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -818,7 +832,8 @@ TEST(InferenceSessionTests, ModelWithoutOpset) {
 
   so.session_logid = "InferenceSessionTests.ModelWithoutOpset";
 
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
   Status retval = session_object.Load(MODEL_URI_NO_OPSET);
   ASSERT_FALSE(retval.IsOK());
   if (!retval.IsOK()) {
@@ -867,7 +882,8 @@ static common::Status RunOptionalInputTest(bool add_required_input,
   SessionOptions so;
   so.session_logid = "InferenceSessionTests.TestOptionalInputs";
 
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
 
   std::stringstream s1;
   model_proto.SerializeToOstream(&s1);
@@ -986,7 +1002,8 @@ TEST(ExecutionProviderTest, FunctionTest) {
 
   SessionOptions so;
   so.session_logid = "ExecutionProviderTest.FunctionTest";
-  InferenceSession session_object{so};
+  auto session_ptr = Session::Create(so);
+  Session& session_object = *session_ptr;
   status = session_object.Load(model_file_name);
   ASSERT_TRUE(status.IsOK());
   status = session_object.Initialize();
@@ -1025,7 +1042,8 @@ TEST(ExecutionProviderTest, FunctionTest) {
   ASSERT_TRUE(status.IsOK());
   VerifyOutputs(fetches, expected_dims_mul_m, expected_values_mul_m);
 
-  InferenceSession session_object_2{so};
+  auto session_ptr_2 = Session::Create(so);
+  Session& session_object_2 = *session_ptr_2;
   session_object_2.RegisterExecutionProvider(std::move(testCPUExecutionProvider));
   session_object_2.RegisterExecutionProvider(std::make_unique<::onnxruntime::FuseExecutionProvider>());
   status = session_object_2.Load(model_file_name);
@@ -1093,7 +1111,8 @@ TEST(ExecutionProviderTest, FunctionInlineTest) {
 
   SessionOptions so;
   so.session_logid = "ExecutionProviderTest.FunctionInlineTest";
-  InferenceSession session_object{so};
+  auto session_ptr = Session::Create(so);
+  Session& session_object = *session_ptr;
   status = session_object.Load(model_file_name);
   ASSERT_TRUE(status.IsOK());
   status = session_object.Initialize();
@@ -1183,7 +1202,8 @@ TEST(InferenceSessionTests, TestTruncatedSequence) {
 
   // now run the truncated model
   SessionOptions so;
-  InferenceSession session_object(so);
+  auto session_ptr = Session::Create(so);
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(LSTM_MODEL_URI).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -1291,7 +1311,8 @@ TEST(InferenceSessionTests, TestTruncatedSequence) {
 TEST(InferenceSessionTests, TestCopyToFromDevices) {
   SessionOptions so;
   so.session_logid = "InferenceSessionTests.TestCopyToFromDevices";
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
 
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
@@ -1344,12 +1365,13 @@ TEST(InferenceSessionTests, TestCopyToFromDevices) {
 }
 
 TEST(InferenceSessionTests, TestL1Transformers) {
-  string model_uri = "testdata/transform/fusion/fuse-conv-bn-mul-add-unsqueeze.onnx";  
+  string model_uri = "testdata/transform/fusion/fuse-conv-bn-mul-add-unsqueeze.onnx";
 
   SessionOptions so;
   so.session_logid = "InferenceSessionTests.TestL1Transformers";
   so.graph_optimization_level = 1;
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(model_uri).IsOK());
 
   std::shared_ptr<Model> p_model;
@@ -1365,11 +1387,12 @@ TEST(InferenceSessionTests, TestL1AndL2Transformers) {
   SessionOptions so;
   so.session_logid = "InferenceSessionTests.TestL1AndL2Transformers";
   so.graph_optimization_level = 2;
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(model_uri).IsOK());
 
   std::shared_ptr<Model> p_model;
-  ASSERT_TRUE(Model::Load(model_uri, p_model).IsOK());  
+  ASSERT_TRUE(Model::Load(model_uri, p_model).IsOK());
 
   ASSERT_TRUE(session_object.Initialize().IsOK());
 }
@@ -1380,7 +1403,8 @@ TEST(InferenceSessionTests, TestCustomTransformers) {
   SessionOptions so;
   so.session_logid = "InferenceSessionTests.TestL1AndL2Transformers";
   so.graph_optimization_level = 2;
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
   session_object.AddCustomTransformerList({"EliminateIdentity", "ConvAddFusion", "EliminateUnsqueeze"});
   ASSERT_TRUE(session_object.Load(model_uri).IsOK());
 
@@ -1390,13 +1414,14 @@ TEST(InferenceSessionTests, TestCustomTransformers) {
   ASSERT_TRUE(session_object.Initialize().IsOK());
 }
 
-TEST(InferenceSessionTests, DisableAllTransformers) {  
+TEST(InferenceSessionTests, DisableAllTransformers) {
   string model_uri = "testdata/transform/fusion/fuse-conv-bn-mul-add-unsqueeze.onnx";
 
   SessionOptions so;
   so.session_logid = "InferenceSessionTests.DisableAllTransformers";
   so.graph_optimization_level = 0;
-  InferenceSession session_object{so, &DefaultLoggingManager()};
+  auto session_ptr = Session::Create(so, &DefaultLoggingManager());
+  Session& session_object = *session_ptr;
   ASSERT_TRUE(session_object.Load(model_uri).IsOK());
 
   std::shared_ptr<Model> p_model;

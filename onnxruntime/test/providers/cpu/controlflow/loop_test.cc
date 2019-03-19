@@ -7,7 +7,7 @@
 
 #include "core/common/logging/logging.h"
 #include "core/framework/session_state.h"
-#include "core/session/inference_session.h"
+#include "core/session/session.h"
 
 #include "test/providers/provider_test_utils.h"
 #include "test/util/include/default_providers.h"

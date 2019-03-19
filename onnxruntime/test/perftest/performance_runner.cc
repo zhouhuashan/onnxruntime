@@ -4,7 +4,6 @@
 #include "performance_runner.h"
 #include "TestCase.h"
 #include "core/graph/graph_viewer.h"  //for onnxruntime::NodeArg
-#include "core/session/inference_session.h"
 #include "utils.h"
 #include "testenv.h"
 #include "providers.h"
