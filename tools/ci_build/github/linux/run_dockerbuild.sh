@@ -53,10 +53,9 @@ set +e
 if [ $BUILD_DEVICE = "cpu" ]; then
     docker rm -f "onnxruntime-$BUILD_DEVICE" || true
     docker run -h $HOSTNAME \
-        --rm \
         --name "onnxruntime-$BUILD_DEVICE" \
         --volume "$SOURCE_ROOT:/onnxruntime_src" \
-        --volume "$BUILD_DIR:/home/onnxruntimedev" \
+        --volume "$BUILD_DIR:/build" \
         --volume "$HOME/.cache/onnxruntime:/home/onnxruntimedev/.cache/onnxruntime" \
         "onnxruntime-$IMAGE" \
         /bin/bash /onnxruntime_src/tools/ci_build/github/linux/run_build.sh \
@@ -67,7 +66,7 @@ else
         --rm \
         --name "onnxruntime-$BUILD_DEVICE" \
         --volume "$SOURCE_ROOT:/onnxruntime_src" \
-        --volume "$BUILD_DIR:/home/onnxruntimedev" \
+        --volume "$BUILD_DIR:/build" \
         --volume "$HOME/.cache/onnxruntime:/home/onnxruntimedev/.cache/onnxruntime" \
         "onnxruntime-$IMAGE" \
         /bin/bash /onnxruntime_src/tools/ci_build/github/linux/run_build.sh \
