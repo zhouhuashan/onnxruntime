@@ -186,7 +186,66 @@ class SessionObjectInitializer {
   }
 };
 
-inline void RegisterExecutionProvider(Session* sess, onnxruntime::IExecutionProviderFactory& f) {
+// A wrapper for class Session
+class PySession {
+ public:
+  PySession(const SessionOptions& session_options,
+            logging::LoggingManager* logging_manager) : session_(Session::Create(session_options, logging_manager)) {
+    if (!session_) {
+      throw std::runtime_error("Fail to create a session.");
+    }
+  }
+
+  common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider) {
+    return session_->RegisterExecutionProvider(std::move(p_exec_provider));
+  }
+
+  common::Status Load(const std::string& model_uri) {
+    return session_->Load(model_uri);
+  }
+
+  common::Status Load(std::istream& model_istream) {
+    return session_->Load(model_istream);
+  }
+
+  common::Status Initialize() {
+    return session_->Initialize();
+  }
+
+  common::Status Run(const RunOptions& run_options,
+                     const NameMLValMap& feeds,
+                     const std::vector<std::string>& output_names,
+                     std::vector<MLValue>* p_fetches) {
+    return session_->Run(run_options, feeds, output_names, p_fetches);
+  }
+
+  common::Status Run(const NameMLValMap& feeds,
+                     const std::vector<std::string>& output_names,
+                     std::vector<MLValue>* p_fetches) {
+    return session_->Run(feeds, output_names, p_fetches);
+  }
+
+  std::string EndProfiling() {
+    return session_->EndProfiling();
+  }
+
+  std::pair<common::Status, const InputDefList*> GetModelInputs() const {
+    return session_->GetModelInputs();
+  }
+
+  std::pair<common::Status, const OutputDefList*> GetModelOutputs() const {
+    return session_->GetModelOutputs();
+  }
+
+  std::pair<common::Status, const ModelMetadata*> GetModelMetadata() const {
+    return session_->GetModelMetadata();
+  }
+
+ private:
+  std::unique_ptr<Session> session_;
+};
+
+inline void RegisterExecutionProvider(PySession* sess, onnxruntime::IExecutionProviderFactory& f) {
   auto p = f.CreateProvider();
   auto status = sess->RegisterExecutionProvider(std::move(p));
   if (!status.IsOK()) {
@@ -194,7 +253,7 @@ inline void RegisterExecutionProvider(Session* sess, onnxruntime::IExecutionProv
   }
 }
 
-void InitializeSession(Session* sess) {
+void InitializeSession(PySession* sess) {
   onnxruntime::common::Status status;
 
 #ifdef USE_TENSORRT
@@ -332,11 +391,11 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           "node shape (assuming the node holds a tensor)");
 
   py::class_<SessionObjectInitializer>(m, "SessionObjectInitializer");
-  py::class_<Session>(m, "Session", R"pbdoc(This is the main class used to run a model.)pbdoc")
+  py::class_<PySession>(m, "InferenceSession", R"pbdoc(This is the main class used to run a model.)pbdoc")
       .def(py::init<SessionObjectInitializer, SessionObjectInitializer>())
       .def(py::init<SessionOptions, SessionObjectInitializer>())
       .def(
-          "load_model", [](Session* sess, const std::string& path) {
+          "load_model", [](PySession* sess, const std::string& path) {
             auto status = sess->Load(path);
             if (!status.IsOK()) {
               throw std::runtime_error(status.ToString().c_str());
@@ -345,7 +404,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           },
           R"pbdoc(Load a model saved in ONNX format.)pbdoc")
       .def(
-          "read_bytes", [](Session* sess, const py::bytes& serializedModel) {
+          "read_bytes", [](PySession* sess, const py::bytes& serializedModel) {
             std::istringstream buffer(serializedModel);
             auto status = sess->Load(buffer);
             if (!status.IsOK()) {
@@ -354,7 +413,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
             InitializeSession(sess);
           },
           R"pbdoc(Load a model serialized in ONNX format.)pbdoc")
-      .def("run", [](Session* sess, std::vector<std::string> output_names, std::map<std::string, py::object> pyfeeds, RunOptions* run_options = nullptr) -> std::vector<py::object> {
+      .def("run", [](PySession* sess, std::vector<std::string> output_names, std::map<std::string, py::object> pyfeeds, RunOptions* run_options = nullptr) -> std::vector<py::object> {
         NameMLValMap feeds;
         for (auto _ : pyfeeds) {
           MLValue ml_value;
@@ -400,10 +459,10 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         }
         return rfetch;
       })
-      .def("end_profiling", [](Session* sess) -> std::string {
+      .def("end_profiling", [](PySession* sess) -> std::string {
         return sess->EndProfiling();
       })
-      .def_property_readonly("inputs_meta", [](const Session* sess) -> const std::vector<const onnxruntime::NodeArg*>& {
+      .def_property_readonly("inputs_meta", [](const PySession* sess) -> const std::vector<const onnxruntime::NodeArg*>& {
         auto res = sess->GetModelInputs();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
@@ -411,7 +470,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           return *(res.second);
         }
       })
-      .def_property_readonly("outputs_meta", [](const Session* sess) -> const std::vector<const onnxruntime::NodeArg*>& {
+      .def_property_readonly("outputs_meta", [](const PySession* sess) -> const std::vector<const onnxruntime::NodeArg*>& {
         auto res = sess->GetModelOutputs();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
@@ -419,7 +478,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           return *(res.second);
         }
       })
-      .def_property_readonly("model_meta", [](const Session* sess) -> const onnxruntime::ModelMetadata& {
+      .def_property_readonly("model_meta", [](const PySession* sess) -> const onnxruntime::ModelMetadata& {
         auto res = sess->GetModelMetadata();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
