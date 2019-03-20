@@ -105,13 +105,6 @@ struct ModelMetadata {
 class Session {
  public:
   /**
-   * Session Type, currently only support Inference.
-   */
-  enum class SessionType {
-    Inference
-  };
-
-  /**
     Create a new Session
     @param session_options Session options.
     @param logging_manager
@@ -120,11 +113,9 @@ class Session {
     If nullptr, the default LoggingManager MUST have been created previously as it will be used
     for logging. This will use the default logger id in messages.
     See core/common/logging/logging.h for details, and how LoggingManager::DefaultLogger works.
-    @param session_type choose from below session types, e.g. Inferenece.
     */
   static std::unique_ptr<Session> Create(const SessionOptions& session_options,
-                                         logging::LoggingManager* logging_manager = nullptr,
-                                         SessionType session_type = SessionType::Inference);
+                                         logging::LoggingManager* logging_manager = nullptr);
 
   virtual ~Session() = default;
 
@@ -295,5 +286,9 @@ class Session {
     * @return OK if success.
     */
   virtual common::Status Load(std::unique_ptr<ONNX_NAMESPACE::ModelProto> p_model_proto) = 0;
+
+  // A trivial class for sub class's constructor.
+  // to enforce Session::Create() being the only way for construction.
+  class SubClassConstructorCookie {};
 };
 }  // namespace onnxruntime

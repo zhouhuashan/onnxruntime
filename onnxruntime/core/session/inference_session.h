@@ -34,6 +34,13 @@ class Notification;
 class InferenceSession : public Session {
  public:
   /**
+  * InferenceSession should only be created by Session::Create().
+  */
+  InferenceSession(const SessionOptions& session_options,
+                   logging::LoggingManager* logging_manager,
+                   const Session::SubClassConstructorCookie& cookie);
+
+  /**
     * Register an execution provider. If you've one to register, call this before invoking Initialize().
     * The order of invocation indicates the preference order as well. In other words call this method 
     * on your most preferred execution provider first followed by the less preferred ones.
@@ -117,7 +124,7 @@ class InferenceSession : public Session {
   common::Status Run(const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>* p_fetches) override {
-    return Run({}, feeds, output_names, p_fetches);
+    return Run(RunOptions(), feeds, output_names, p_fetches);
   }
 
   /**
@@ -206,10 +213,6 @@ class InferenceSession : public Session {
   common::Status Load(std::unique_ptr<ONNX_NAMESPACE::ModelProto> p_model_proto) override;
 
  private:
-  friend class Session;
-  InferenceSession(const SessionOptions& session_options,
-                   logging::LoggingManager* logging_manager);
-
   ORT_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(InferenceSession);
 
   bool HasLocalSchema() const {

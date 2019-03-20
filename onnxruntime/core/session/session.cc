@@ -12,15 +12,7 @@ using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 
 std::unique_ptr<Session> Session::Create(const SessionOptions& session_options,
-                                         logging::LoggingManager* logging_manager,
-                                         SessionType session_type) {
-  switch (session_type) {
-    case onnxruntime::Session::SessionType::Inference:
-      return std::unique_ptr<InferenceSession>(new InferenceSession(session_options, logging_manager));
-      break;
-    default:
-      break;
-  }
-  return nullptr;
+                                         logging::LoggingManager* logging_manager) {
+  return std::make_unique<InferenceSession>(session_options, logging_manager, SubClassConstructorCookie());
 }
 }  // namespace onnxruntime

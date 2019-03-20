@@ -136,7 +136,9 @@ struct CustomOpKernel : OpKernel {
   void* op_kernel_;
 };
 
-InferenceSession::InferenceSession(const SessionOptions& session_options, logging::LoggingManager* logging_manager)
+InferenceSession::InferenceSession(const SessionOptions& session_options,
+                                   logging::LoggingManager* logging_manager,
+                                   const Session::SubClassConstructorCookie& /*cookie*/)
     : Session(),
       session_options_{session_options},
       graph_transformation_mgr_{session_options_.max_num_graph_transformation_steps},
