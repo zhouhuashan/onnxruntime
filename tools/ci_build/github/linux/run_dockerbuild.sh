@@ -57,6 +57,7 @@ if [ $BUILD_DEVICE = "cpu" ]; then
         --volume "$SOURCE_ROOT:/onnxruntime_src" \
         --volume "$BUILD_DIR:/build" \
         --volume "$HOME/.cache/onnxruntime:/home/onnxruntimedev/.cache/onnxruntime" \
+        --volume "$HOME/.onnx:/home/onnxruntimedev/.onnx" \
         "onnxruntime-$IMAGE" \
         /bin/bash /onnxruntime_src/tools/ci_build/github/linux/run_build.sh \
          -d $BUILD_DEVICE -x "$BUILD_EXTR_PAR" &
@@ -68,6 +69,7 @@ else
         --volume "$SOURCE_ROOT:/onnxruntime_src" \
         --volume "$BUILD_DIR:/build" \
         --volume "$HOME/.cache/onnxruntime:/home/onnxruntimedev/.cache/onnxruntime" \
+        --volume "$HOME/.onnx:/home/onnxruntimedev/.onnx" \
         "onnxruntime-$IMAGE" \
         /bin/bash /onnxruntime_src/tools/ci_build/github/linux/run_build.sh \
         -d $BUILD_DEVICE -x "$BUILD_EXTR_PAR" &
