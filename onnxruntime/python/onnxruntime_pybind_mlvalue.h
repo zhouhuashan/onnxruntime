@@ -13,8 +13,7 @@
 #include "core/framework/allocatormgr.h"
 #include "core/framework/environment.h"
 #include "core/framework/ml_value.h"
-#include "core/session/inference_session.h"
-
+#include "core/session/session.h"
 
 using namespace std;
 namespace onnxruntime {
