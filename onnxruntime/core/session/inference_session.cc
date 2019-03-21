@@ -959,12 +959,9 @@ class InferenceSession::Impl {
       std::unique_ptr<RuleBasedGraphTransformer> rule_transformer =
           transformer_utils::GenerateRuleBasedGraphTransformer(level, &custom_list, t_name);
 
-	  if (rule_transformer) {
+      if (rule_transformer) {
         transformer_manager.Register(std::move(rule_transformer), level, std::move(providers));
       }
-
-      ORT_ENFORCE(graph_optimization_level < static_cast<uint32_t>(TransformerLevel::MaxTransformerLevel),
-                  "Allowed values are 1 and 2. Current level is set to " + std::to_string(graph_optimization_level));
 
       // Generate and register transformers for level
       auto transformers_to_register = transformer_utils::GenerateTransformers(level, &custom_list);
@@ -972,6 +969,9 @@ class InferenceSession::Impl {
         transformer_manager.Register(std::move(entry.first), level, std::move(entry.second));
       }
     };
+
+    ORT_ENFORCE(graph_optimization_level < static_cast<uint32_t>(TransformerLevel::MaxTransformerLevel),
+                "Allowed values are 1 and 2. Current level is set to " + std::to_string(graph_optimization_level));
 
     if ((graph_optimization_level >= static_cast<uint32_t>(TransformerLevel::Level1)) || !custom_list.empty()) {
       add_transformers(TransformerLevel::Level1, {}, "Level1");
